@@ -1,0 +1,10 @@
+# OS files
+.DS_Store
+.idea
+*.cache
+
+node_modules
+index.dev.mjs
+
+# composer dependencies (dev: kirby, mago)
+/vendor/

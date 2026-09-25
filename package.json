@@ -1,0 +1,39 @@
+{
+	"name": "kirby-agents",
+	"private": true,
+	"license": "UNLICENSED",
+	"type": "module",
+	"scripts": {
+		"build": "kirbyup src/index.js",
+		"dev": "kirbyup serve src/index.js",
+		"format": "oxfmt",
+		"format:check": "oxfmt --check",
+		"lint": "eslint \"src/**/*.{js,vue}\"",
+		"lint:fix": "pnpm run lint --fix"
+	},
+	"devDependencies": {
+		"@eslint/js": "^10.0.1",
+		"eslint": "^10.11.0",
+		"eslint-config-prettier": "^10.1.8",
+		"eslint-plugin-vue": "^10.11.1",
+		"kirbyup": "^3.5.0",
+		"oxfmt": "^0.70.0",
+		"vue-eslint-parser": "^10.4.1"
+	},
+	"browserslist": [
+		"last 2 Android versions",
+		"last 2 Chrome versions",
+		"last 2 ChromeAndroid versions",
+		"last 2 Edge versions",
+		"last 2 Firefox versions",
+		"last 2 FirefoxAndroid versions",
+		"last 2 iOS versions",
+		"last 2 KaiOS versions",
+		"last 2 Safari versions",
+		"last 2 Samsung versions",
+		"last 2 Opera versions",
+		"last 2 OperaMobile versions",
+		"last 2 UCAndroid versions"
+	],
+	"packageManager": "pnpm@12.5.1"
+}

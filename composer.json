@@ -1,0 +1,49 @@
+{
+	"name": "tobimori/kirby-agents",
+	"description": "Stateless MCP server for Kirby CMS with OAuth, blueprint-aware editing, and page lifecycle tools",
+	"type": "kirby-plugin",
+	"version": "0.1.0",
+	"license": "proprietary",
+	"homepage": "https://github.com/tobimori/kirby-agents#readme",
+	"authors": [
+		{
+			"name": "Tobias Möritz",
+			"email": "tobias@moeritz.io"
+		}
+	],
+	"autoload": {
+		"psr-4": {
+			"tobimori\\Agents\\": "classes"
+		}
+	},
+	"minimum-stability": "RC",
+	"require": {
+		"php": ">=8.2.0",
+		"getkirby/composer-installer": "^1.2.1"
+	},
+	"require-dev": {
+		"carthage-software/mago": "^1.50.0",
+		"getkirby/cms": "^5.0.0"
+	},
+	"scripts": {
+		"analyze": "mago analyze",
+		"dist": "composer install --no-dev --optimize-autoloader",
+		"fix": [
+			"mago lint --fix",
+			"mago fmt"
+		],
+		"fmt": "mago fmt",
+		"fmt:check": "mago fmt --check",
+		"lint": "mago lint"
+	},
+	"config": {
+		"optimize-autoloader": true,
+		"allow-plugins": {
+			"carthage-software/mago": true,
+			"getkirby/composer-installer": true
+		}
+	},
+	"extra": {
+		"kirby-cms-path": false
+	}
+}

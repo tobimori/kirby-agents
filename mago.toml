@@ -1,0 +1,22 @@
+#:schema vendor/carthage-software/mago/schema.json
+version = "1"
+php-version = "8.2"
+
+[source]
+paths = ["index.php", "classes", "config"]
+includes = ["vendor"]
+
+[source.glob]
+literal-separator = true
+
+[formatter]
+use-tabs = true
+tab-width = 4
+
+[linter]
+minimum-fail-level = "warning"
+
+[linter.rules]
+literal-named-argument = { enabled = false }
+
+[analyzer]

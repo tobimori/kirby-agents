@@ -1,0 +1,12 @@
+{
+	"compilerOptions": {
+		"baseUrl": ".",
+		"paths": {
+			"@/*": ["./src/*"]
+		},
+		"lib": ["esnext", "dom"]
+	},
+	"vueCompilerOptions": {
+		"target": 2.7
+	}
+}
