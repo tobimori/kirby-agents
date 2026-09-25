@@ -81,7 +81,7 @@ final class McpEndpoint
 			$params[] = 'error="' . $error . '"';
 		}
 
-		return Response::json(['error' => $error], $status, headers: [
+		return ChallengeResponse::json(['error' => $error], $status, headers: [
 			'WWW-Authenticate' => 'Bearer ' . implode(', ', $params),
 		]);
 	}
