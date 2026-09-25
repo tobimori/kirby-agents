@@ -41,17 +41,21 @@ final class Schema
 	}
 
 	/**
-	 * Accepts the full name (`block columns`) or only the name (`columns`)
+	 * Accepts the full name (`block columns`), or only the name (`columns`)
+	 * if exactly one kind has it
 	 */
 	public function findType(string $focus): ?string
 	{
-		foreach (array_keys($this->types) as $name) {
-			if ($name === $focus || explode(' ', $name, 2)[1] === $focus) {
-				return $name;
-			}
+		if (array_key_exists($focus, $this->types)) {
+			return $focus;
 		}
 
-		return null;
+		$matches = array_filter(
+			array_keys($this->types),
+			static fn(string $name): bool => explode(' ', $name, 2)[1] === $focus,
+		);
+
+		return count($matches) === 1 ? reset($matches) : null;
 	}
 
 	/**
