@@ -17,7 +17,7 @@ final class Agents
 	}
 
 	/**
-	 * The OAuth issuer, which is the Panel URL
+	 * OAuth issuer: the Panel URL
 	 */
 	public static function issuer(): string
 	{
@@ -25,7 +25,7 @@ final class Agents
 	}
 
 	/**
-	 * The canonical URI of the MCP endpoint (RFC 8707 resource)
+	 * Canonical URL of the MCP endpoint
 	 */
 	public static function resource(): string
 	{

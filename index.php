@@ -14,4 +14,5 @@ if (version_compare(App::version() ?? '0.0.0', '5.0.0', '<') === true) {
 
 App::plugin('tobimori/agents', extends: [
 	'options' => require __DIR__ . '/config/options.php',
+	'routes' => require __DIR__ . '/config/routes.php',
 ]);
