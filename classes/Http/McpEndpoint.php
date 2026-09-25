@@ -21,7 +21,7 @@ final class McpEndpoint
 	{
 		$request = App::instance()->request();
 
-		$error = Guard::check($request);
+		$error = Guard::https($request) ?? Guard::origin($request);
 
 		if ($error !== null) {
 			return $error;

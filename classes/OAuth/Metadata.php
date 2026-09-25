@@ -9,6 +9,7 @@ use Kirby\Content\Field;
 use Kirby\Http\Response;
 use Kirby\Http\Url;
 use tobimori\Agents\Agents;
+use tobimori\Agents\Http\Json;
 
 final class Metadata
 {
@@ -44,8 +45,8 @@ final class Metadata
 			'response_types_supported' => ['code'],
 			'grant_types_supported' => ['authorization_code', 'refresh_token'],
 			'code_challenge_methods_supported' => ['S256'],
-			'token_endpoint_auth_methods_supported' => ['none'],
-			'revocation_endpoint_auth_methods_supported' => ['none'],
+			'token_endpoint_auth_methods_supported' => ['none', 'client_secret_basic', 'client_secret_post'],
+			'revocation_endpoint_auth_methods_supported' => ['none', 'client_secret_basic', 'client_secret_post'],
 			'client_id_metadata_document_supported' => true,
 			'authorization_response_iss_parameter_supported' => true,
 			'scopes_supported' => Scope::all(),
@@ -72,14 +73,8 @@ final class Metadata
 		return trim(Url::path($url), '/');
 	}
 
-	/**
-	 * JSON response for a metadata document, readable from any origin
-	 */
 	public static function response(array $data): Response
 	{
-		return Response::json($data, 200, headers: [
-			'Access-Control-Allow-Origin' => '*',
-			'Cache-Control' => 'public, max-age=300',
-		]);
+		return Json::response($data, headers: ['Cache-Control' => 'public, max-age=300']);
 	}
 }

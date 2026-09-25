@@ -74,7 +74,7 @@ final class Token
 			'e' => time() + self::ACCESS_TTL,
 		]));
 
-		return self::ACCESS . '.' . $payload . '.' . Secret::sign($payload);
+		return self::ACCESS . '.' . $payload . '.' . Secret::sign(self::ACCESS . '.' . $payload);
 	}
 
 	/**
@@ -90,7 +90,7 @@ final class Token
 			return null;
 		}
 
-		if (hash_equals(Secret::sign($parts[1]), $parts[2]) === false) {
+		if (hash_equals(Secret::sign(self::ACCESS . '.' . $parts[1]), $parts[2]) === false) {
 			return null;
 		}
 

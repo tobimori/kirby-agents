@@ -13,21 +13,29 @@ use tobimori\Agents\Agents;
 final class Guard
 {
 	/**
-	 * Returns an error response if the request must be rejected
+	 * Error response for plain HTTP, except for direct requests from this machine
 	 */
-	public static function check(Request $request): ?Response
+	public static function https(Request $request): ?Response
 	{
-		if ($request->ssl() === false && static::isLoopback() === false) {
-			return Response::json(['error' => 'HTTPS is required'], 403);
+		if ($request->ssl() || self::isLoopback()) {
+			return null;
 		}
 
+		return Json::error('invalid_request', 'HTTPS is required', 403);
+	}
+
+	/**
+	 * Error response for browser requests from other sites (DNS rebinding)
+	 */
+	public static function origin(Request $request): ?Response
+	{
 		$origin = (string) $request->header('Origin');
 
-		if ($origin !== '' && static::isAllowedOrigin($origin) === false) {
-			return Response::json(['error' => 'Origin is not allowed'], 403);
+		if ($origin === '' || self::isAllowedOrigin($origin)) {
+			return null;
 		}
 
-		return null;
+		return Json::error('invalid_request', 'Origin is not allowed', 403);
 	}
 
 	/**
