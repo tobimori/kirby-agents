@@ -62,6 +62,22 @@ enum Scope: string
 	}
 
 	/**
+	 * A broader scope includes the narrower ones
+	 */
+	public function includes(self $scope): bool
+	{
+		return match ($this) {
+			self::ContentWrite => in_array($scope, [self::ContentWrite, self::ContentRead], true),
+			self::ContentPublish, self::PagesManage => in_array(
+				$scope,
+				[$this, self::ContentWrite, self::ContentRead],
+				true,
+			),
+			default => $this === $scope,
+		};
+	}
+
+	/**
 	 * Extra role permission needed to grant this scope
 	 */
 	public function permission(): ?string

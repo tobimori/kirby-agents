@@ -10,6 +10,7 @@ use Kirby\Http\Response;
 use tobimori\Agents\OAuth\Access;
 use tobimori\Agents\OAuth\Metadata;
 use tobimori\Agents\OAuth\Scope;
+use tobimori\Agents\Protocol\Server;
 
 final class McpEndpoint
 {
@@ -47,14 +48,7 @@ final class McpEndpoint
 
 		App::instance()->auth()->setUser($access->user);
 
-		// the protocol core is not built yet
-		$id = $request->body()->get('id');
-
-		return Response::json([
-			'jsonrpc' => '2.0',
-			'id' => is_string($id) || is_int($id) ? $id : null,
-			'error' => ['code' => -32601, 'message' => 'Method not found'],
-		]);
+		return Server::handle($request, $access);
 	}
 
 	/**
@@ -62,16 +56,32 @@ final class McpEndpoint
 	 */
 	public static function challenge(?string $error = null): Response
 	{
+		return self::authenticate(401, $error ?? 'unauthorized', Scope::minimal(), $error !== null);
+	}
+
+	/**
+	 * 403 response that asks the client to authorize again with more scopes
+	 */
+	public static function insufficientScope(Scope $scope): Response
+	{
+		return self::authenticate(403, 'insufficient_scope', [$scope->value], true);
+	}
+
+	/**
+	 * @param list<string> $scopes
+	 */
+	private static function authenticate(int $status, string $error, array $scopes, bool $withError): Response
+	{
 		$params = [
 			'resource_metadata="' . Metadata::protectedResourceUrl() . '"',
-			'scope="' . implode(' ', Scope::minimal()) . '"',
+			'scope="' . implode(' ', $scopes) . '"',
 		];
 
-		if ($error !== null) {
+		if ($withError) {
 			$params[] = 'error="' . $error . '"';
 		}
 
-		return Response::json(['error' => $error ?? 'unauthorized'], 401, headers: [
+		return Response::json(['error' => $error], $status, headers: [
 			'WWW-Authenticate' => 'Bearer ' . implode(', ', $params),
 		]);
 	}
