@@ -7,6 +7,7 @@ namespace tobimori\Agents\Http;
 use Kirby\Cms\App;
 use Kirby\Http\Request\Auth\BearerAuth;
 use Kirby\Http\Response;
+use tobimori\Agents\OAuth\Access;
 use tobimori\Agents\OAuth\Metadata;
 use tobimori\Agents\OAuth\Scope;
 
@@ -32,10 +33,28 @@ final class McpEndpoint
 		}
 
 		// only bearer tokens count, the Panel session cookie is ignored
-		$token = $request->auth();
+		$auth = $request->auth();
 
-		// no token can be valid until the token endpoint exists
-		return static::challenge($token instanceof BearerAuth ? 'invalid_token' : null);
+		if (!$auth instanceof BearerAuth) {
+			return static::challenge();
+		}
+
+		$access = Access::fromToken($auth->token());
+
+		if ($access === null) {
+			return static::challenge('invalid_token');
+		}
+
+		App::instance()->auth()->setUser($access->user);
+
+		// the protocol core is not built yet
+		$id = $request->body()->get('id');
+
+		return Response::json([
+			'jsonrpc' => '2.0',
+			'id' => is_string($id) || is_int($id) ? $id : null,
+			'error' => ['code' => -32601, 'message' => 'Method not found'],
+		]);
 	}
 
 	/**
