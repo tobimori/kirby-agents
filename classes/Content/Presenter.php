@@ -186,7 +186,7 @@ final class Presenter
 			'block' => trim(
 				$node->type
 				. ' '
-				. $this->preview($node->fields, is_array($value['content'] ?? null) ? $value['content'] : [], 1)
+				. $this->preview($node->fields, is_array($value['content'] ?? null) ? $value['content'] : [], 2)
 				. (($value['isHidden'] ?? false) === true ? ' (hidden)' : ''),
 			),
 			'layout' => trim(

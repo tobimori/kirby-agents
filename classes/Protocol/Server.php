@@ -13,6 +13,7 @@ use tobimori\Agents\Http\McpEndpoint;
 use tobimori\Agents\OAuth\Access;
 use tobimori\Agents\Tools\Arguments;
 use tobimori\Agents\Tools\Guide;
+use tobimori\Agents\Tools\ScopeRequired;
 use tobimori\Agents\Tools\Tool;
 use tobimori\Agents\Tools\ToolError;
 use tobimori\Agents\Tools\Tools;
@@ -218,6 +219,8 @@ final class Server
 				'content' => [['type' => 'text', 'text' => $error->getMessage()]],
 				'isError' => true,
 			]);
+		} catch (ScopeRequired $error) {
+			return McpEndpoint::insufficientScope($error->scope);
 		}
 
 		if (is_string($data)) {

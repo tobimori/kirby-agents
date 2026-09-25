@@ -73,6 +73,22 @@ final class Arguments
 	}
 
 	/**
+	 * A list of values of any type, with a maximum length
+	 *
+	 * @return list<mixed>
+	 */
+	public function list(string $key, int $max): array
+	{
+		$value = $this->values[$key] ?? null;
+
+		if (!is_array($value) || !array_is_list($value) || $value === [] || count($value) > $max) {
+			throw new ToolError("`{$key}` must be a list with 1 to {$max} items");
+		}
+
+		return $value;
+	}
+
+	/**
 	 * A string or a list of strings
 	 *
 	 * @return list<string>

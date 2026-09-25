@@ -1,0 +1,208 @@
+<?php
+
+declare(strict_types=1);
+
+namespace tobimori\Agents\Tools;
+
+use tobimori\Agents\Content\Editor;
+use tobimori\Agents\Content\Models;
+use tobimori\Agents\Content\Presenter;
+use tobimori\Agents\Content\Reader;
+use tobimori\Agents\Content\Writer;
+use tobimori\Agents\OAuth\Access;
+use tobimori\Agents\OAuth\Scope;
+
+final class ContentUpdate implements Tool
+{
+	private const MAX_OPS = 100;
+
+	public function name(): string
+	{
+		return 'content_update';
+	}
+
+	public function definition(): array
+	{
+		return [
+			'title' => 'Change page content',
+			'description' => implode("\n", [
+				'Changes the content of a page or the site with a list of operations. Read the page with content_get first, and send its `etag`.',
+				'All operations are applied together: if one is invalid, nothing is saved.',
+				'Ref numbers come from that read. All refs in one call point to that read, also after earlier operations in the same call. New items can get a name with `as`, which later operations in the same call can use instead of a number.',
+				'Operations:',
+				'- `{"op": "set", "field": "subtitle", "value": "New"}` sets a top-level field',
+				'- `{"op": "set", "ref": 5, "field": "text", "value": "<p>New</p>"}` sets a field of a block, a structure row, or the settings of a layout row',
+				'- `{"op": "insert", "into": "text", "type": "heading", "content": {"text": "Hi"}, "as": "a"}` adds a block at the end of a top-level field',
+				'- `{"op": "insert", "after": 5, "type": "text", "content": {…}}` adds a block after item 5. `before` works the same way',
+				'- `{"op": "insert", "into": 3, "slot": "left", "type": "text", "content": {…}}` adds a block to the nested field `left` of block 3',
+				'- `{"op": "insert", "into": "links", "content": {"label": "Docs", "url": "https://…"}}` adds a structure row (no `type`)',
+				'- `{"op": "insert", "into": "layout", "columns": ["1/2", "1/2"], "content": {"background": "dark"}, "as": "r"}` adds a layout row. `content` is its settings',
+				'- `{"op": "insert", "into": "r", "column": 1, "type": "text", "content": {…}}` adds a block to column 1 (counted from 1) of a layout row. `into` a column ref works too',
+				'- `{"op": "move", "ref": 1, "after": 5}` moves an item. `before` and `into` work as for insert',
+				'- `{"op": "remove", "ref": 6}` removes an item with everything in it',
+				'Values use the formats from schema_get. For files, pages, and users, send UUIDs like `page://…`. Missing fields in `content` stay empty.',
+				'By default the changes are saved as unsaved changes (`changes` version), which an editor sees and publishes in the Panel. The result lists the refs of all new items and the new `etag` and outline.',
+			]),
+			'inputSchema' => [
+				'type' => 'object',
+				'properties' => [
+					'page' => [
+						'type' => 'string',
+						'description' => 'Page id, for example `blog/my-post`, or `site`',
+					],
+					'etag' => [
+						'type' => 'string',
+						'description' => '`etag` from the content_get read that the refs come from',
+					],
+					'ops' => [
+						'type' => 'array',
+						'minItems' => 1,
+						'maxItems' => self::MAX_OPS,
+						'items' => [
+							'type' => 'object',
+							'properties' => [
+								'op' => ['type' => 'string', 'enum' => ['set', 'insert', 'move', 'remove']],
+								'ref' => ['type' => ['integer', 'string']],
+								'field' => ['type' => 'string'],
+								'value' => [],
+								'type' => ['type' => 'string'],
+								'content' => ['type' => 'object'],
+								'as' => ['type' => 'string'],
+								'after' => ['type' => ['integer', 'string']],
+								'before' => ['type' => ['integer', 'string']],
+								'into' => ['type' => ['integer', 'string']],
+								'slot' => ['type' => 'string'],
+								'column' => ['type' => 'integer', 'minimum' => 1],
+								'columns' => ['type' => 'array', 'items' => ['type' => 'string']],
+							],
+							'required' => ['op'],
+						],
+						'description' => 'Operations, applied in order',
+					],
+					'version' => [
+						'type' => 'string',
+						'enum' => ['changes', 'latest'],
+						'default' => 'changes',
+						'description' => '`changes` saves for review in the Panel, `latest` also publishes, which needs the `content:publish` scope',
+					],
+					'language' => [
+						'type' => 'string',
+						'description' => 'Language code on multi-language sites. Without it, the default language',
+					],
+					'dryRun' => [
+						'type' => 'boolean',
+						'default' => false,
+						'description' => 'Check the operations and show the result without saving',
+					],
+				],
+				'required' => ['page', 'etag', 'ops'],
+				'additionalProperties' => false,
+			],
+			'annotations' => [
+				'readOnlyHint' => false,
+				'destructiveHint' => true,
+				'idempotentHint' => false,
+				'openWorldHint' => false,
+			],
+		];
+	}
+
+	public function scope(): Scope
+	{
+		return Scope::ContentWrite;
+	}
+
+	public function call(Arguments $arguments, Access $access): string
+	{
+		$version = $arguments->enum('version', ['changes', 'latest'], 'changes');
+
+		if ($version === 'latest' && $access->allows(Scope::ContentPublish) === false) {
+			throw new ScopeRequired(Scope::ContentPublish);
+		}
+
+		$model = Models::find((string) $arguments->string('page'));
+		$language = $arguments->string('language');
+		$base = Reader::read($model, null, $language);
+
+		if ($arguments->string('etag') !== $base->etag) {
+			throw new ToolError(
+				"The content changed since your read. The current etag is {$base->etag}. Read it again with content_get, because the ref numbers may have changed too.",
+			);
+		}
+
+		$ops = $arguments->list('ops', self::MAX_OPS);
+		$editor = new Editor($base);
+		$editor->apply($ops);
+		$result = $editor->result();
+
+		$dryRun = $arguments->bool('dryRun', false);
+		$outcome = Writer::write($base, $result['values'], $result['changed'], $version === 'latest', $dryRun);
+
+		if ($outcome['errors'] !== []) {
+			throw new ToolError("Nothing was saved. Invalid values:\n" . self::messages($outcome['errors']));
+		}
+
+		$lines = [];
+
+		if ($dryRun) {
+			$lines[] = 'Dry run: the operations are valid. Nothing was saved. The content would be:';
+			$after = $base->withValues($outcome['values']);
+		} else {
+			// after a change, Kirby keeps the old state in the old model object
+			$after = Reader::read(Models::find((string) $arguments->string('page')), null, $language);
+			$lines[] = $version === 'latest' ? 'Saved and published.' : self::savedText($after);
+		}
+
+		$lines[] = 'Changed fields: ' . implode(', ', $result['changed']) . '.';
+
+		$created = self::createdRefs($after, $result['created']);
+
+		if ($created !== []) {
+			$lines[] = 'New items: ' . implode(', ', $created) . '.';
+		}
+
+		if ($outcome['warnings'] !== []) {
+			$lines[] = "Other fields with invalid values, not changed by you:\n" . self::messages($outcome['warnings']);
+		}
+
+		return implode("\n", $lines) . "\n\n" . Presenter::outline($after);
+	}
+
+	private static function savedText(Reader $after): string
+	{
+		return $after->version === 'changes'
+			? 'Saved as unsaved changes. An editor can review and publish them in the Panel.'
+			: 'Saved. The content is now the same as the published version, so there are no unsaved changes.';
+	}
+
+	/**
+	 * `r = 17 (layout row)` or `19 (block heading)` for each insert, from its path after the change
+	 *
+	 * @param list<array{name: string|null, path: list<string|int>}> $created
+	 *
+	 * @return list<string>
+	 */
+	private static function createdRefs(Reader $after, array $created): array
+	{
+		$refs = [];
+
+		foreach ($created as $item) {
+			foreach ($after->nodes as $node) {
+				if ($node->path === $item['path']) {
+					$name = $item['name'] !== null ? $item['name'] . ' = ' : '';
+					$refs[] = "{$name}{$node->ref} ({$node->kind} {$node->type})";
+				}
+			}
+		}
+
+		return $refs;
+	}
+
+	/**
+	 * @param list<string> $messages
+	 */
+	private static function messages(array $messages): string
+	{
+		return implode("\n", array_map(static fn(string $message): string => '- ' . $message, $messages));
+	}
+}

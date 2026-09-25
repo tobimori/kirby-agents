@@ -15,7 +15,7 @@ final class Tools
 	 */
 	public static function all(): array
 	{
-		$tools = [new ContentGet(), new PagesFind(), new SchemaGet(), new SiteOverview()];
+		$tools = [new ContentGet(), new ContentUpdate(), new PagesFind(), new SchemaGet(), new SiteOverview()];
 		usort($tools, static fn(Tool $a, Tool $b): int => strcmp($a->name(), $b->name()));
 
 		return $tools;

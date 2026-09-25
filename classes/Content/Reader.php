@@ -77,6 +77,24 @@ final class Reader
 		);
 	}
 
+	/**
+	 * The same read with other values, to show the result of a dry run
+	 *
+	 * @param array<array-key, mixed> $values
+	 */
+	public function withValues(array $values): self
+	{
+		return new self(
+			model: $this->model,
+			version: $this->version,
+			language: $this->language,
+			etag: 'none, dry run',
+			fields: $this->fields,
+			values: $values,
+			nodes: Nodes::index($this->fields, $values),
+		);
+	}
+
 	public function node(int $ref): Node
 	{
 		return (
