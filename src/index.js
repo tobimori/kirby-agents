@@ -1,0 +1,1 @@
+panel.plugin("tobimori/agents", {})
