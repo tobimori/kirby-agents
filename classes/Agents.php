@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace tobimori\Agents;
 
 use Kirby\Cms\App;
+use Kirby\Content\Field;
 
 final class Agents
 {
@@ -30,5 +31,12 @@ final class Agents
 	public static function resource(): string
 	{
 		return static::issuer() . '/mcp';
+	}
+
+	public static function siteTitle(): string
+	{
+		$title = App::instance()->site()->content()->get('title');
+
+		return $title instanceof Field ? (string) $title->value() : '';
 	}
 }

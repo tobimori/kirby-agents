@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace tobimori\Agents\OAuth;
 
 use Kirby\Cms\App;
-use Kirby\Content\Field;
 use Kirby\Http\Response;
 use Kirby\Http\Url;
 use tobimori\Agents\Agents;
@@ -18,14 +17,12 @@ final class Metadata
 	 */
 	public static function protectedResource(): array
 	{
-		$title = App::instance()->site()->content()->get('title');
-
 		return [
 			'resource' => Agents::resource(),
 			'authorization_servers' => [Agents::issuer()],
 			'scopes_supported' => Scope::minimal(),
 			'bearer_methods_supported' => ['header'],
-			'resource_name' => $title instanceof Field ? $title->value() : null,
+			'resource_name' => Agents::siteTitle(),
 		];
 	}
 

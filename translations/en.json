@@ -1,0 +1,21 @@
+{
+	"title": "Agents",
+	"authorize.title": "Allow {client} to access {site}?",
+	"authorize.user": "The agent acts as {user}, with the permissions of your role.",
+	"authorize.client.verified": "The client identity is published at {host}.",
+	"authorize.client.unverified": "The client registered itself. Its identity is not verified.",
+	"authorize.redirect.web": "After your decision, you go back to {host}.",
+	"authorize.redirect.loopback": "After your decision, you go back to an app on this computer ({host}). Only allow access if you started this connection.",
+	"authorize.redirect.app": "After your decision, you go back to the app {host}. Only allow access if you started this connection.",
+	"authorize.scopes": "The agent can:",
+	"authorize.scope.unavailable": "Not available for your role",
+	"authorize.allow": "Allow",
+	"authorize.deny": "Deny",
+	"authorize.error.expired": "This request has expired or was already used. Start the connection again from your app.",
+	"authorize.error.forbidden": "Your role is not allowed to connect agents.",
+	"scope.content:read": "Read pages, content, and blueprints",
+	"scope.content:write": "Prepare content changes for review",
+	"scope.content:publish": "Publish and discard content changes",
+	"scope.pages:manage": "Create, move, and rename pages",
+	"scope.pages:delete": "Delete pages"
+}
