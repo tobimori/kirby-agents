@@ -220,6 +220,10 @@ final class Server
 			]);
 		}
 
+		if (is_string($data)) {
+			return self::result($id, ['content' => [['type' => 'text', 'text' => $data]]]);
+		}
+
 		return self::result($id, [
 			'content' => [['type' => 'text', 'text' => self::json($data)]],
 			'structuredContent' => $data,

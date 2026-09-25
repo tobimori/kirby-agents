@@ -23,7 +23,8 @@ interface Tool
 	public function scope(): Scope;
 
 	/**
-	 * Returns the structured result, or throws a ToolError the agent can fix
+	 * Returns structured data, or plain text for results that are text already.
+	 * Throws a ToolError the agent can fix.
 	 */
-	public function call(Arguments $arguments, Access $access): array;
+	public function call(Arguments $arguments, Access $access): array|string;
 }
