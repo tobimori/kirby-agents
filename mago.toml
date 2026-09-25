@@ -18,6 +18,14 @@ minimum-fail-level = "warning"
 
 [linter.rules]
 literal-named-argument = { enabled = false }
+# JSON-RPC error codes like -32601 are standard numbers
+readable-literal = { enabled = false }
+# size metrics, not rules: splitting code only to pass them makes it worse
+cyclomatic-complexity = { enabled = false }
+excessive-parameter-list = { enabled = false }
+kan-defect = { enabled = false }
+too-many-methods = { enabled = false }
+halstead = { enabled = false }
 # Kirby binds `$this` to route, hook, and area closures, which fails for static closures
 prefer-static-closure = { exclude = ["config/"] }
 prefer-first-class-callable = { exclude = ["config/"] }
