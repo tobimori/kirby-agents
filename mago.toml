@@ -18,5 +18,10 @@ minimum-fail-level = "warning"
 
 [linter.rules]
 literal-named-argument = { enabled = false }
+# Kirby binds `$this` to route, hook, and area closures, which fails for static closures
+prefer-static-closure = { exclude = ["config/"] }
+prefer-first-class-callable = { exclude = ["config/"] }
 
 [analyzer]
+# Kirby options and request data are untyped, we check types where we use them
+ignore = ["mixed-assignment"]
