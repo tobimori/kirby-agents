@@ -7,6 +7,7 @@ namespace tobimori\Agents\Tools;
 use Kirby\Cms\App;
 use Kirby\Cms\ModelWithContent;
 use Kirby\Cms\Page;
+use tobimori\Agents\Content\Models;
 use tobimori\Agents\OAuth\Access;
 use tobimori\Agents\OAuth\Scope;
 use tobimori\Agents\Schema\Compiler;
@@ -82,18 +83,8 @@ final class SchemaGet implements Tool
 	{
 		$kirby = App::instance();
 
-		if ($id === 'site') {
-			return $kirby->site();
-		}
-
 		if ($id !== null) {
-			$page = $kirby->page($id, drafts: true);
-
-			if ($page === null || $page->isAccessible() === false) {
-				throw new ToolError("No page with the id `{$id}`");
-			}
-
-			return $page;
+			return Models::find($id);
 		}
 
 		if ($blueprint !== null) {

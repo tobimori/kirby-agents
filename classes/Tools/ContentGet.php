@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace tobimori\Agents\Tools;
 
-use Kirby\Cms\App;
-use Kirby\Cms\ModelWithContent;
+use tobimori\Agents\Content\Models;
 use tobimori\Agents\Content\Presenter;
 use tobimori\Agents\Content\Reader;
 use tobimori\Agents\OAuth\Access;
@@ -75,7 +74,7 @@ final class ContentGet implements Tool
 	public function call(Arguments $arguments, Access $access): array|string
 	{
 		$content = Reader::read(
-			self::model((string) $arguments->string('page')),
+			Models::find((string) $arguments->string('page')),
 			$arguments->string('version'),
 			$arguments->string('language'),
 		);
@@ -94,22 +93,5 @@ final class ContentGet implements Tool
 		}
 
 		return Presenter::outline($content);
-	}
-
-	private static function model(string $id): ModelWithContent
-	{
-		$kirby = App::instance();
-
-		if ($id === 'site') {
-			return $kirby->site();
-		}
-
-		$page = $kirby->page($id, drafts: true);
-
-		if ($page === null || $page->isAccessible() === false) {
-			throw new ToolError("No page with the id `{$id}`");
-		}
-
-		return $page;
 	}
 }
