@@ -12,6 +12,7 @@ use tobimori\Agents\Content\Models;
 use tobimori\Agents\Content\PageInfo;
 use tobimori\Agents\Lifecycle\Creator;
 use tobimori\Agents\Lifecycle\Placement;
+use tobimori\Agents\Lifecycle\Uploads;
 use tobimori\Agents\OAuth\Access;
 use tobimori\Agents\OAuth\Scope;
 
@@ -44,6 +45,7 @@ final class PageRulesGet implements Tool
 			'description' => implode("\n", [
 				'Returns what the blueprints and the role of the user allow for a page, or for new pages in it. Read it before page_create or page_update.',
 				'- `create`: templates for new pages in this page (or `site`), with their create options: the `status` new pages get, how `title` and `slug` are set, the `fields` you can set when you create the page, and `sort` (how the new pages are sorted). No `create` means no new pages here',
+				'- `upload`: file templates you can upload with file_upload, with their `accept` rules (mime types, extensions, `maxsize` in bytes) and where the Panel offers them (`from`). No `upload` means no uploads here',
 				'- For pages also: `allowed` actions of the role, `statuses`, `sort` (how this page is sorted among its siblings), `templates` it can change to, and `moveTo` (where it can move)',
 			]),
 			'inputSchema' => [
@@ -74,6 +76,7 @@ final class PageRulesGet implements Tool
 			return [
 				'page' => ['id' => 'site', 'title' => Agents::siteTitle()],
 				'create' => self::create($model),
+				'upload' => Uploads::templates($model),
 			];
 		}
 
@@ -85,6 +88,7 @@ final class PageRulesGet implements Tool
 		$rules = [
 			'page' => PageInfo::summary($model),
 			'create' => self::create($model),
+			'upload' => Uploads::templates($model),
 			'allowed' => array_values(array_map(strval(...), $allowed)),
 			'statuses' => self::statuses($model),
 			'sort' => Placement::sorting($model),

@@ -139,11 +139,12 @@ final class Placement
 	}
 
 	/**
-	 * Props of the pages sections in the blueprint of the model that list the children of the parent
+	 * Props of the sections of a type (`pages` or `files`) in the blueprint of the model
+	 * that list the children or files of the parent
 	 *
 	 * @return list<array<array-key, mixed>>
 	 */
-	private static function sections(Site|Page $model, Site|Page $parent): array
+	public static function sections(Site|Page $model, Site|Page $parent, string $type = 'pages'): array
 	{
 		$tabs = $model->blueprint()->toArray()['tabs'] ?? [];
 		$sections = [];
@@ -157,7 +158,7 @@ final class Placement
 				foreach ($props as $section) {
 					if (
 						is_array($section)
-						&& ($section['type'] ?? null) === 'pages'
+						&& ($section['type'] ?? null) === $type
 						&& self::lists($model, $section, $parent)
 					) {
 						$sections[] = $section;
@@ -172,7 +173,7 @@ final class Placement
 	/**
 	 * The `parent` prop is a query from the model. Without it, the section lists the children of the model.
 	 */
-	private static function lists(Site|Page $model, array $section, Site|Page $parent): bool
+	public static function lists(Site|Page $model, array $section, Site|Page $parent): bool
 	{
 		try {
 			$listed = is_string($section['parent'] ?? null) ? $model->query($section['parent']) : $model;
