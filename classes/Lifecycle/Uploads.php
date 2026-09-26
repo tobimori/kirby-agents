@@ -11,7 +11,8 @@ use Kirby\Form\Form;
 use tobimori\Agents\Content\InputCheck;
 use tobimori\Agents\Content\Reader;
 use tobimori\Agents\Content\Writer;
-use tobimori\Agents\Schema\FieldProps;
+use tobimori\Agents\Fields\Fields;
+use tobimori\Agents\Fields\FilesField;
 use tobimori\Agents\Tools\ToolError;
 
 /**
@@ -150,10 +151,10 @@ final class Uploads
 			}
 
 			$path = $where . $name;
-			$type = $props['type'] ?? null;
+			$field = Fields::for($props);
 
 			if (
-				$type === 'files'
+				$field instanceof FilesField
 				&& is_array($props['uploads'] ?? null)
 				// `uploads.parent` is a query like the `parent` of a section
 				&& Placement::lists($parent, $props['uploads'], $parent)
@@ -162,29 +163,11 @@ final class Uploads
 				$found[$path] = is_string($template) ? $template : null;
 			}
 
-			$nested = match ($type) {
-				'blocks', 'layout' => self::blockFields($parent, $props, $path),
-				'structure', 'object' => self::fields($parent, FieldProps::fields($props), $path . ' > '),
-				default => [],
-			};
-
-			$found = [...$found, ...$nested];
-		}
-
-		return $found;
-	}
-
-	/**
-	 * @return array<string, string|null>
-	 */
-	private static function blockFields(Site|Page $parent, array $props, string $path): array
-	{
-		$found = $props['type'] === 'layout'
-			? self::fields($parent, FieldProps::settings($props), $path . ' > settings > ')
-			: [];
-
-		foreach (FieldProps::blockTypes($props) as $type) {
-			$found = [...$found, ...self::fields($parent, FieldProps::fieldset($props, $type), "{$path} > {$type} > ")];
+			// block types and layout settings are part of the path, the fields of structures and objects not
+			foreach ($field->fieldSets() as $set => $nested) {
+				$prefix = $set === '' ? "{$path} > " : "{$path} > {$set} > ";
+				$found = [...$found, ...self::fields($parent, $nested, $prefix)];
+			}
 		}
 
 		return $found;

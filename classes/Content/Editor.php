@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace tobimori\Agents\Content;
 
-use Kirby\Toolkit\Str;
-use tobimori\Agents\Schema\FieldProps;
+use tobimori\Agents\Fields\Field;
+use tobimori\Agents\Fields\Fields;
 use tobimori\Agents\Tools\ToolError;
 
 /**
@@ -14,29 +14,13 @@ use tobimori\Agents\Tools\ToolError;
  * All refs point to the read version. Each node carries a marker (`__ref` for
  * existing nodes, `__new` for inserted ones), so an operation finds its node
  * even after earlier operations moved or inserted other nodes.
+ * The field classes create new items and check where nodes may go.
  */
 final class Editor
 {
 	private const REF = '__ref';
 
 	private const NEW = '__new';
-
-	/**
-	 * Field types with lists or objects as values
-	 */
-	private const STRUCTURED = [
-		'blocks',
-		'layout',
-		'structure',
-		'entries',
-		'object',
-		'pages',
-		'files',
-		'users',
-		'checkboxes',
-		'multiselect',
-		'tags',
-	];
 
 	/**
 	 * @var array<array-key, mixed>
@@ -143,11 +127,11 @@ final class Editor
 			$props = $this->content->fields[$field] ?? null;
 
 			if (!is_array($props)) {
-				throw new ToolError(self::unknownField($field, $this->content->fields, 'the page'));
+				throw new ToolError(Field::unknownField($field, $this->content->fields, 'the page'));
 			}
 
 			self::ensureEditable($field, $props);
-			$this->values[$field] = self::decoded($props, $op['value']);
+			$this->values[$field] = Fields::for($props)->input($op['value']);
 			$this->changed[$field] = true;
 
 			return;
@@ -158,19 +142,15 @@ final class Editor
 		$props = $node['fields'][$field] ?? null;
 
 		if (!is_array($props)) {
-			throw new ToolError(self::unknownField($field, $node['fields'], "{$node['kind']} {$ref}"));
+			throw new ToolError(Field::unknownField($field, $node['fields'], "{$node['kind']} {$ref}"));
 		}
 
 		self::ensureEditable($field, $props);
 
 		$path = $this->pathOf($key);
-		$slot = match ($node['kind']) {
-			'block' => ['content', $field],
-			'layout' => ['attrs', $field],
-			default => [$field],
-		};
+		$slot = [...Fields::for($node['props'])->contentPath($node['kind']), $field];
 
-		$this->values = self::setAt($this->values, [...$path, ...$slot], self::decoded($props, $op['value']));
+		$this->values = self::setAt($this->values, [...$path, ...$slot], Fields::for($props)->input($op['value']));
 		$this->touch($path);
 	}
 
@@ -190,15 +170,10 @@ final class Editor
 		}
 
 		$target = $this->target($op);
-		$content = self::decoded(['type' => 'object'], $op['content'] ?? null);
+		$content = Field::json($op['content'] ?? null);
 		$content = is_array($content) ? $content : [];
 
-		[$node, $meta] = match ($target['kind']) {
-			'blocks' => $this->newBlock($target['props'], $op, $content),
-			'structure' => $this->newRow($target['props'], $content),
-			'layout' => $this->newLayoutRow($target['props'], $op, $content),
-			default => throw new ToolError("items cannot be inserted into a {$target['kind']} field"),
-		};
+		[$node, $meta] = Fields::for($target['props'])->newItem($target['kind'], $op, $content);
 
 		$key = $name ?? '_' . (count($this->nodes) + 1);
 		$node[self::NEW] = $key;
@@ -219,22 +194,7 @@ final class Editor
 		$this->touch($from);
 
 		$target = $this->target($op);
-		$kind = self::containerKind($meta['kind']);
-
-		if ($target['kind'] !== $kind) {
-			throw new ToolError("a {$meta['kind']} cannot be moved into a {$target['kind']} field");
-		}
-
-		if ($kind === 'blocks' && !in_array($meta['type'], FieldProps::blockTypes($target['props']), true)) {
-			throw new ToolError(
-				"block type `{$meta['type']}` is not allowed there. Allowed: "
-					. implode(', ', FieldProps::blockTypes($target['props'])),
-			);
-		}
-
-		if ($kind === 'structure' && ($target['props']['name'] ?? null) !== ($meta['props']['name'] ?? null)) {
-			throw new ToolError('structure rows can only move within the same structure field');
-		}
+		Fields::for($target['props'])->accept($target['kind'], $meta);
 
 		$this->values = self::insertAt($this->values, $target['path'], $target['index'], $node);
 		$this->touch($target['path']);
@@ -273,21 +233,17 @@ final class Editor
 		$index = (int) array_pop($path);
 		$meta = $this->nodes[$key];
 
-		if ($meta['kind'] === 'column') {
-			throw new ToolError('columns belong to their layout row. Insert blocks `into` the column instead');
-		}
-
 		return [
 			'path' => $path,
 			'index' => $mode === 'after' ? $index + 1 : $index,
 			'props' => $meta['props'],
-			'kind' => self::containerKind($meta['kind']),
+			'kind' => $meta['kind'],
 		];
 	}
 
 	/**
 	 * `into` a top-level field name, or into a node: a nested field (`slot`),
-	 * a layout column (`column`), or a column ref
+	 * or what the field class allows, like a layout column
 	 *
 	 * @return array{path: list<string|int>, index: int|null, props: array<array-key, mixed>, kind: string}
 	 */
@@ -296,47 +252,37 @@ final class Editor
 		if (is_string($into) && is_array($this->content->fields[$into] ?? null)) {
 			$props = $this->content->fields[$into];
 
-			return ['path' => [$into], 'index' => null, 'props' => $props, 'kind' => self::type($props)];
+			return [
+				'path' => [$into],
+				'index' => null,
+				'props' => $props,
+				'kind' => Fields::for($props)->itemKind() ?? '',
+			];
 		}
 
 		$key = $this->key($into);
 		$meta = $this->nodes[$key];
 		$path = $this->pathOf($key);
+		$owner = Fields::for($meta['props']);
+		$inner = $owner->into($meta['kind'], self::getAt($this->values, $path), $op);
 
-		if ($meta['kind'] === 'column') {
-			return ['path' => [...$path, 'blocks'], 'index' => null, 'props' => $meta['props'], 'kind' => 'blocks'];
-		}
-
-		if ($meta['kind'] === 'layout') {
-			$column = $op['column'] ?? null;
-			$columns = self::getAt($this->values, [...$path, 'columns']);
-			$count = is_array($columns) ? count($columns) : 0;
-
-			if (!is_int($column) || $column < 1 || $column > $count) {
-				throw new ToolError("into a layout row, send `column` as a number from 1 to {$count}");
-			}
-
+		if ($inner !== null) {
 			return [
-				'path' => [...$path, 'columns', $column - 1, 'blocks'],
+				'path' => [...$path, ...$inner['path']],
 				'index' => null,
 				'props' => $meta['props'],
-				'kind' => 'blocks',
+				'kind' => $inner['kind'],
 			];
 		}
 
 		$slot = $op['slot'] ?? null;
 		$props = is_string($slot) ? $meta['fields'][$slot] ?? null : null;
+		$kind = is_array($props) ? Fields::for($props)->itemKind() : null;
 
-		if (
-			!is_string($slot)
-			|| !is_array($props)
-			|| !in_array(self::type($props), ['blocks', 'structure', 'layout'], true)
-		) {
+		if (!is_string($slot) || !is_array($props) || $kind === null) {
 			$slots = array_keys(array_filter(
 				$meta['fields'],
-				static fn(mixed $props): bool => (
-					is_array($props) && in_array(self::type($props), ['blocks', 'structure', 'layout'], true)
-				),
+				static fn(mixed $props): bool => is_array($props) && Fields::for($props)->itemKind() !== null,
 			));
 
 			throw new ToolError(
@@ -347,102 +293,12 @@ final class Editor
 			);
 		}
 
-		$base = $meta['kind'] === 'block' ? [...$path, 'content', $slot] : [...$path, $slot];
-
-		return ['path' => $base, 'index' => null, 'props' => $props, 'kind' => self::type($props)];
-	}
-
-	/**
-	 * @return array{0: array<string, mixed>, 1: array{kind: string, type: string, fields: array<array-key, mixed>, props: array<array-key, mixed>}}
-	 */
-	private function newBlock(array $props, array $op, array $content): array
-	{
-		$type = $op['type'] ?? null;
-		$types = FieldProps::blockTypes($props);
-
-		if (!is_string($type) || !in_array($type, $types, true)) {
-			throw new ToolError('`type` must be one of: ' . implode(', ', $types));
-		}
-
-		$fields = FieldProps::fieldset($props, $type);
-		self::ensureKnown($content, $fields, "block {$type}");
-
 		return [
-			['id' => Str::uuid(), 'type' => $type, 'isHidden' => false, 'content' => $content],
-			['kind' => 'block', 'type' => $type, 'fields' => $fields, 'props' => $props],
+			'path' => [...$path, ...$owner->contentPath($meta['kind']), $slot],
+			'index' => null,
+			'props' => $props,
+			'kind' => $kind,
 		];
-	}
-
-	/**
-	 * @return array{0: array<array-key, mixed>, 1: array{kind: string, type: string, fields: array<array-key, mixed>, props: array<array-key, mixed>}}
-	 */
-	private function newRow(array $props, array $content): array
-	{
-		$fields = FieldProps::fields($props);
-		$name = is_string($props['name'] ?? null) ? $props['name'] : 'row';
-		self::ensureKnown($content, $fields, "row {$name}");
-
-		return [$content, ['kind' => 'row', 'type' => $name, 'fields' => $fields, 'props' => $props]];
-	}
-
-	/**
-	 * @return array{0: array<string, mixed>, 1: array{kind: string, type: string, fields: array<array-key, mixed>, props: array<array-key, mixed>}}
-	 */
-	private function newLayoutRow(array $props, array $op, array $content): array
-	{
-		$layouts = [];
-
-		foreach (is_array($props['layouts'] ?? null) ? $props['layouts'] : [] as $layout) {
-			$layouts[] = array_values(array_filter(is_array($layout) ? $layout : [], is_string(...)));
-		}
-
-		$columns = $op['columns'] ?? null;
-
-		if (!in_array($columns, $layouts, true)) {
-			$options = array_map(static fn(array $layout): string => (string) json_encode($layout), $layouts);
-
-			throw new ToolError('`columns` must be one of: ' . implode(', ', $options));
-		}
-
-		$fields = FieldProps::settings($props);
-		self::ensureKnown($content, $fields, 'layout row settings');
-
-		return [
-			[
-				'id' => Str::uuid(),
-				'attrs' => $content,
-				'columns' => array_map(static fn(mixed $width): array => [
-					'id' => Str::uuid(),
-					'width' => $width,
-					'blocks' => [],
-				], $columns),
-			],
-			['kind' => 'layout', 'type' => 'row', 'fields' => $fields, 'props' => $props],
-		];
-	}
-
-	/**
-	 * Lists and objects sent as JSON text. Some clients do this, because the schema of `value` has no type.
-	 */
-	private static function decoded(array $props, mixed $value): mixed
-	{
-		if (!is_string($value)) {
-			return $value;
-		}
-
-		if (!in_array($props['type'] ?? null, self::STRUCTURED, true)) {
-			return $value;
-		}
-
-		$text = ltrim($value);
-
-		if (!str_starts_with($text, '[') && !str_starts_with($text, '{')) {
-			return $value;
-		}
-
-		$decoded = json_decode($text, true);
-
-		return is_array($decoded) ? $decoded : $value;
 	}
 
 	/**
@@ -591,46 +447,5 @@ final class Editor
 		if (($props['disabled'] ?? false) === true) {
 			throw new ToolError("field `{$field}` is read-only");
 		}
-	}
-
-	/**
-	 * @param array<array-key, mixed> $fields
-	 */
-	private static function ensureKnown(array $content, array $fields, string $where): void
-	{
-		foreach (array_keys($content) as $field) {
-			if (!is_array($fields[$field] ?? null)) {
-				throw new ToolError(self::unknownField((string) $field, $fields, $where));
-			}
-		}
-	}
-
-	/**
-	 * @param array<array-key, mixed> $fields
-	 */
-	private static function unknownField(string $field, array $fields, string $where): string
-	{
-		$names = array_keys($fields);
-
-		return "{$where} has no field `{$field}`. Fields: " . ($names === [] ? 'none' : implode(', ', $names));
-	}
-
-	/**
-	 * Kind of list that holds a node. Blocks in layout columns have the layout props,
-	 * so the kind comes from the node, not from the props.
-	 */
-	private static function containerKind(string $nodeKind): string
-	{
-		return match ($nodeKind) {
-			'block' => 'blocks',
-			'row' => 'structure',
-			'layout' => 'layout',
-			default => $nodeKind,
-		};
-	}
-
-	private static function type(array $props): string
-	{
-		return is_string($props['type'] ?? null) ? $props['type'] : '';
 	}
 }

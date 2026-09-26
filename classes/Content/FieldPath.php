@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace tobimori\Agents\Content;
 
-use tobimori\Agents\Schema\FieldProps;
+use tobimori\Agents\Fields\Fields;
 use tobimori\Agents\Tools\ToolError;
 
 /**
@@ -34,16 +34,27 @@ final class FieldPath
 		$where = (string) ($props['name'] ?? '');
 
 		while ($parts !== []) {
-			$type = is_string($props['type'] ?? null) ? $props['type'] : '';
+			$sets = Fields::for($props)->fieldSets();
 			$next = array_shift($parts);
 
-			$fields = match ($type) {
-				'blocks', 'layout' => self::container($props, $next, $where),
-				'structure', 'object' => FieldProps::fields($props),
-				default => throw new ToolError("`{$where}` is a {$type} field and has no nested fields"),
-			};
+			if ($sets === []) {
+				$type = is_string($props['type'] ?? null) ? $props['type'] : 'unknown';
 
-			if (in_array($type, ['blocks', 'layout'], true)) {
+				throw new ToolError("`{$where}` is a {$type} field and has no nested fields");
+			}
+
+			// structures and objects have their fields directly, blocks and layouts per block type
+			$fields = $sets[''] ?? null;
+
+			if ($fields === null) {
+				if (!array_key_exists($next, $sets)) {
+					throw new ToolError(
+						"`{$next}` is not a block type of `{$where}`. Choose one of: "
+							. implode(', ', array_keys($sets)),
+					);
+				}
+
+				$fields = $sets[$next];
 				$where .= " > {$next}";
 				$next = array_shift($parts);
 
@@ -57,30 +68,6 @@ final class FieldPath
 		}
 
 		return $props;
-	}
-
-	/**
-	 * Fields of a block type, or of the settings of layout rows
-	 *
-	 * @return array<array-key, mixed>
-	 */
-	private static function container(array $props, string $name, string $where): array
-	{
-		if ($props['type'] === 'layout' && $name === 'settings') {
-			return FieldProps::settings($props);
-		}
-
-		$types = FieldProps::blockTypes($props);
-
-		if (!in_array($name, $types, true)) {
-			$settings = $props['type'] === 'layout' ? ', or `settings` for the row settings' : '';
-
-			throw new ToolError(
-				"`{$name}` is not a block type of `{$where}`. Block types: " . implode(', ', $types) . $settings,
-			);
-		}
-
-		return FieldProps::fieldset($props, $name);
 	}
 
 	/**
