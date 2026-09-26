@@ -18,11 +18,24 @@ final class Agents
 	}
 
 	/**
-	 * OAuth issuer: the Panel URL
+	 * Path of the endpoints outside the Panel (option `path`), or null for the Panel
+	 */
+	public static function path(): ?string
+	{
+		$path = static::option('path');
+
+		return is_string($path) ? trim($path, '/') : null;
+	}
+
+	/**
+	 * OAuth issuer and base of all endpoints: the Panel URL, or the URL of the `path` option
 	 */
 	public static function issuer(): string
 	{
-		return rtrim((string) App::instance()->url('panel'), '/');
+		$kirby = App::instance();
+		$path = static::path();
+
+		return rtrim($path === null ? (string) $kirby->url('panel') : (string) $kirby->url() . '/' . $path, '/');
 	}
 
 	/**

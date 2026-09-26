@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 return [
+	// endpoints outside the Panel, for example `agents` for `/agents/mcp`, or `''` for `/mcp`.
+	// For hosts that block the Panel from outside. The consent stays in the Panel.
+	'path' => null,
 	// client metadata documents
 	'cache' => true,
 	// rate limit counters
