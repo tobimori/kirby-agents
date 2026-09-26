@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace tobimori\Agents\Protocol;
 
 use Kirby\Cms\App;
+use Kirby\Exception\Exception as KirbyException;
 use Kirby\Http\Request;
 use Kirby\Http\Response;
 use Throwable;
@@ -214,7 +215,8 @@ final class Server
 
 		try {
 			$data = $tool->call($arguments, $access);
-		} catch (ToolError $error) {
+		} catch (ToolError|KirbyException $error) {
+			// Kirby exceptions are rule violations with messages for users, like a duplicate slug
 			return self::result($id, [
 				'content' => [['type' => 'text', 'text' => $error->getMessage()]],
 				'isError' => true,
