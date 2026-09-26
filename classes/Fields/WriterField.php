@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace tobimori\Agents\Fields;
 
+use tobimori\Agents\Content\InputCheck;
 use tobimori\Agents\Schema\Compiler;
 
 /**
@@ -31,34 +32,116 @@ class WriterField extends Field
 		'quote' => 'blockquote',
 	];
 
+	/**
+	 * HTML tags of the marks and nodes, to find tags the field does not allow
+	 */
+	private const TAGS = [
+		'bold' => ['strong', 'b'],
+		'italic' => ['em', 'i'],
+		'underline' => ['u'],
+		'strike' => ['s', 'del'],
+		'code' => ['code'],
+		'link' => ['a'],
+		'email' => ['a'],
+		'sup' => ['sup'],
+		'sub' => ['sub'],
+		'paragraph' => ['p'],
+		'heading' => ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+		'bulletList' => ['ul', 'li'],
+		'orderedList' => ['ol', 'li'],
+		'quote' => ['blockquote'],
+	];
+
 	public function describe(Compiler $schema): string
 	{
-		$marks = self::enabled(
-			$this->props['marks'] ?? null,
-			['bold', 'italic', 'underline', 'strike', 'link', 'email'],
-			self::MARKS,
-		);
-		$tags = array_map(static fn(string $mark): string => self::MARKS[$mark] ?? $mark, $marks);
+		$tags = array_map(static fn(string $mark): string => self::MARKS[$mark] ?? $mark, $this->marks());
 
-		if (($this->props['inline'] ?? false) === true) {
+		if ($this->isInline()) {
 			return 'inline html without <p>, tags: ' . self::tags($tags) . $this->length();
 		}
 
-		// outside inline mode, the writer always wraps text in paragraphs
-		$nodes = self::enabled(
-			$this->props['nodes'] ?? null,
-			['paragraph', 'heading', 'bulletList', 'orderedList'],
-			self::NODES,
-		);
-		$nodes = $nodes === [] ? ['paragraph'] : $nodes;
-		$blocks = array_map(static fn(string $node): string => self::NODES[$node] ?? $node, $nodes);
+		$blocks = array_map(static fn(string $node): string => self::NODES[$node] ?? $node, $this->blockNodes());
 
 		return 'html, blocks: ' . self::tags($blocks) . ', inline: ' . self::tags($tags) . $this->length();
+	}
+
+	/**
+	 * Kirby stores any HTML, because the Panel only offers the enabled marks and nodes.
+	 * Tags of other plugins' nodes are unknown here, so they pass.
+	 */
+	public function check(mixed $value, InputCheck $check, string $where): void
+	{
+		if (
+			!is_string($value)
+			|| !$check->isNew($value)
+			|| preg_match_all('/<([a-z][a-z0-9]*)\b/i', $value, $matches) === 0
+		) {
+			return;
+		}
+
+		$enabled = [...$this->marks(), ...$this->blockNodes(), ...($this->isInline() ? [] : ['paragraph'])];
+		$allowed = [];
+		$known = [];
+
+		foreach (self::TAGS as $name => $tags) {
+			$known = [...$known, ...$tags];
+
+			if (in_array($name, $enabled, true)) {
+				$allowed = [...$allowed, ...$tags];
+			}
+		}
+
+		$used = array_unique(array_map(strtolower(...), $matches[1]));
+		$wrong = array_diff(array_intersect($used, $known), $allowed);
+
+		if ($wrong !== []) {
+			$check->error(
+				"{$where}: " . self::tags(array_values($wrong)) . ' not allowed. Allowed: '
+					. self::tags(array_values(array_unique($allowed))),
+			);
+		}
 	}
 
 	public function prominent(): bool
 	{
 		return true;
+	}
+
+	private function isInline(): bool
+	{
+		return ($this->props['inline'] ?? false) === true;
+	}
+
+	/**
+	 * @return list<string>
+	 */
+	private function marks(): array
+	{
+		return self::enabled(
+			$this->props['marks'] ?? null,
+			['bold', 'italic', 'underline', 'strike', 'link', 'email'],
+			self::MARKS,
+		);
+	}
+
+	/**
+	 * Block nodes, none in inline mode. Outside inline mode, the writer always wraps text in paragraphs
+	 *
+	 * @return list<string>
+	 */
+	private function blockNodes(): array
+	{
+		if ($this->isInline()) {
+			return [];
+		}
+
+		$nodes = self::enabled(
+			$this->props['nodes'] ?? null,
+			['paragraph', 'heading', 'bulletList', 'orderedList'],
+			self::NODES,
+		);
+
+		return $nodes === [] ? ['paragraph'] : $nodes;
 	}
 
 	/**
