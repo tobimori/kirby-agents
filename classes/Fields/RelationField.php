@@ -51,7 +51,7 @@ abstract class RelationField extends Field
 				continue;
 			}
 
-			if ($this->find($id, $check->model) === null) {
+			if ($check->isNew($id) && $this->find($id, $check->model) === null) {
 				$check->error("{$where}: `{$id}` is not a {$this->noun()} on this site");
 			}
 		}

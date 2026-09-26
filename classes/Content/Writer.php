@@ -49,8 +49,14 @@ final class Writer
 		// the values as Kirby will store them, with defaults and normalized relations
 		$result = array_intersect_key($fields->toFormValues(), $base->fields);
 
-		// Kirby drops unknown options and references without an error, so check the input
-		$errors = InputCheck::errors($model, array_intersect_key($base->fields, array_flip($changed)), $values);
+		// Kirby drops unknown options and references without an error, so check the input.
+		// Values from the content before are not checked, so old content does not block a change
+		$errors = InputCheck::errors(
+			$model,
+			array_intersect_key($base->fields, array_flip($changed)),
+			$values,
+			$base->values,
+		);
 		$warnings = [];
 
 		// Kirby keeps these fields the same in all languages and ignores them in translations

@@ -38,7 +38,7 @@ class OptionField extends Field
 		}
 
 		foreach ($given as $item) {
-			if ($item !== null && $item !== '' && !in_array($item, $allowed, true)) {
+			if ($item !== null && $item !== '' && !in_array($item, $allowed, true) && $check->isNew($item)) {
 				$check->error(
 					"{$where}: " . self::encode($item) . ' is not an option. Options: '
 						. implode(', ', array_map(self::encode(...), $allowed)),

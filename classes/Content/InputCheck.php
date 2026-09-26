@@ -18,18 +18,27 @@ final class InputCheck
 	 */
 	private array $errors = [];
 
+	/**
+	 * @var array<string, true> JSON of each value in the content before the change
+	 */
+	private array $old = [];
+
 	private function __construct(
 		public readonly ModelWithContent $model,
 	) {}
 
 	/**
 	 * @param array<array-key, mixed> $fields props by field name
+	 * @param array<array-key, mixed> $before content before the change: its values are not checked
 	 *
 	 * @return list<string>
 	 */
-	public static function errors(ModelWithContent $model, array $fields, array $values): array
+	public static function errors(ModelWithContent $model, array $fields, array $values, array $before = []): array
 	{
 		$check = new self($model);
+		array_walk_recursive($before, static function (mixed $value) use ($check): void {
+			$check->old[(string) json_encode($value)] = true;
+		});
 		$check->fields($fields, $values, '');
 
 		return $check->errors;
@@ -47,6 +56,15 @@ final class InputCheck
 				Fields::for($props)->check($values[$name] ?? null, $this, $where . $name);
 			}
 		}
+	}
+
+	/**
+	 * False for a single value (text, option, reference) that the content had before,
+	 * anywhere. Old content should not block a change, also when it moved.
+	 */
+	public function isNew(mixed $value): bool
+	{
+		return ($this->old[(string) json_encode($value)] ?? false) === false;
 	}
 
 	public function error(string $message): void
