@@ -57,7 +57,8 @@ final class Compiler
 
 		$blueprint = basename($model->blueprint()->name());
 		$title = match (true) {
-			$model instanceof File => 'file ' . $model->id() . ' (blueprint: ' . $blueprint . ')',
+			$model instanceof File && $model->exists() => 'file ' . $model->id() . ' (blueprint: ' . $blueprint . ')',
+			$model instanceof File => 'file blueprint ' . $blueprint,
 			!$model instanceof Page => 'site',
 			$model->exists() => 'page ' . $model->id() . ' (blueprint: ' . $blueprint . ')',
 			default => 'blueprint ' . $blueprint,

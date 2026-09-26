@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace tobimori\Agents\Tools;
 
 use Kirby\Cms\App;
+use Kirby\Cms\File;
 use Kirby\Cms\ModelWithContent;
 use Kirby\Cms\Page;
 use tobimori\Agents\Content\Models;
@@ -46,7 +47,7 @@ final class SchemaGet implements Tool
 					],
 					'blueprint' => [
 						'type' => 'string',
-						'description' => 'Page blueprint name, for example `post`, to see the fields of a new page',
+						'description' => 'Page blueprint name, for example `post`, to see the fields of a new page. For file templates, `files/<template>`, for example `files/image`',
 					],
 					'focus' => [
 						'type' => 'string',
@@ -85,6 +86,16 @@ final class SchemaGet implements Tool
 
 		if ($id !== null) {
 			return Models::content($id);
+		}
+
+		if ($blueprint !== null && str_starts_with($blueprint, 'files/')) {
+			// a file that exists only in memory, to build the form of a new file.
+			// Templates without a blueprint (like `blocks/image`) use the `default` file blueprint, the header shows it
+			return new File([
+				'filename' => 'new-file.tmp',
+				'parent' => $kirby->site(),
+				'template' => substr($blueprint, 6),
+			]);
 		}
 
 		if ($blueprint !== null) {
