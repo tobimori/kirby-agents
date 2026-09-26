@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace tobimori\Agents\Tools;
 
+use Kirby\Cms\Page;
 use tobimori\Agents\Content\Editor;
 use tobimori\Agents\Content\Models;
 use tobimori\Agents\Content\Presenter;
@@ -83,7 +84,7 @@ final class ContentUpdate implements Tool
 						'type' => 'string',
 						'enum' => ['changes', 'latest'],
 						'default' => 'changes',
-						'description' => '`changes` saves for review in the Panel, `latest` also publishes. `latest` needs the `content:publish` scope. Without it, the server asks the client to authorize again with that scope (HTTP 403 `insufficient_scope`), so ask the user before you try',
+						'description' => '`changes` saves for review in the Panel, `latest` also publishes. For pages that are not drafts, `latest` needs the `content:publish` scope. Without it, the server asks the client to authorize again with that scope (HTTP 403 `insufficient_scope`), so ask the user before you try',
 					],
 					'language' => [
 						'type' => 'string',
@@ -115,12 +116,14 @@ final class ContentUpdate implements Tool
 	public function call(Arguments $arguments, Access $access): string
 	{
 		$version = $arguments->enum('version', ['changes', 'latest'], 'changes');
+		$model = Models::find((string) $arguments->string('page'));
 
-		if ($version === 'latest' && $access->allows(Scope::ContentPublish) === false) {
+		// drafts are not public, so saving their latest version publishes nothing
+		$publishes = $version === 'latest' && !($model instanceof Page && $model->isDraft());
+
+		if ($publishes && $access->allows(Scope::ContentPublish) === false) {
 			throw new ScopeRequired(Scope::ContentPublish);
 		}
-
-		$model = Models::find((string) $arguments->string('page'));
 		$language = $arguments->string('language');
 		$base = Reader::read($model, null, $language);
 
@@ -150,7 +153,11 @@ final class ContentUpdate implements Tool
 		} else {
 			// after a change, Kirby keeps the old state in the old model object
 			$after = Reader::read(Models::find((string) $arguments->string('page')), null, $language);
-			$lines[] = $version === 'latest' ? 'Saved and published.' : self::savedText($after);
+			$lines[] = match (true) {
+				$publishes => 'Saved and published.',
+				$version === 'latest' => 'Saved. The page is still a draft.',
+				default => self::savedText($after),
+			};
 		}
 
 		$lines[] = 'Changed fields: ' . implode(', ', $result['changed']) . '.';
