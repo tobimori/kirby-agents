@@ -18,7 +18,7 @@ class EntriesField extends Field
 		return 'entries<' . $schema->expression($this->field()) . '>' . $this->count();
 	}
 
-	public function input(mixed $value): mixed
+	public function input(mixed $value, mixed $current): mixed
 	{
 		return self::json($value);
 	}

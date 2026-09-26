@@ -26,6 +26,14 @@ class StructureField extends ObjectField
 		return 'row';
 	}
 
+	/**
+	 * Rows are a list, so ignored sub-fields cannot be kept like in an object
+	 */
+	public function input(mixed $value, mixed $current): mixed
+	{
+		return self::json($value);
+	}
+
 	public function newItem(string $kind, array $op, array $content): array
 	{
 		if ($kind !== 'row') {

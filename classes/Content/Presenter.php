@@ -108,7 +108,11 @@ final class Presenter
 
 		foreach ($values as $name => $value) {
 			$props = $fields[$name] ?? null;
-			$result[$name] = is_array($props) ? Fields::for($props)->present($value, [...$path, $name], $this) : $value;
+
+			// only fields from the blueprint, without the ones that agents should ignore
+			if (is_array($props)) {
+				$result[$name] = Fields::for($props)->present($value, [...$path, $name], $this);
+			}
 		}
 
 		return $result;

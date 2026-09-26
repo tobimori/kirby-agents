@@ -131,7 +131,7 @@ final class Editor
 			}
 
 			self::ensureEditable($field, $props);
-			$this->values[$field] = Fields::for($props)->input($op['value']);
+			$this->values[$field] = Fields::for($props)->input($op['value'], $this->values[$field] ?? null);
 			$this->changed[$field] = true;
 
 			return;
@@ -150,7 +150,12 @@ final class Editor
 		$path = $this->pathOf($key);
 		$slot = [...Fields::for($node['props'])->contentPath($node['kind']), $field];
 
-		$this->values = self::setAt($this->values, [...$path, ...$slot], Fields::for($props)->input($op['value']));
+		$current = self::getAt($this->values, [...$path, ...$slot]);
+		$this->values = self::setAt(
+			$this->values,
+			[...$path, ...$slot],
+			Fields::for($props)->input($op['value'], $current),
+		);
 		$this->touch($path);
 	}
 

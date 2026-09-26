@@ -9,6 +9,7 @@ use Kirby\Cms\Language;
 use Kirby\Cms\ModelWithContent;
 use Kirby\Content\VersionId;
 use Kirby\Form\Form;
+use tobimori\Agents\Fields\Fields;
 use tobimori\Agents\Tools\ToolError;
 
 /**
@@ -63,11 +64,14 @@ final class Reader
 
 		foreach ($form->fields() as $name => $field) {
 			if ($field->hasValue()) {
-				$props = $field->toArray();
+				$props = Fields::props($field);
 				unset($props['value']);
 				$fields[(string) $name] = $props;
 			}
 		}
+
+		// fields with `agents.ignore: true` are not shown and cannot be changed, Kirby keeps their values
+		$fields = Fields::visible($fields);
 
 		$values = array_intersect_key($form->toFormValues(), $fields);
 		$raw = $content->read($language) ?? [];

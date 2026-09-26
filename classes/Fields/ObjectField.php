@@ -24,9 +24,20 @@ class ObjectField extends Field
 		return ['' => $this->fields()];
 	}
 
-	public function input(mixed $value): mixed
+	/**
+	 * Agents do not see the sub-fields with `agents.ignore`, so their values stay
+	 */
+	public function input(mixed $value, mixed $current): mixed
 	{
-		return self::json($value);
+		$value = self::json($value);
+		$all = is_array($this->props['fields'] ?? null) ? $this->props['fields'] : [];
+		$ignored = array_diff_key($all, Fields::visible($all));
+
+		if (!is_array($value) || !is_array($current) || $ignored === []) {
+			return $value;
+		}
+
+		return [...$value, ...array_intersect_key($current, $ignored)];
 	}
 
 	public function check(mixed $value, InputCheck $check, string $where): void
@@ -55,10 +66,12 @@ class ObjectField extends Field
 	}
 
 	/**
+	 * Sub-fields, without the ones that agents should ignore
+	 *
 	 * @return array<array-key, mixed>
 	 */
 	protected function fields(): array
 	{
-		return is_array($this->props['fields'] ?? null) ? $this->props['fields'] : [];
+		return Fields::visible(is_array($this->props['fields'] ?? null) ? $this->props['fields'] : []);
 	}
 }

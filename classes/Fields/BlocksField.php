@@ -75,7 +75,7 @@ class BlocksField extends Field
 		return $kind === 'block' ? ['content'] : parent::contentPath($kind);
 	}
 
-	public function input(mixed $value): mixed
+	public function input(mixed $value, mixed $current): mixed
 	{
 		return self::json($value);
 	}
@@ -207,7 +207,7 @@ class BlocksField extends Field
 	}
 
 	/**
-	 * Fields of a fieldset from all its tabs
+	 * Fields of a fieldset from all its tabs, without the ones that agents should ignore
 	 *
 	 * @return array<array-key, mixed>
 	 */
@@ -219,7 +219,7 @@ class BlocksField extends Field
 			$fields += is_array($tab['fields'] ?? null) ? $tab['fields'] : [];
 		}
 
-		return $fields;
+		return Fields::visible($fields);
 	}
 
 	private static function blockType(mixed $block): string

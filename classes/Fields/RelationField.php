@@ -31,7 +31,7 @@ abstract class RelationField extends Field
 		return $this->noun() . 's, list of UUIDs' . $this->count() . $query;
 	}
 
-	public function input(mixed $value): mixed
+	public function input(mixed $value, mixed $current): mixed
 	{
 		return self::json($value);
 	}

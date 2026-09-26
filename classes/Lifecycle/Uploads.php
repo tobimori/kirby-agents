@@ -80,7 +80,13 @@ final class Uploads
 	public static function content(File $draft, array $content): array
 	{
 		$form = Form::for($draft);
-		$props = $form->fields()->toProps();
+		$props = [];
+
+		foreach ($form->fields() as $name => $field) {
+			$props[(string) $name] = Fields::props($field);
+		}
+
+		$props = Fields::visible($props);
 		$unknown = array_diff(array_keys($content), array_keys($props));
 
 		if ($unknown !== []) {

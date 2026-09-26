@@ -28,10 +28,16 @@ final class Compiler
 		$compiler = new self();
 		$fields = [];
 
+		$props = [];
+
 		foreach (Form::for($model)->fields() as $name => $field) {
 			if ($field->hasValue()) {
-				$fields[(string) $name] = $compiler->describe($field->toArray());
+				$props[(string) $name] = Fields::props($field);
 			}
+		}
+
+		foreach (Fields::visible($props) as $name => $field) {
+			$fields[(string) $name] = $compiler->describe(is_array($field) ? $field : []);
 		}
 
 		$blueprint = basename($model->blueprint()->name());
@@ -127,6 +133,19 @@ final class Compiler
 
 		if (is_string($props['help'] ?? null) && $props['help'] !== '') {
 			$parts[] = 'help: ' . self::shorten(strip_tags($props['help']), 100);
+		}
+
+		// blueprint hints, with more room than `help`: the author wrote them for agents
+		$description = Fields::hint($props, 'description');
+
+		if (is_string($description) && $description !== '') {
+			$parts[] = 'note: ' . self::shorten($description, 500);
+		}
+
+		$example = Fields::hint($props, 'example');
+
+		if ($example !== null) {
+			$parts[] = 'example ' . Field::quote($example);
 		}
 
 		return implode(', ', $parts);

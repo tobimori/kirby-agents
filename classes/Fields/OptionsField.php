@@ -17,7 +17,7 @@ class OptionsField extends OptionField
 		return 'list of ' . $this->options() . $this->count();
 	}
 
-	public function input(mixed $value): mixed
+	public function input(mixed $value, mixed $current): mixed
 	{
 		return self::json($value);
 	}

@@ -101,9 +101,9 @@ abstract class Field
 	}
 
 	/**
-	 * Input from the agent before Kirby gets it
+	 * Input from the agent before Kirby gets it. `$current` is the value before the change
 	 */
-	public function input(mixed $value): mixed
+	public function input(mixed $value, mixed $current): mixed
 	{
 		return $value;
 	}
@@ -209,9 +209,14 @@ abstract class Field
 		return "{$where} has no field `{$field}`. Fields: " . ($names === [] ? 'none' : implode(', ', $names));
 	}
 
+	/**
+	 * The field type, or the type from the blueprint hint `agents.as`
+	 */
 	protected function type(): string
 	{
-		return is_string($this->props['type'] ?? null) ? $this->props['type'] : 'unknown';
+		$type = Fields::hint($this->props, 'as') ?? $this->props['type'] ?? null;
+
+		return is_string($type) ? $type : 'unknown';
 	}
 
 	protected function name(): string
