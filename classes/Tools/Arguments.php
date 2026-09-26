@@ -28,6 +28,11 @@ final class Arguments
 		return $value;
 	}
 
+	public function has(string $key): bool
+	{
+		return ($this->values[$key] ?? null) !== null;
+	}
+
 	public function int(string $key, int $default, int $min, int $max): int
 	{
 		$value = $this->values[$key] ?? null;

@@ -36,6 +36,7 @@ final class PageRulesGet implements Tool
 		'default' => 'listed pages have a position, which you can set',
 		'zero' => 'listed pages have no position and are sorted by title',
 		'date' => 'the position of listed pages comes from their date field',
+		'datetime' => 'the position of listed pages comes from their date field',
 	];
 
 	public function name(): string
