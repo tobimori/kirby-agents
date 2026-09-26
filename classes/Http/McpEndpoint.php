@@ -48,7 +48,8 @@ final class McpEndpoint
 
 		App::instance()->auth()->setUser($access->user);
 
-		return Server::handle($request, $access);
+		// per agent, so a runaway agent does not slow down the site
+		return RateLimit::hit('mcp', 'grant ' . $access->grant) ?? Server::handle($request, $access);
 	}
 
 	/**

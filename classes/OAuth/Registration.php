@@ -9,6 +9,7 @@ use Kirby\Http\Response;
 use Kirby\Toolkit\Str;
 use tobimori\Agents\Http\Guard;
 use tobimori\Agents\Http\Json;
+use tobimori\Agents\Http\RateLimit;
 
 /**
  * Dynamic client registration (RFC 7591) without storage.
@@ -32,10 +33,10 @@ final class Registration
 			return Json::error('invalid_request', 'Use POST', 405);
 		}
 
-		$insecure = Guard::https($request);
+		$refused = Guard::https($request) ?? RateLimit::hit('register');
 
-		if ($insecure !== null) {
-			return $insecure;
+		if ($refused !== null) {
+			return $refused;
 		}
 
 		$data = $request->body()->toArray();

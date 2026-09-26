@@ -10,6 +10,7 @@ use Kirby\Panel\Panel;
 use Kirby\Toolkit\Escape;
 use tobimori\Agents\Agents;
 use tobimori\Agents\Http\Guard;
+use tobimori\Agents\Http\RateLimit;
 
 /**
  * Authorization code flow:
@@ -35,10 +36,11 @@ final class Authorization
 			return new Response('', null, 405, ['Allow' => 'GET']);
 		}
 
-		$insecure = Guard::https($request);
+		// the limit also covers the fetches of client metadata documents
+		$refused = Guard::https($request) ?? RateLimit::hit('authorize');
 
-		if ($insecure !== null) {
-			return $insecure;
+		if ($refused !== null) {
+			return $refused;
 		}
 
 		$query = $request->query();

@@ -11,6 +11,7 @@ use Kirby\Http\Request\Auth\BasicAuth;
 use Kirby\Http\Response;
 use tobimori\Agents\Http\Guard;
 use tobimori\Agents\Http\Json;
+use tobimori\Agents\Http\RateLimit;
 
 final class TokenEndpoint
 {
@@ -84,7 +85,7 @@ final class TokenEndpoint
 			return Json::error('invalid_request', 'Use POST', 405);
 		}
 
-		return Guard::https($request);
+		return Guard::https($request) ?? RateLimit::hit('token');
 	}
 
 	/**

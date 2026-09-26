@@ -86,6 +86,12 @@ final class UploadEndpoint
 			return self::error(401, 'The upload link is not valid or expired. Call file_upload again.');
 		}
 
+		$limited = RateLimit::hit('upload', 'grant ' . $data['grant']);
+
+		if ($limited !== null) {
+			return $limited;
+		}
+
 		$kirby->auth()->setUser($data['user']);
 		$upload = $request->files()->get('file');
 
@@ -129,7 +135,7 @@ final class UploadEndpoint
 	/**
 	 * Valid signature, not expired, and the grant still exists with the `files:manage` scope
 	 *
-	 * @return array{user: User, page: string, template: string, filename: string, content: array<array-key, mixed>}|null
+	 * @return array{user: User, grant: string, page: string, template: string, filename: string, content: array<array-key, mixed>}|null
 	 */
 	private static function parse(#[SensitiveParameter] string $token): ?array
 	{
@@ -175,6 +181,7 @@ final class UploadEndpoint
 
 		return [
 			'user' => $user,
+			'grant' => $grant->id,
 			'page' => $data['p'],
 			'template' => $data['t'],
 			'filename' => $data['f'],
