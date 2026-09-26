@@ -20,6 +20,8 @@ final class Tools
 			new ChangesPublish(),
 			new ContentGet(),
 			new ContentUpdate(),
+			new PageCreate(),
+			new PageRulesGet(),
 			new PagesFind(),
 			new SchemaGet(),
 			new SiteOverview(),

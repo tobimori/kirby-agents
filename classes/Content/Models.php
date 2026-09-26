@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace tobimori\Agents\Content;
 
 use Kirby\Cms\App;
-use Kirby\Cms\ModelWithContent;
+use Kirby\Cms\Page;
+use Kirby\Cms\Site;
 use tobimori\Agents\Tools\ToolError;
 
 final class Models
@@ -13,7 +14,7 @@ final class Models
 	/**
 	 * A page by id, drafts included, or `site`. Pages the user may not access do not exist here.
 	 */
-	public static function find(string $id): ModelWithContent
+	public static function find(string $id): Site|Page
 	{
 		$kirby = App::instance();
 

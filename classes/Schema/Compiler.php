@@ -65,6 +65,14 @@ final class Compiler
 	}
 
 	/**
+	 * One line for a simple field, like the fields of the create dialog. Nested types are not listed
+	 */
+	public static function line(array $props): string
+	{
+		return (new self())->describe($props);
+	}
+
+	/**
 	 * One line for one field: type expression, then constraints
 	 */
 	private function describe(array $props): string

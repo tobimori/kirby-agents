@@ -89,6 +89,28 @@ final class Arguments
 	}
 
 	/**
+	 * An object with names as keys, or an empty array when it is missing
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function object(string $key): array
+	{
+		$value = $this->values[$key] ?? [];
+
+		if (!is_array($value) || $value !== [] && array_is_list($value)) {
+			throw new ToolError("`{$key}` must be an object");
+		}
+
+		$object = [];
+
+		foreach ($value as $name => $item) {
+			$object[(string) $name] = $item;
+		}
+
+		return $object;
+	}
+
+	/**
 	 * A string or a list of strings
 	 *
 	 * @return list<string>
