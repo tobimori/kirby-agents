@@ -227,7 +227,10 @@ final class Presenter
 				continue;
 			}
 
-			$parts[] = $name . ' ' . self::short($value);
+			$parts[] =
+				$name
+				. ' '
+				. (in_array($type, ['pages', 'files', 'users'], true) ? $this->relations($value) : self::short($value));
 
 			if (count($parts) === $limit) {
 				break;
