@@ -26,6 +26,7 @@ final class Tools
 			new PageRulesGet(),
 			new PageUpdate(),
 			new PagesFind(),
+			new RelationsFind(),
 			new SchemaGet(),
 			new SiteOverview(),
 		];

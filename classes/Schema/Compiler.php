@@ -350,6 +350,11 @@ final class Compiler
 		$min = is_int($props['min'] ?? null) ? $props['min'] : null;
 		$max = is_int($props['max'] ?? null) ? $props['max'] : null;
 
+		// relation fields with `multiple: false` take one item
+		if (($props['multiple'] ?? true) === false) {
+			$max = 1;
+		}
+
 		return match (true) {
 			$min !== null && $max !== null => ", {$min} to {$max} items",
 			$max !== null => ", max {$max}",

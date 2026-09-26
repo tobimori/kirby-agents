@@ -34,7 +34,7 @@ final class ChangesPublish implements Tool
 					],
 					'etag' => [
 						'type' => 'string',
-						'description' => '`etag` from content_get of the `changes` version',
+						'description' => '`etag` of the `changes` version, from content_get or from the result of content_update',
 					],
 					'language' => [
 						'type' => 'string',

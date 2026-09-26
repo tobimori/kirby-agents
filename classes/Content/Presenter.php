@@ -412,10 +412,14 @@ final class Presenter
 		return $items === []
 			? '(empty)'
 			: implode(', ', array_map(
-				static fn(array $item): string => '"'
-				. $item['title']
-				. '" '
-				. implode(' ', array_filter([$item['id'], $item['uuid']])),
+				// files without a title show their filename, which is in the id already
+				static fn(array $item): string => (
+					(
+						$item['title'] !== '' && $item['title'] !== basename((string) $item['id'])
+							? '"' . $item['title'] . '" '
+							: ''
+					) . implode(' ', array_filter([$item['id'], $item['uuid']]))
+				),
 				$items,
 			));
 	}
