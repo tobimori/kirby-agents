@@ -4,17 +4,33 @@ declare(strict_types=1);
 
 namespace tobimori\Agents\Fields;
 
+use Kirby\Cms\App;
 use Kirby\Exception\InvalidArgumentException;
 use Kirby\Form\Field as FormField;
 use Kirby\Form\FieldClass;
+use Kirby\Plugin\Plugin;
 use tobimori\Agents\Agents;
 
 /**
- * Finds the class for a field type: from the option `fields`, from the core types,
- * or CustomField for types that no class knows
+ * Finds the class for a field type: from the option `fields`, from other plugins,
+ * from the core types, or CustomField for types that no class knows.
+ *
+ * Plugins declare classes for their field types in their plugin definition. Kirby ignores the key
+ * without Kirby Agents, and the class is only loaded when Kirby Agents uses it:
+ * `'tobimori.agents.fields' => ['alt-text' => AltTextAgentField::class]`
  */
 final class Fields
 {
+	/**
+	 * Key in the plugin definition of other plugins
+	 */
+	public const EXTENSION = 'tobimori.agents.fields';
+
+	/**
+	 * @var array<array-key, mixed>|null classes by type, from the site option and all plugins
+	 */
+	private static ?array $registered = null;
+
 	/**
 	 * @var array<string, class-string<Field>>
 	 */
@@ -113,18 +129,42 @@ final class Fields
 	}
 
 	/**
-	 * The class for a type: from the option `fields`, from the core types,
+	 * Field classes from other plugins and from the site option. The site option wins,
+	 * so a site can replace the class of a plugin
+	 *
+	 * @return array<array-key, mixed> classes by type
+	 */
+	private static function registered(): array
+	{
+		if (self::$registered !== null) {
+			return self::$registered;
+		}
+
+		$classes = [];
+
+		foreach (App::instance()->plugins() as $plugin) {
+			$declared = $plugin instanceof Plugin ? $plugin->extends()[self::EXTENSION] ?? null : null;
+			$classes = [...$classes, ...(is_array($declared) ? $declared : [])];
+		}
+
+		$option = Agents::option('fields', []);
+
+		return self::$registered = [...$classes, ...(is_array($option) ? $option : [])];
+	}
+
+	/**
+	 * The class for a type: registered by a plugin or the site, from the core types,
 	 * or the class of the type it extends in Kirby, like `writer` for a `seo-writer` field
 	 *
 	 * @return class-string<Field>|null
 	 */
 	private static function find(string $type): ?string
 	{
-		$custom = Agents::option('fields', []);
+		$registered = self::registered();
 
 		// a limit, in case field definitions extend each other in a loop
 		for ($depth = 0; $depth < 10 && $type !== null; $depth++) {
-			$class = (is_array($custom) ? $custom[$type] ?? null : null) ?? self::CORE[$type] ?? null;
+			$class = $registered[$type] ?? self::CORE[$type] ?? null;
 
 			if ($class === null) {
 				$type = self::extended($type);
@@ -134,7 +174,11 @@ final class Fields
 
 			if (!is_string($class) || !is_subclass_of($class, Field::class)) {
 				throw new InvalidArgumentException(
-					message: "The option tobimori.agents.fields.{$type} must be the name of a class that extends "
+					message: 'The class for the field type `'
+					. $type
+					. '` (option or plugin key '
+					. self::EXTENSION
+					. ') must exist and extend '
 					. Field::class,
 				);
 			}

@@ -16,7 +16,8 @@ return [
 	// defaults: register [20, 3600], authorize [30, 60], token [60, 60] per IP; mcp [120, 60], upload [30, 60] per agent
 	'limits' => [],
 	// field classes for custom field types, for example `['rating' => \tobimori\Agents\Fields\NumberField::class]`.
-	// A class extends \tobimori\Agents\Fields\Field. Types without a class show what their props tell
+	// A class extends \tobimori\Agents\Fields\Field. Plugins declare theirs with the key `tobimori.agents.fields`
+	// in their plugin definition, this option wins over them
 	'fields' => [],
 	// extra origins that may call the MCP endpoint from a browser
 	'origins' => [],
