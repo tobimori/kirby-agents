@@ -32,13 +32,6 @@ final class PageRulesGet implements Tool
 		'update',
 	];
 
-	private const SORT = [
-		'default' => 'listed pages have a position, which you can set',
-		'zero' => 'listed pages have no position and are sorted by title',
-		'date' => 'the position of listed pages comes from their date field',
-		'datetime' => 'the position of listed pages comes from their date field',
-	];
-
 	public function name(): string
 	{
 		return 'page_rules';
@@ -50,8 +43,8 @@ final class PageRulesGet implements Tool
 			'title' => 'Page rules',
 			'description' => implode("\n", [
 				'Returns what the blueprints and the role of the user allow for a page, or for new pages in it. Read it before page_create or page_update.',
-				'- `create`: templates for new pages in this page (or `site`), with their create options: the `status` new pages get, how `title` and `slug` are set, and the `fields` you can set when you create the page. No `create` means no new pages here',
-				'- For pages also: `allowed` actions of the role, `statuses`, `sort` (how listed pages are sorted), `templates` it can change to, and `moveTo` (where it can move)',
+				'- `create`: templates for new pages in this page (or `site`), with their create options: the `status` new pages get, how `title` and `slug` are set, the `fields` you can set when you create the page, and `sort` (how the new pages are sorted). No `create` means no new pages here',
+				'- For pages also: `allowed` actions of the role, `statuses`, `sort` (how this page is sorted among its siblings), `templates` it can change to, and `moveTo` (where it can move)',
 			]),
 			'inputSchema' => [
 				'type' => 'object',
@@ -94,9 +87,7 @@ final class PageRulesGet implements Tool
 			'create' => self::create($model),
 			'allowed' => array_values(array_map(strval(...), $allowed)),
 			'statuses' => self::statuses($model),
-			'sort' =>
-				self::SORT[$model->blueprint()->num()]
-					?? 'the position of listed pages comes from the query `' . $model->blueprint()->num() . '`',
+			'sort' => Placement::sorting($model),
 			'templates' => self::templates($model),
 		];
 

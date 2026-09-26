@@ -27,7 +27,7 @@ final class PageDelete implements Tool
 			'title' => 'Delete a page',
 			'description' => implode("\n", [
 				'Deletes a page with all its subpages, drafts, and files. This cannot be undone.',
-				'It takes two calls. The first call deletes nothing: it shows what would be deleted and returns a `confirm` code. Show this to the user and ask. Only if the user agrees, call again with the `confirm` code within 10 minutes.',
+				'It takes two calls. The first call deletes nothing: it shows what would be deleted and returns a `confirm` code. Show this to the user and ask. Only if the user agrees, call again with the `confirm` code within 10 minutes. If the user clearly asked to delete this page before, and the first call shows nothing unexpected (for example subpages they did not mention), that counts as agreement.',
 				'The code is only valid for this page in its current state: if the page changes, ask again.',
 			]),
 			'inputSchema' => [

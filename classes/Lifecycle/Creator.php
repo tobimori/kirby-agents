@@ -53,7 +53,7 @@ final class Creator
 	/**
 	 * The create options for page_rules
 	 *
-	 * @return array{status: string, title: string, slug: string, fields?: array<string, string>}
+	 * @return array{status: string, title: string, slug: string, sort: string, fields?: array<string, string>}
 	 */
 	public function describe(): array
 	{
@@ -64,6 +64,7 @@ final class Creator
 			'status' => $this->status(),
 			'title' => is_string($title) ? "set from the template `{$title}`" : 'you send it',
 			'slug' => is_string($slug) ? "set from the template `{$slug}`" : 'from the title, unless you send one',
+			'sort' => Placement::sorting($this->dialog->model()),
 		];
 
 		return $fields === [] ? $options : [...$options, 'fields' => $fields];

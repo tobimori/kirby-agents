@@ -22,7 +22,7 @@ final class ChangesPublish implements Tool
 			'title' => 'Publish unsaved changes',
 			'description' => implode("\n", [
 				'Publishes the unsaved changes of a page or the site, like the Save button in the Panel. The changes can come from content_update or from an editor in the Panel.',
-				'Read the page with content_get first (it shows the `changes` version) and send its `etag`, so you publish exactly what you read. The page status (draft, listed) does not change.',
+				'Read the page with content_get first (it shows the `changes` version) and send its `etag`, so you publish exactly what you read. The page status does not change: a draft stays a draft. To make a page public, use page_update with `status`.',
 				'Content with invalid fields is not published. Only publish when the user asked for it.',
 			]),
 			'inputSchema' => [

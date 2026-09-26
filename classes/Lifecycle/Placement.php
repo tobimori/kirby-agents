@@ -23,6 +23,23 @@ final class Placement
 	 */
 	public const MAX_MOVE_CHECKS = 300;
 
+	private const SORT = [
+		'default' => 'listed pages have a position, which you can set with page_update',
+		'zero' => 'listed pages have no position and are sorted by title',
+		'date' => 'listed pages are sorted by their date field, the position is set automatically',
+		'datetime' => 'listed pages are sorted by their date field, the position is set automatically',
+	];
+
+	/**
+	 * How the page is sorted among its listed siblings, from `num` in its blueprint
+	 */
+	public static function sorting(Page $page): string
+	{
+		$num = $page->blueprint()->num();
+
+		return self::SORT[$num] ?? "listed pages are sorted by the query `{$num}`, the position is set automatically";
+	}
+
 	/**
 	 * Templates for new children of the parent, like the add buttons of the pages sections
 	 * that list its children: in its own blueprint and, for pages, in the site blueprint

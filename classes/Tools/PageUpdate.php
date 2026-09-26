@@ -31,8 +31,8 @@ final class PageUpdate implements Tool
 				'- `slug`: the URL part. Other pages and links that use the old URL do not change',
 				'- `template`: one of `templates` from page_rules. Content of fields that the new template does not have is removed',
 				'- `parent`: a page id from `moveTo` of page_rules, or `site`',
-				'- `status`: `draft`, `unlisted`, or `listed`. Needs the `content:publish` scope. Only the published content goes live, unsaved changes stay unsaved',
-				'- `position`: position among the listed pages, counted from 1. Only when page_rules says the position can be set',
+				'- `status`: `draft`, `unlisted`, or `listed`. This is how a page becomes public: `listed` pages show in menus and lists, `unlisted` pages only by URL. Needs the `content:publish` scope. Only the published content goes live: unsaved changes need changes_publish',
+				'- `position`: position among the listed siblings, counted from 1. For top-level pages, this is usually the order in the main menu. Only when `sort` in page_rules says that you can set it',
 			]),
 			'inputSchema' => [
 				'type' => 'object',
