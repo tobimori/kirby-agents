@@ -6,6 +6,8 @@ return [
 	// endpoints outside the Panel, for example `agents` for `/agents/mcp`, or `''` for `/mcp`.
 	// For hosts that block the Panel from outside. The consent stays in the Panel.
 	'path' => null,
+	// register the tools with WebMCP (`document.modelContext`) in the Panel, for agents in the browser
+	'webmcp' => true,
 	// client metadata documents
 	'cache' => true,
 	// rate limit counters

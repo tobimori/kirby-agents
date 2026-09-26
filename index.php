@@ -37,6 +37,7 @@ foreach ($files === false ? [] : $files as $file) {
 App::plugin('tobimori/agents', extends: [
 	'options' => require __DIR__ . '/config/options.php',
 	'routes' => require __DIR__ . '/config/routes.php',
+	'api' => require __DIR__ . '/config/api.php',
 	'areas' => require __DIR__ . '/config/areas.php',
 	'hooks' => require __DIR__ . '/config/hooks.php',
 	'permissions' => [
