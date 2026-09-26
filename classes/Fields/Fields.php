@@ -63,28 +63,17 @@ final class Fields
 	{
 		$as = self::hint($props, 'as');
 		$type = is_string($as) ? $as : $props['type'] ?? '';
-		$type = is_string($type) ? $type : '';
-		$custom = Agents::option('fields', []);
-		$class = (is_array($custom) ? $custom[$type] ?? null : null) ?? self::CORE[$type] ?? null;
+		$class = self::find(is_string($type) ? $type : '');
 
 		if ($class === null && is_string($as)) {
 			$name = is_string($props['name'] ?? null) ? $props['name'] : '';
 
 			throw new InvalidArgumentException(
-				message: "`agents.as` of the field `{$name}`: `{$as}` is not a core field type or a type in the option tobimori.agents.fields",
+				message: "`agents.as` of the field `{$name}`: `{$as}` is not a field type with a class",
 			);
 		}
 
-		$class ??= CustomField::class;
-
-		if (!is_string($class) || !is_subclass_of($class, Field::class)) {
-			throw new InvalidArgumentException(
-				message: "The option tobimori.agents.fields.{$type} must be the name of a class that extends "
-				. Field::class,
-			);
-		}
-
-		return new $class($props);
+		return $class === null ? new CustomField($props) : new $class($props);
 	}
 
 	/**
@@ -121,6 +110,67 @@ final class Fields
 			$fields,
 			static fn(mixed $props): bool => !is_array($props) || self::hint($props, 'ignore') !== true,
 		);
+	}
+
+	/**
+	 * The class for a type: from the option `fields`, from the core types,
+	 * or the class of the type it extends in Kirby, like `writer` for a `seo-writer` field
+	 *
+	 * @return class-string<Field>|null
+	 */
+	private static function find(string $type): ?string
+	{
+		$custom = Agents::option('fields', []);
+
+		// a limit, in case field definitions extend each other in a loop
+		for ($depth = 0; $depth < 10 && $type !== null; $depth++) {
+			$class = (is_array($custom) ? $custom[$type] ?? null : null) ?? self::CORE[$type] ?? null;
+
+			if ($class === null) {
+				$type = self::extended($type);
+
+				continue;
+			}
+
+			if (!is_string($class) || !is_subclass_of($class, Field::class)) {
+				throw new InvalidArgumentException(
+					message: "The option tobimori.agents.fields.{$type} must be the name of a class that extends "
+					. Field::class,
+				);
+			}
+
+			return $class;
+		}
+
+		return null;
+	}
+
+	/**
+	 * The type that a field type of a plugin extends: `extends` in an array definition,
+	 * or the parent class of a class-based field, like Kirby's BlocksField
+	 */
+	private static function extended(string $type): ?string
+	{
+		$definition = FormField::$types[$type] ?? null;
+
+		if (is_string($definition) && class_exists($definition)) {
+			$parents = class_parents($definition);
+
+			foreach ($parents === false ? [] : $parents as $parent) {
+				if (str_starts_with($parent, 'Kirby\\Form\\Field\\')) {
+					return lcfirst(substr(basename(str_replace('\\', '/', $parent)), 0, -5));
+				}
+			}
+
+			return null;
+		}
+
+		// definitions in a file are loaded on first use
+		if (is_string($definition) || is_array($definition)) {
+			$definition = FormField::load($type);
+		}
+
+		return is_array($definition) && is_string($definition['extends'] ?? null) ? $definition['extends'] : null;
 	}
 
 	/**

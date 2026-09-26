@@ -13,7 +13,8 @@ class TextareaField extends Field
 {
 	public function describe(Compiler $schema): string
 	{
-		$format = $this->type() === 'textarea' ? 'textarea, KirbyText with Markdown' : $this->type();
+		// also fields of plugins that extend the textarea
+		$format = $this->type() === 'markdown' ? 'markdown' : 'textarea, KirbyText with Markdown';
 
 		return $format . $this->length();
 	}
