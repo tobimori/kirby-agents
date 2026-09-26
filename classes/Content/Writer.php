@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace tobimori\Agents\Content;
 
+use Kirby\Cms\App;
 use Kirby\Cms\Language;
 use Kirby\Content\LockedContentException;
 use Kirby\Form\Fields;
@@ -51,6 +52,17 @@ final class Writer
 		// Kirby drops unknown options and references without an error, so check the input
 		$errors = InputCheck::errors($model, array_intersect_key($base->fields, array_flip($changed)), $values);
 		$warnings = [];
+
+		// Kirby keeps these fields the same in all languages and ignores them in translations
+		if ($language->isDefault() === false) {
+			$default = App::instance()->defaultLanguage()?->code() ?? 'default';
+
+			foreach ($changed as $name) {
+				if (($base->fields[$name]['translate'] ?? true) === false) {
+					$errors[] = "{$name}: this field is the same in all languages. Change it with `language: {$default}`";
+				}
+			}
+		}
 
 		foreach (self::errors($fields) as $name => $line) {
 			if (in_array($name, $changed, true)) {

@@ -34,6 +34,13 @@ final class Presenter
 	{
 		$presenter = new self($content, ids: false);
 		$lines = [$presenter->header()];
+
+		if ($content->untranslated !== []) {
+			$lines[] =
+				'Not translated yet, the values are from the default language: '
+				. implode(', ', $content->untranslated);
+		}
+
 		$width = max(array_map(static fn(int|string $name): int => strlen((string) $name), [
 			...array_keys($content->fields),
 			'title',
@@ -98,7 +105,7 @@ final class Presenter
 	private function header(): string
 	{
 		$model = $this->content->model;
-		$name = $model instanceof Page ? 'page ' . $model->id() . ', title "' . (string) $model->title() . '"' : 'site';
+		$name = $model instanceof Page ? 'page ' . $model->id() . ', title "' . $this->content->title . '"' : 'site';
 
 		return (
 			$name
@@ -113,11 +120,13 @@ final class Presenter
 
 	private function meta(): array
 	{
-		return [
+		$meta = [
 			'etag' => $this->content->etag,
 			'version' => $this->content->version,
 			'language' => $this->content->language,
 		];
+
+		return $this->content->untranslated !== [] ? [...$meta, 'untranslated' => $this->content->untranslated] : $meta;
 	}
 
 	/**

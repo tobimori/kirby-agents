@@ -43,7 +43,8 @@ final class Pending
 		}
 
 		$language = Language::ensure($read->language);
-		$latest = $model->version('latest')->exists($language) ? $model->version('latest')->read($language) ?? [] : [];
+		// with the values of the default language for a missing translation, like the read
+		$latest = $model->version('latest')->content($language)->toArray();
 
 		// compare form values like `Version::isIdentical()`, because the stored text of the same value can differ
 		$fields = Fields::for($model, $language);
@@ -51,7 +52,12 @@ final class Pending
 		$latest = array_intersect_key($fields->reset()->fill(input: $latest)->toFormValues(), $read->fields);
 		$changed = [];
 
-		foreach (array_keys($read->fields) as $key) {
+		foreach ($read->fields as $key => $props) {
+			// in translations, these fields come from the default language and are not part of the changes
+			if (!$language->isDefault() && is_array($props) && ($props['translate'] ?? true) === false) {
+				continue;
+			}
+
 			if (($changes[$key] ?? null) !== ($latest[$key] ?? null)) {
 				$changed[] = (string) $key;
 			}

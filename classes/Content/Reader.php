@@ -20,6 +20,7 @@ final class Reader
 	 * @param array<array-key, mixed> $fields props by field name, without values
 	 * @param array<array-key, mixed> $values form values, as the Panel sees them
 	 * @param array<int, Node> $nodes
+	 * @param list<string> $untranslated fields that show the value of the default language
 	 */
 	private function __construct(
 		public readonly ModelWithContent $model,
@@ -29,6 +30,8 @@ final class Reader
 		public readonly array $fields,
 		public readonly array $values,
 		public readonly array $nodes,
+		public readonly string $title,
+		public readonly array $untranslated,
 	) {}
 
 	/**
@@ -46,7 +49,10 @@ final class Reader
 
 		$content = $model->version($version);
 
-		if ($content->exists($language) === false) {
+		// a missing translation shows the default language, like in the Panel. The first save creates it
+		$missing = $content->exists($language) === false;
+
+		if ($missing && ($language->isDefault() || $content->exists('default') === false)) {
 			throw new ToolError("The page has no `{$version}` version in this language");
 		}
 
@@ -64,7 +70,23 @@ final class Reader
 		}
 
 		$values = array_intersect_key($form->toFormValues(), $fields);
-		$stored = json_encode([$version, $language->code(), $content->read($language)]);
+		$raw = $content->read($language) ?? [];
+		$title = $content->content($language)->toArray()['title'] ?? '';
+
+		// Kirby shows the default language for fields that a translation does not have
+		$untranslated = [];
+
+		if ($language->isDefault() === false) {
+			foreach ($fields as $name => $props) {
+				if (($props['translate'] ?? true) !== false && !array_key_exists(strtolower($name), $raw)) {
+					$untranslated[] = $name;
+				}
+			}
+		}
+
+		// translations show untranslated and `translate: false` fields from the default language
+		$fallback = $language->isDefault() ? null : $content->read('default');
+		$stored = json_encode([$version, $language->code(), $raw, $fallback]);
 
 		return new self(
 			model: $model,
@@ -74,6 +96,8 @@ final class Reader
 			fields: $fields,
 			values: $values,
 			nodes: Nodes::index($fields, $values),
+			title: is_string($title) ? $title : '',
+			untranslated: $untranslated,
 		);
 	}
 
@@ -92,6 +116,8 @@ final class Reader
 			fields: $this->fields,
 			values: $values,
 			nodes: Nodes::index($this->fields, $values),
+			title: $this->title,
+			untranslated: $this->untranslated,
 		);
 	}
 
