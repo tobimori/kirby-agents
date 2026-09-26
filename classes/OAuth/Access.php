@@ -25,7 +25,7 @@ final class Access
 
 	/**
 	 * Valid signature and expiry, issued for this server,
-	 * and the user and grant still exist
+	 * and the user and grant still exist. Scopes the role may no longer grant are removed
 	 */
 	public static function fromToken(#[SensitiveParameter] string $token): ?self
 	{
@@ -41,7 +41,8 @@ final class Access
 			return null;
 		}
 
-		return new self($user, $data['grant'], $data['scopes']);
+		// role permissions can change after the grant, so they apply to each request
+		return new self($user, $data['grant'], Scope::allowedFor($user, $data['scopes']));
 	}
 
 	public function allows(Scope $scope): bool
