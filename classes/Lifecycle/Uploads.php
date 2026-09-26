@@ -7,8 +7,12 @@ namespace tobimori\Agents\Lifecycle;
 use Kirby\Cms\File;
 use Kirby\Cms\Page;
 use Kirby\Cms\Site;
+use Kirby\Form\Form;
+use tobimori\Agents\Content\InputCheck;
 use tobimori\Agents\Content\Reader;
+use tobimori\Agents\Content\Writer;
 use tobimori\Agents\Schema\FieldProps;
+use tobimori\Agents\Tools\ToolError;
 
 /**
  * File templates that can be uploaded to a page, like the upload buttons of the Panel:
@@ -62,6 +66,52 @@ final class Uploads
 		}
 
 		return $result;
+	}
+
+	/**
+	 * Checks the values for the fields of a new file, required fields included,
+	 * and returns them as Kirby stores them
+	 *
+	 * @param array<string, mixed> $content form values
+	 *
+	 * @return array<string, mixed>
+	 */
+	public static function content(File $draft, array $content): array
+	{
+		$form = Form::for($draft);
+		$props = $form->fields()->toProps();
+		$unknown = array_diff(array_keys($content), array_keys($props));
+
+		if ($unknown !== []) {
+			throw new ToolError(
+				'The file template has no field `' . implode('`, `', $unknown) . '`. Fields: '
+					. implode(', ', array_keys($props)),
+			);
+		}
+
+		$form->fill(input: $content);
+
+		// the Panel lets the upload through and shows the errors later, but the file is public at once
+		$errors = [
+			...InputCheck::errors($draft, array_intersect_key($props, $content), $content),
+			...array_values(Writer::errors($form->fields())),
+		];
+
+		if ($errors !== []) {
+			throw new ToolError(
+				"No upload link. Invalid or missing values in `content`:\n- " . implode("\n- ", $errors),
+			);
+		}
+
+		$stored = [];
+
+		foreach ($form->toStoredValues() as $name => $value) {
+			if ($value !== null && $value !== '') {
+				$stored[(string) $name] = $value;
+			}
+		}
+
+		return $stored;
 	}
 
 	/**

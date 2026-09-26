@@ -21,6 +21,7 @@ final class Tools
 			new ChangesPublish(),
 			new ContentGet(),
 			new ContentUpdate(),
+			new FileUpload(),
 			new FilesFind(),
 			new PageCreate(),
 			new PageDelete(),

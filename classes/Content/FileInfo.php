@@ -10,7 +10,7 @@ use Kirby\Uuid\FileUuid;
 
 final class FileInfo
 {
-	public const FIELDS = 'Each file has: `id` (use it with the content tools, for example to change its `alt` text), `uuid` (null until the file has a stored UUID), `filename`, `template`, `type` (image, document, video, …), `mime`, `size` in bytes, `width` and `height` for images, `url`, `changes` (true when the file has unsaved changes).';
+	public const FIELDS = 'Each file has: `id` (use it with the content tools, for example to change its `alt` text), `uuid` (null until the file has a stored UUID), `filename`, `template`, `type` (image, document, video, …), `mime`, `size` in bytes, `width` and `height` for images, `url`, `changes` (true when the file has unsaved changes). A file has its own content, etag, and unsaved changes, separate from its page.';
 
 	/**
 	 * @return array{id: string, uuid: string|null, filename: string, template: string|null, type: string|null, mime: string|null, size: int, width?: int, height?: int, url: string, changes: bool}
