@@ -127,7 +127,7 @@ final class UploadEndpoint
 	}
 
 	/**
-	 * Valid signature, not expired, and the grant still exists with the `pages:manage` scope
+	 * Valid signature, not expired, and the grant still exists with the `files:manage` scope
 	 *
 	 * @return array{user: User, page: string, template: string, filename: string, content: array<array-key, mixed>}|null
 	 */
@@ -169,7 +169,7 @@ final class UploadEndpoint
 		// the role permissions can change after the link was made
 		$access = new Access($user, $grant->id, Scope::allowedFor($user, $grant->scopes));
 
-		if ($access->allows(Scope::PagesManage) === false) {
+		if ($access->allows(Scope::FilesManage) === false) {
 			return null;
 		}
 

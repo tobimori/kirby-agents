@@ -13,9 +13,11 @@
 	"authorize.deny": "Deny",
 	"authorize.error.expired": "This request has expired or was already used. Start the connection again from your app.",
 	"authorize.error.forbidden": "Your role is not allowed to connect agents.",
-	"scope.content:read": "Read pages, content, and blueprints",
+	"scope.content:read": "Read pages, files, content, and blueprints",
 	"scope.content:write": "Prepare content changes for review",
-	"scope.content:publish": "Publish and discard content changes",
-	"scope.pages:manage": "Create, move, and rename pages, and upload files",
-	"scope.pages:delete": "Delete pages and files"
+	"scope.content:publish": "Publish content changes and change the status of pages",
+	"scope.pages:manage": "Create, rename, move, and sort pages",
+	"scope.pages:delete": "Delete pages",
+	"scope.files:manage": "Upload files",
+	"scope.files:delete": "Delete files"
 }
