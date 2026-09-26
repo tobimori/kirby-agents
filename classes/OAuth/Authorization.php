@@ -80,6 +80,11 @@ final class Authorization
 			return self::back($redirect, $state, 'invalid_scope', 'Unknown scope');
 		}
 
+		// for clients that cannot ask for more scopes later, the consent view shows them all
+		$extra = Agents::option('scopes', []);
+		$extra = is_array($extra) ? array_intersect($extra, Scope::all()) : [];
+		$scopes = array_values(array_unique([...$scopes, ...$extra]));
+
 		$id = bin2hex(random_bytes(16));
 
 		$kirby->session()->data()->set(self::SESSION . $id, [
