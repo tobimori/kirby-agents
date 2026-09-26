@@ -39,10 +39,8 @@ final class PagesFind implements Tool
 						'description' => 'True includes all descendants, false only direct children',
 					],
 					'template' => [
-						'oneOf' => [
-							['type' => 'string'],
-							['type' => 'array', 'items' => ['type' => 'string']],
-						],
+						'type' => ['string', 'array'],
+						'items' => ['type' => 'string'],
 						'description' => 'One template name or a list. Filters by template, not by blueprint',
 					],
 					'status' => [

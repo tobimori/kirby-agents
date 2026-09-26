@@ -63,15 +63,17 @@ final class ContentUpdate implements Tool
 							'type' => 'object',
 							'properties' => [
 								'op' => ['type' => 'string', 'enum' => ['set', 'insert', 'move', 'remove']],
-								'ref' => ['type' => ['integer', 'string']],
+								// string first: some clients use only the first type, and names like `a` must work
+								'ref' => ['type' => ['string', 'integer']],
 								'field' => ['type' => 'string'],
-								'value' => [],
+								// any JSON value, so no type. Lists and objects may also come as JSON text
+								'value' => ['description' => 'New value in the format of the field in schema_get'],
 								'type' => ['type' => 'string'],
 								'content' => ['type' => 'object'],
 								'as' => ['type' => 'string'],
-								'after' => ['type' => ['integer', 'string']],
-								'before' => ['type' => ['integer', 'string']],
-								'into' => ['type' => ['integer', 'string']],
+								'after' => ['type' => ['string', 'integer']],
+								'before' => ['type' => ['string', 'integer']],
+								'into' => ['type' => ['string', 'integer']],
 								'slot' => ['type' => 'string'],
 								'column' => ['type' => 'integer', 'minimum' => 1],
 								'columns' => ['type' => 'array', 'items' => ['type' => 'string']],

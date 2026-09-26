@@ -22,6 +22,23 @@ final class Editor
 	private const NEW = '__new';
 
 	/**
+	 * Field types with lists or objects as values
+	 */
+	private const STRUCTURED = [
+		'blocks',
+		'layout',
+		'structure',
+		'entries',
+		'object',
+		'pages',
+		'files',
+		'users',
+		'checkboxes',
+		'multiselect',
+		'tags',
+	];
+
+	/**
 	 * @var array<array-key, mixed>
 	 */
 	private array $values;
@@ -130,7 +147,7 @@ final class Editor
 			}
 
 			self::ensureEditable($field, $props);
-			$this->values[$field] = $op['value'];
+			$this->values[$field] = self::decoded($props, $op['value']);
 			$this->changed[$field] = true;
 
 			return;
@@ -153,7 +170,7 @@ final class Editor
 			default => [$field],
 		};
 
-		$this->values = self::setAt($this->values, [...$path, ...$slot], $op['value']);
+		$this->values = self::setAt($this->values, [...$path, ...$slot], self::decoded($props, $op['value']));
 		$this->touch($path);
 	}
 
@@ -173,7 +190,8 @@ final class Editor
 		}
 
 		$target = $this->target($op);
-		$content = is_array($op['content'] ?? null) ? $op['content'] : [];
+		$content = self::decoded(['type' => 'object'], $op['content'] ?? null);
+		$content = is_array($content) ? $content : [];
 
 		[$node, $meta] = match ($target['kind']) {
 			'blocks' => $this->newBlock($target['props'], $op, $content),
@@ -404,10 +422,39 @@ final class Editor
 	}
 
 	/**
+	 * Lists and objects sent as JSON text. Some clients do this, because the schema of `value` has no type.
+	 */
+	private static function decoded(array $props, mixed $value): mixed
+	{
+		if (!is_string($value)) {
+			return $value;
+		}
+
+		if (!in_array($props['type'] ?? null, self::STRUCTURED, true)) {
+			return $value;
+		}
+
+		$text = ltrim($value);
+
+		if (!str_starts_with($text, '[') && !str_starts_with($text, '{')) {
+			return $value;
+		}
+
+		$decoded = json_decode($text, true);
+
+		return is_array($decoded) ? $decoded : $value;
+	}
+
+	/**
 	 * A ref number from the read, or the `as` name of a node inserted earlier in this call
 	 */
 	private function key(mixed $ref): int|string
 	{
+		// clients that send refs as strings, like `"5"`
+		if (is_string($ref) && ctype_digit($ref)) {
+			$ref = (int) $ref;
+		}
+
 		if ((is_int($ref) || is_string($ref)) && ($this->nodes[$ref] ?? null) !== null) {
 			return $ref;
 		}
