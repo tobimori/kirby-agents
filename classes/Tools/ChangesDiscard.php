@@ -21,7 +21,7 @@ final class ChangesDiscard implements Tool
 		return [
 			'title' => 'Discard unsaved changes',
 			'description' => implode("\n", [
-				'Deletes the unsaved changes of a page or the site, like the Discard button in the Panel. The published content stays. This cannot be undone.',
+				'Deletes the unsaved changes of a page, the site, or a file, like the Discard button in the Panel. The published content stays. This cannot be undone.',
 				'Read the page with content_get first and send its `etag`, so you do not delete changes you have not seen. The changes can also be from an editor, so only discard when the user asked for it.',
 			]),
 			'inputSchema' => [
@@ -29,7 +29,7 @@ final class ChangesDiscard implements Tool
 				'properties' => [
 					'page' => [
 						'type' => 'string',
-						'description' => 'Page id, for example `blog/my-post`, or `site`',
+						'description' => Models::CONTENT_ID,
 					],
 					'etag' => [
 						'type' => 'string',
@@ -60,7 +60,7 @@ final class ChangesDiscard implements Tool
 	public function call(Arguments $arguments, Access $access): string
 	{
 		$pending = Pending::for(
-			Models::find((string) $arguments->string('page')),
+			Models::content((string) $arguments->string('page')),
 			(string) $arguments->string('etag'),
 			$arguments->string('language'),
 		);
@@ -70,6 +70,6 @@ final class ChangesDiscard implements Tool
 			? 'Discarded. The changes were the same as the published content.'
 			: 'Discarded the changes to: '
 			. implode(', ', $pending->changed)
-			. '. The page shows the published content again.';
+			. '. The published content applies again.';
 	}
 }

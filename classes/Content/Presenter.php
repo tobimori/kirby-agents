@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace tobimori\Agents\Content;
 
+use Kirby\Cms\File;
 use Kirby\Cms\Page;
 use tobimori\Agents\Schema\FieldProps;
 use tobimori\Agents\Tools\ToolError;
@@ -105,7 +106,11 @@ final class Presenter
 	private function header(): string
 	{
 		$model = $this->content->model;
-		$name = $model instanceof Page ? 'page ' . $model->id() . ', title "' . $this->content->title . '"' : 'site';
+		$name = match (true) {
+			$model instanceof Page => 'page ' . $model->id() . ', title "' . $this->content->title . '"',
+			$model instanceof File => 'file ' . $model->id() . ', template ' . ($model->template() ?? 'default'),
+			default => 'site',
+		};
 
 		return (
 			$name

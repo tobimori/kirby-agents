@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace tobimori\Agents\Schema;
 
 use Closure;
+use Kirby\Cms\File;
 use Kirby\Cms\ModelWithContent;
 use Kirby\Cms\Page;
 use Kirby\Form\Form;
@@ -56,6 +57,7 @@ final class Compiler
 
 		$blueprint = basename($model->blueprint()->name());
 		$title = match (true) {
+			$model instanceof File => 'file ' . $model->id() . ' (blueprint: ' . $blueprint . ')',
 			!$model instanceof Page => 'site',
 			$model->exists() => 'page ' . $model->id() . ' (blueprint: ' . $blueprint . ')',
 			default => 'blueprint ' . $blueprint,

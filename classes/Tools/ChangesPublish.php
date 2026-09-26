@@ -21,7 +21,7 @@ final class ChangesPublish implements Tool
 		return [
 			'title' => 'Publish unsaved changes',
 			'description' => implode("\n", [
-				'Publishes the unsaved changes of a page or the site, like the Save button in the Panel. The changes can come from content_update or from an editor in the Panel.',
+				'Publishes the unsaved changes of a page, the site, or a file, like the Save button in the Panel. The changes can come from content_update or from an editor in the Panel.',
 				'Read the page with content_get first (it shows the `changes` version) and send its `etag`, so you publish exactly what you read. The page status does not change: a draft stays a draft. To make a page public, use page_update with `status`.',
 				'Content with invalid fields is not published. Only publish when the user asked for it.',
 			]),
@@ -30,7 +30,7 @@ final class ChangesPublish implements Tool
 				'properties' => [
 					'page' => [
 						'type' => 'string',
-						'description' => 'Page id, for example `blog/my-post`, or `site`',
+						'description' => Models::CONTENT_ID,
 					],
 					'etag' => [
 						'type' => 'string',
@@ -61,7 +61,7 @@ final class ChangesPublish implements Tool
 	public function call(Arguments $arguments, Access $access): string
 	{
 		$pending = Pending::for(
-			Models::find((string) $arguments->string('page')),
+			Models::content((string) $arguments->string('page')),
 			(string) $arguments->string('etag'),
 			$arguments->string('language'),
 		);

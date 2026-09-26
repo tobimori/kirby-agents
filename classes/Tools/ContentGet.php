@@ -22,7 +22,7 @@ final class ContentGet implements Tool
 		return [
 			'title' => 'Read page content',
 			'description' => implode("\n", [
-				'Reads the content of a page or the site.',
+				'Reads the content of a page, the site, or a file (its metadata, like `alt`).',
 				'Without `fields` and `ref`, returns an outline: each field with a short preview in plain text, without HTML. Items in blocks, layouts, structures, and entries have a ref number, and nested items are indented under the name of their field.',
 				'With `fields` or `ref`, returns full values as JSON. Nested items carry their `ref` number.',
 				'Ref numbers and the `etag` belong to this version of the content. They change when the content changes, so read again after a change.',
@@ -32,7 +32,7 @@ final class ContentGet implements Tool
 				'properties' => [
 					'page' => [
 						'type' => 'string',
-						'description' => 'Page id, for example `blog/my-post`, or `site`',
+						'description' => Models::CONTENT_ID,
 					],
 					'fields' => [
 						'type' => 'array',
@@ -74,7 +74,7 @@ final class ContentGet implements Tool
 	public function call(Arguments $arguments, Access $access): array|string
 	{
 		$content = Reader::read(
-			Models::find((string) $arguments->string('page')),
+			Models::content((string) $arguments->string('page')),
 			$arguments->string('version'),
 			$arguments->string('language'),
 		);

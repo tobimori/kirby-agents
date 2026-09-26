@@ -39,7 +39,7 @@ final class RelationsFind implements Tool
 				'properties' => [
 					'page' => [
 						'type' => 'string',
-						'description' => 'Page id, for example `blog/my-post`, or `site`',
+						'description' => Models::CONTENT_ID,
 					],
 					'field' => [
 						'type' => 'string',
@@ -75,7 +75,7 @@ final class RelationsFind implements Tool
 
 	public function call(Arguments $arguments, Access $access): array
 	{
-		$model = Models::find((string) $arguments->string('page'));
+		$model = Models::content((string) $arguments->string('page'));
 		$path = (string) $arguments->string('field');
 		$props = FieldPath::resolve(Reader::read($model)->fields, $path);
 		$type = is_string($props['type'] ?? null) ? $props['type'] : '';

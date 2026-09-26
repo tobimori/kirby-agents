@@ -24,7 +24,7 @@ final class SchemaGet implements Tool
 		return [
 			'title' => 'Get the content schema',
 			'description' => implode("\n", [
-				'Returns the fields of a page, a page blueprint, or the site, in a compact notation. Read it before you change content.',
+				'Returns the fields of a page, a page blueprint, the site, or a file, in a compact notation. Read it before you change content.',
 				'The first block lists the fields: name, then type and rules. Nested content refers to named types, which follow as their own blocks. Kinds of named types: `block` (a block type), `row` (a structure row), `object` (an object field), `settings` (the settings of the rows in a layout field).',
 				'Values:',
 				'- text, url, email, slug, tel, textarea, markdown: string',
@@ -42,7 +42,7 @@ final class SchemaGet implements Tool
 				'properties' => [
 					'page' => [
 						'type' => 'string',
-						'description' => 'Page id, for example `blog/my-post`, or `site` for the site fields',
+						'description' => Models::CONTENT_ID,
 					],
 					'blueprint' => [
 						'type' => 'string',
@@ -84,7 +84,7 @@ final class SchemaGet implements Tool
 		$kirby = App::instance();
 
 		if ($id !== null) {
-			return Models::find($id);
+			return Models::content($id);
 		}
 
 		if ($blueprint !== null) {

@@ -27,7 +27,7 @@ final class ContentUpdate implements Tool
 		return [
 			'title' => 'Change page content',
 			'description' => implode("\n", [
-				'Changes the content of a page or the site with a list of operations. Read the page with content_get first, and send its `etag`.',
+				'Changes the content of a page, the site, or a file (its metadata) with a list of operations. Read the page with content_get first, and send its `etag`.',
 				'All operations are applied together: if one is invalid, nothing is saved.',
 				'Ref numbers come from that read. All refs in one call point to that read, also after earlier operations in the same call. New items can get a name with `as`, which later operations in the same call can use instead of a number.',
 				'Operations:',
@@ -49,7 +49,7 @@ final class ContentUpdate implements Tool
 				'properties' => [
 					'page' => [
 						'type' => 'string',
-						'description' => 'Page id, for example `blog/my-post`, or `site`',
+						'description' => Models::CONTENT_ID,
 					],
 					'etag' => [
 						'type' => 'string',
@@ -116,7 +116,7 @@ final class ContentUpdate implements Tool
 	public function call(Arguments $arguments, Access $access): string
 	{
 		$version = $arguments->enum('version', ['changes', 'latest'], 'changes');
-		$model = Models::find((string) $arguments->string('page'));
+		$model = Models::content((string) $arguments->string('page'));
 
 		// drafts are not public, so saving their latest version publishes nothing
 		$publishes = $version === 'latest' && !($model instanceof Page && $model->isDraft());
@@ -152,7 +152,7 @@ final class ContentUpdate implements Tool
 			$after = $base->withValues($outcome['values']);
 		} else {
 			// after a change, Kirby keeps the old state in the old model object
-			$after = Reader::read(Models::find((string) $arguments->string('page')), null, $language);
+			$after = Reader::read(Models::content((string) $arguments->string('page')), null, $language);
 			$lines[] = match (true) {
 				$publishes => 'Saved and published.',
 				$version === 'latest' => 'Saved. The page is still a draft.',
