@@ -21,6 +21,7 @@ final class Tools
 			new ContentGet(),
 			new ContentUpdate(),
 			new PageCreate(),
+			new PageDelete(),
 			new PageRulesGet(),
 			new PageUpdate(),
 			new PagesFind(),
