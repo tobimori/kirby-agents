@@ -8,6 +8,7 @@ use Kirby\Cms\App;
 use Kirby\Cms\Blueprint;
 use Kirby\Cms\Page;
 use Kirby\Cms\Pages;
+use Kirby\Content\Changes;
 use Kirby\Toolkit\I18n;
 use Throwable;
 use tobimori\Agents\Agents;
@@ -27,7 +28,7 @@ final class SiteOverview implements Tool
 		return [
 			'title' => 'Site overview',
 			'description' =>
-				'Start here. Returns the site title, languages, the acting user and token scopes, the page `blueprints`, and the page tree, drafts included. '
+				'Start here. Returns the site title, languages, the acting user and token scopes, the page `blueprints`, the pages with `unsavedChanges`, and the page tree, drafts included. '
 					. PageInfo::FIELDS,
 			'inputSchema' => [
 				'type' => 'object',
@@ -76,6 +77,7 @@ final class SiteOverview implements Tool
 			],
 			'scopes' => $access->scopes,
 			'blueprints' => self::blueprints(),
+			'unsavedChanges' => self::unsaved(),
 			'pages' => $depth > 0 ? self::tree($kirby->site()->childrenAndDrafts(), $depth, $limit) : [],
 		];
 	}
@@ -123,6 +125,25 @@ final class SiteOverview implements Tool
 		}
 
 		return $blueprints;
+	}
+
+	/**
+	 * Ids of the site and pages with a changes version, like the Changes dialog in the Panel
+	 *
+	 * @return list<string>
+	 */
+	private static function unsaved(): array
+	{
+		$site = App::instance()->site();
+		$ids = $site->version('changes')->exists('*') ? ['site'] : [];
+
+		foreach ((new Changes())->pages() as $page) {
+			if ($page instanceof Page && $page->isListable()) {
+				$ids[] = $page->id();
+			}
+		}
+
+		return $ids;
 	}
 
 	private static function tree(Pages $pages, int $depth, int $limit): array

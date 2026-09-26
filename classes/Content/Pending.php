@@ -43,14 +43,15 @@ final class Pending
 		}
 
 		$language = Language::ensure($read->language);
-		$changes = $model->version('changes')->read($language) ?? [];
 		$latest = $model->version('latest')->exists($language) ? $model->version('latest')->read($language) ?? [] : [];
+
+		// compare form values like `Version::isIdentical()`, because the stored text of the same value can differ
+		$fields = Fields::for($model, $language);
+		$changes = $read->values;
+		$latest = array_intersect_key($fields->reset()->fill(input: $latest)->toFormValues(), $read->fields);
 		$changed = [];
 
-		// Kirby ignores these in the comparison too
-		unset($changes['lock'], $changes['uuid'], $latest['lock'], $latest['uuid']);
-
-		foreach (array_unique([...array_keys($changes), ...array_keys($latest)]) as $key) {
+		foreach (array_keys($read->fields) as $key) {
 			if (($changes[$key] ?? null) !== ($latest[$key] ?? null)) {
 				$changed[] = (string) $key;
 			}

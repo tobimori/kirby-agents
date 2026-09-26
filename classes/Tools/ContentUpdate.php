@@ -83,7 +83,7 @@ final class ContentUpdate implements Tool
 						'type' => 'string',
 						'enum' => ['changes', 'latest'],
 						'default' => 'changes',
-						'description' => '`changes` saves for review in the Panel, `latest` also publishes, which needs the `content:publish` scope',
+						'description' => '`changes` saves for review in the Panel, `latest` also publishes. `latest` needs the `content:publish` scope. Without it, the server asks the client to authorize again with that scope (HTTP 403 `insufficient_scope`), so ask the user before you try',
 					],
 					'language' => [
 						'type' => 'string',

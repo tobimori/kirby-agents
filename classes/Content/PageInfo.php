@@ -15,10 +15,10 @@ final class PageInfo
 	/**
 	 * Explains the summary fields in tool descriptions
 	 */
-	public const FIELDS = 'Each page has: `id` (its path, use it with other tools), `uuid` (null until the page has a stored UUID), `title`, `template`, `blueprint` (pages without an own blueprint use `default`), `status` (listed, unlisted, or draft), `num` (sort number), `children` (count, drafts included), `modified`.';
+	public const FIELDS = 'Each page has: `id` (its path, use it with other tools), `uuid` (null until the page has a stored UUID), `title`, `template`, `blueprint` (pages without an own blueprint use `default`), `status` (listed, unlisted, or draft), `num` (sort number), `children` (count, drafts included), `modified`, `changes` (true when the page has unsaved changes).';
 
 	/**
-	 * @return array{id: string, uuid: string|null, title: string, template: string, blueprint: string, status: string, num: int|null, children: int, modified: string}
+	 * @return array{id: string, uuid: string|null, title: string, template: string, blueprint: string, status: string, num: int|null, children: int, modified: string, changes: bool}
 	 */
 	public static function summary(Page $page): array
 	{
@@ -35,6 +35,7 @@ final class PageInfo
 			'num' => $page->num(),
 			'children' => $page->childrenAndDrafts()->count(),
 			'modified' => date('c', (int) $page->modified()),
+			'changes' => $page->version('changes')->exists('*'),
 		];
 	}
 }
