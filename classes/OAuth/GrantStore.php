@@ -27,10 +27,43 @@ final class GrantStore
 
 	public function find(string $id): ?Grant
 	{
+		return $this->read()[$id] ?? null;
+	}
+
+	/**
+	 * Connected agents: grants with tokens, not the ones that wait for the code exchange
+	 *
+	 * @return array<string, Grant>
+	 */
+	public function connected(): array
+	{
+		return array_filter($this->read(), static fn(Grant $grant): bool => $grant->refresh !== null);
+	}
+
+	/**
+	 * Returns false if the grant does not exist
+	 */
+	public function revoke(string $id): bool
+	{
+		return $this->change(static function (array &$grants) use ($id): bool {
+			$exists = array_key_exists($id, $grants);
+			unset($grants[$id]);
+
+			return $exists;
+		});
+	}
+
+	/**
+	 * Grants that have not expired, read under a shared lock
+	 *
+	 * @return array<string, Grant>
+	 */
+	private function read(): array
+	{
 		$file = $this->file();
 
 		if (is_file($file) === false) {
-			return null;
+			return [];
 		}
 
 		$handle = fopen($file, 'r');
@@ -40,13 +73,13 @@ final class GrantStore
 		}
 
 		try {
-			$grant = $this->decode((string) stream_get_contents($handle))[$id] ?? null;
+			$grants = $this->decode((string) stream_get_contents($handle));
 		} finally {
 			flock($handle, LOCK_UN);
 			fclose($handle);
 		}
 
-		return $grant !== null && $grant->expires >= time() ? $grant : null;
+		return array_filter($grants, static fn(Grant $grant): bool => $grant->expires >= time());
 	}
 
 	/**
