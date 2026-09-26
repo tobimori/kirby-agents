@@ -36,9 +36,7 @@ final class Writer
 		$lock = $changes->lock($language);
 
 		if ($lock->isLocked()) {
-			$user = $lock->user()?->email() ?? 'another user';
-
-			throw new ToolError("{$user} is editing this content in the Panel right now. Try again later.");
+			throw self::locked($lock->toArray());
 		}
 
 		$fields = Fields::for($model, $language);
@@ -54,10 +52,7 @@ final class Writer
 		$errors = InputCheck::errors($model, array_intersect_key($base->fields, array_flip($changed)), $values);
 		$warnings = [];
 
-		foreach ($fields->errors() as $name => $error) {
-			$messages = is_array($error['message'] ?? null) ? $error['message'] : [];
-			$line = $name . ': ' . implode(' ', array_filter($messages, is_string(...)));
-
+		foreach (self::errors($fields) as $name => $line) {
 			if (in_array($name, $changed, true)) {
 				$errors[] = $line;
 			} else {
@@ -79,9 +74,37 @@ final class Writer
 				$changes->publish($language);
 			}
 		} catch (LockedContentException $exception) {
-			throw new ToolError($exception->getMessage());
+			throw self::locked($exception->getDetails());
 		}
 
 		return ['errors' => [], 'warnings' => $warnings, 'values' => $result];
+	}
+
+	/**
+	 * `name: message` by field name
+	 *
+	 * @return array<string, string>
+	 */
+	public static function errors(Fields $fields): array
+	{
+		$errors = [];
+
+		foreach ($fields->errors() as $name => $error) {
+			$messages = is_array($error['message'] ?? null) ? $error['message'] : [];
+			$errors[(string) $name] = $name . ': ' . implode(' ', array_filter($messages, is_string(...)));
+		}
+
+		return $errors;
+	}
+
+	/**
+	 * @param array<array-key, mixed> $lock `Lock::toArray()`
+	 */
+	public static function locked(array $lock): ToolError
+	{
+		$user = is_array($lock['user'] ?? null) ? $lock['user']['email'] ?? null : null;
+		$user = is_string($user) ? $user : 'Another user';
+
+		return new ToolError("{$user} is editing this content in the Panel right now. Try again later.");
 	}
 }
