@@ -94,7 +94,14 @@ final class PageUpdate implements Tool
 			throw new ScopeRequired(Scope::ContentPublish);
 		}
 
-		$slug = $slug !== null ? Str::slug($slug) : null;
+		// with the slug rules of the language, like the Panel (German: `ü` becomes `ue`)
+		if ($slug !== null) {
+			$rules = Str::$language;
+			Str::$language = $language->rules();
+			$slug = Str::slug($slug);
+			Str::$language = $rules;
+		}
+
 		$parent = $parentId !== null ? Models::find($parentId) : null;
 		$listed = $status ?? ($position !== null ? 'listed' : null);
 
@@ -127,7 +134,7 @@ final class PageUpdate implements Tool
 			PageRules::changeStatus($page, $listed, $position ?? 0);
 		}
 
-		$before = PageInfo::summary($page);
+		$before = self::state($page, $language);
 
 		// template first, because the new blueprint can have other rules for the rest
 		if ($template !== null) {
@@ -150,17 +157,38 @@ final class PageUpdate implements Tool
 			$page = $page->changeStatus($listed, $position);
 		}
 
-		$after = PageInfo::summary($page);
-		$changed = array_keys(array_diff_assoc(
-			array_intersect_key($after, array_flip(['id', 'title', 'template', 'status', 'num'])),
-			$before,
-		));
-		$result = ['changed' => $changed, 'page' => $after];
+		$after = self::state($page, $language);
+		$changed = array_keys(array_diff_assoc($after, $before));
+		$summary = PageInfo::summary($page);
+		$result = ['changed' => $changed, 'page' => $summary];
 
-		if ($listed !== null && $listed !== 'draft' && $after['changes']) {
+		if (!$language->isDefault()) {
+			$result[$language->code()] = ['title' => $after['title'], 'slug' => $after['slug']];
+		}
+
+		if ($listed !== null && $listed !== 'draft' && $summary['changes']) {
 			$result['note'] = 'The page has unsaved changes. They are not public yet: publish them with changes_publish.';
 		}
 
 		return $result;
+	}
+
+	/**
+	 * What page_update can change, with the title and slug in the language
+	 *
+	 * @return array<string, string|int|null>
+	 */
+	private static function state(Page $page, Language $language): array
+	{
+		$title = $page->content($language->code())->toArray()['title'] ?? '';
+
+		return [
+			'id' => $page->id(),
+			'title' => is_string($title) ? $title : '',
+			'slug' => $page->slug($language->code()),
+			'template' => $page->intendedTemplate()->name(),
+			'status' => $page->status(),
+			'num' => $page->num(),
+		];
 	}
 }
