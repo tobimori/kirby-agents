@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Kirby\Toolkit\I18n;
 use tobimori\Agents\OAuth\Authorization;
+use tobimori\Agents\Panel\Grants;
 
 /** @var array<string, Closure> $endpoints */
 $endpoints = require __DIR__ . '/endpoints.php';
@@ -24,8 +25,14 @@ return [
 	'agents' => fn() => [
 		'label' => I18n::translate('agents.title'),
 		'icon' => 'ai',
+		'menu' => true,
+		'link' => 'agents',
 		'views' => [
 			...$public,
+			'agents.grants' => [
+				'pattern' => 'agents',
+				'action' => fn() => Grants::view(),
+			],
 			'agents.authorize' => [
 				'pattern' => 'agents/authorize/(:any)',
 				'action' => fn(string $id) => Authorization::view($id),
@@ -34,6 +41,13 @@ return [
 				'pattern' => 'agents/authorize/(:any)',
 				'method' => 'POST',
 				'action' => fn(string $id) => Authorization::decide($id),
+			],
+		],
+		'dialogs' => [
+			'agents.grants.revoke' => [
+				'pattern' => 'agents/grants/(:any)/(:any)/revoke',
+				'load' => fn(string $user, string $grant) => Grants::confirm($user, $grant),
+				'submit' => fn(string $user, string $grant) => Grants::revoke($user, $grant),
 			],
 		],
 	],
