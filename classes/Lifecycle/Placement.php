@@ -5,21 +5,24 @@ declare(strict_types=1);
 namespace tobimori\Agents\Lifecycle;
 
 use Kirby\Cms\App;
+use Kirby\Cms\Blueprint;
 use Kirby\Cms\Page;
-use Kirby\Cms\PageRules;
-use Kirby\Cms\Section;
+use Kirby\Cms\Pages;
 use Kirby\Cms\Site;
 use Kirby\Content\MemoryStorage;
-use Kirby\Exception\Exception as KirbyException;
+use Kirby\Toolkit\A;
 use Kirby\Toolkit\I18n;
+use Throwable;
 
 /**
- * Where pages can be created and moved to, by the same rules as the Panel
+ * Where pages can be created and moved to, by the rules of the `pages` sections.
+ * It reads the section props, because a `Section` object computes its Panel items,
+ * which is slow and writes missing UUIDs into content files.
  */
 final class Placement
 {
 	/**
-	 * Most pages to check for move targets, because each check loads the sections of a blueprint
+	 * Most pages to check for move targets
 	 */
 	public const MAX_MOVE_CHECKS = 300;
 
@@ -49,20 +52,16 @@ final class Placement
 	public static function templates(Site|Page $parent): array
 	{
 		$templates = [];
+		$models = $parent instanceof Page ? [$parent, $parent->site()] : [$parent];
 
-		foreach (self::sections($parent) as $section) {
-			// false when creation is off, the section is full, or it would not show the new page
-			if ($section->__call('add') !== true) {
-				continue;
-			}
+		foreach ($models as $model) {
+			foreach (self::sections($model, $parent) as $props) {
+				$names = self::names($props);
 
-			$blueprints = $section->__call('blueprints');
-
-			foreach (is_array($blueprints) ? $blueprints : [] as $blueprint) {
-				if (is_array($blueprint) && is_string($blueprint['name'] ?? null)) {
-					$title = $blueprint['title'] ?? $blueprint['name'];
-					$title = is_array($title) ? I18n::translate($title) : $title;
-					$templates[$blueprint['name']] = is_string($title) ? $title : $blueprint['name'];
+				if (self::canAdd($model, $parent, $props, $names)) {
+					foreach ($names as $name) {
+						$templates[$name] = self::title($name);
+					}
 				}
 			}
 		}
@@ -89,6 +88,7 @@ final class Placement
 			'parent' => $parent instanceof Page ? $parent : null,
 			'isDraft' => true,
 		]);
+
 		// copy, never move: with the slug of an existing draft, moving deletes its content from the disk
 		$page->changeStorage(MemoryStorage::class, copy: true);
 
@@ -96,7 +96,10 @@ final class Placement
 	}
 
 	/**
-	 * Ids of the site and pages the page can move to, checked with `PageRules::move`
+	 * Ids of the site and pages the page can move to, with the checks of `PageRules::move`:
+	 * not into itself, no page with the same slug, and a pages section in the blueprint
+	 * of the target that lists its children and accepts the template.
+	 * page_update runs the real `PageRules::move` before a move.
 	 *
 	 * @return array{targets: list<string>, complete: bool}
 	 */
@@ -104,23 +107,30 @@ final class Placement
 	{
 		$site = App::instance()->site();
 		$current = $page->parent()?->id() ?? 'site';
+		$template = $page->intendedTemplate()->name();
 		$targets = [];
 		$checked = 0;
 
-		foreach ([$site, ...$site->index(drafts: true)] as $parent) {
+		foreach ([$site, ...$site->index(drafts: true)] as $target) {
 			if (count($targets) >= $limit || $checked >= self::MAX_MOVE_CHECKS) {
 				return ['targets' => $targets, 'complete' => false];
 			}
 
-			$id = $parent instanceof Page ? $parent->id() : 'site';
+			$id = $target instanceof Page ? $target->id() : 'site';
 
-			if ($id === $current || !$parent instanceof Page && !$parent instanceof Site) {
+			if ($id === $current || $target instanceof Page && ($target->is($page) || $page->isAncestorOf($target))) {
 				continue;
 			}
 
 			$checked++;
+			$sections = self::sections($target, $target);
+			$allowed = array_merge(...array_map(self::templatesProp(...), $sections));
 
-			if (self::canMove($page, $parent)) {
+			if (
+				$sections !== []
+				&& ($allowed === [] || in_array($template, $allowed, true))
+				&& !$target->childrenAndDrafts()->find($page->slug()) instanceof Page
+			) {
 				$targets[] = $id;
 			}
 		}
@@ -128,48 +138,182 @@ final class Placement
 		return ['targets' => $targets, 'complete' => true];
 	}
 
-	private static function canMove(Page $page, Site|Page $parent): bool
-	{
-		try {
-			PageRules::move($page, $parent);
-
-			return true;
-		} catch (KirbyException) {
-			return false;
-		}
-	}
-
 	/**
-	 * @return list<Section>
+	 * Props of the pages sections in the blueprint of the model that list the children of the parent
+	 *
+	 * @return list<array<array-key, mixed>>
 	 */
-	private static function sections(Site|Page $parent): array
+	private static function sections(Site|Page $model, Site|Page $parent): array
 	{
-		$blueprints = [$parent->blueprint()];
-
-		if ($parent instanceof Page) {
-			$blueprints[] = $parent->site()->blueprint();
-		}
-
+		$tabs = $model->blueprint()->toArray()['tabs'] ?? [];
 		$sections = [];
 
-		foreach ($blueprints as $blueprint) {
-			foreach ($blueprint->sections() as $section) {
-				// sections have their values only through `__call`
-				if (!$section instanceof Section || $section->__call('type') !== 'pages') {
-					continue;
-				}
+		foreach (is_array($tabs) ? $tabs : [] as $tab) {
+			$columns = is_array($tab) && is_array($tab['columns'] ?? null) ? $tab['columns'] : [];
 
-				$listed = $section->__call('parent');
+			foreach ($columns as $column) {
+				$props = is_array($column) && is_array($column['sections'] ?? null) ? $column['sections'] : [];
 
-				if (
-					$listed instanceof Site && $parent instanceof Site
-					|| $listed instanceof Page && $parent instanceof Page && $listed->is($parent)
-				) {
-					$sections[] = $section;
+				foreach ($props as $section) {
+					if (
+						is_array($section)
+						&& ($section['type'] ?? null) === 'pages'
+						&& self::lists($model, $section, $parent)
+					) {
+						$sections[] = $section;
+					}
 				}
 			}
 		}
 
 		return $sections;
+	}
+
+	/**
+	 * The `parent` prop is a query from the model. Without it, the section lists the children of the model.
+	 */
+	private static function lists(Site|Page $model, array $section, Site|Page $parent): bool
+	{
+		try {
+			$listed = is_string($section['parent'] ?? null) ? $model->query($section['parent']) : $model;
+		} catch (Throwable) {
+			return false;
+		}
+
+		return (
+			$listed instanceof Site
+			&& $parent instanceof Site
+			|| $listed instanceof Page
+			&& $parent instanceof Page
+			&& $listed->is($parent)
+		);
+	}
+
+	/**
+	 * Templates the add button offers: `create`, else `templates`, else all page blueprints
+	 *
+	 * @return list<string>
+	 */
+	private static function names(array $section): array
+	{
+		// `create: true` only allows creation, like no `create`
+		$names = self::strings($section['create'] ?? null);
+		$names = $names !== [] ? $names : self::templatesProp($section);
+		$names = $names !== [] ? $names : self::strings(App::instance()->blueprints());
+
+		return array_values(array_diff($names, self::strings($section['templatesIgnore'] ?? null)));
+	}
+
+	/**
+	 * @return list<string>
+	 */
+	private static function templatesProp(array $section): array
+	{
+		return self::strings($section['templates'] ?? $section['template'] ?? null);
+	}
+
+	/**
+	 * A string or a list as a list of non-empty strings
+	 *
+	 * @return list<string>
+	 */
+	private static function strings(mixed $value): array
+	{
+		$strings = [];
+
+		foreach (A::wrap($value) as $item) {
+			if (is_string($item) && $item !== '') {
+				$strings[] = $item;
+			}
+		}
+
+		return $strings;
+	}
+
+	/**
+	 * The `add` value of the section: false when creation is off, the section is full,
+	 * or it would not show the new pages because of its status filter
+	 *
+	 * @param list<string> $names
+	 */
+	private static function canAdd(Site|Page $model, Site|Page $parent, array $section, array $names): bool
+	{
+		if (($section['create'] ?? null) === false || $names === []) {
+			return false;
+		}
+
+		$status = self::status($section);
+		$max = $section['max'] ?? null;
+
+		if (is_int($max) && self::listed($model, $parent, $section, $status) >= $max) {
+			return false;
+		}
+
+		if ($status === 'all') {
+			return true;
+		}
+
+		$statuses = array_unique(array_map(static function (string $name): string {
+			try {
+				$status = Blueprint::load('pages/' . $name)['create']['status'] ?? 'draft';
+			} catch (Throwable) {
+				$status = 'draft';
+			}
+
+			return is_string($status) ? $status : 'draft';
+		}, $names));
+
+		return count($statuses) === 1 && $statuses[0] === $status;
+	}
+
+	private static function status(array $section): string
+	{
+		$status = $section['status'] ?? '';
+		$status = $status === 'drafts' ? 'draft' : $status;
+
+		return in_array($status, ['draft', 'published', 'listed', 'unlisted'], true) ? $status : 'all';
+	}
+
+	/**
+	 * Number of pages the section shows, to compare with `max`
+	 */
+	private static function listed(Site|Page $model, Site|Page $parent, array $section, string $status): int
+	{
+		$query = $section['query'] ?? null;
+		$pages = is_string($query) ? $model->query($query, Pages::class) : null;
+		$pages = $pages instanceof Pages ? $pages : $parent->childrenAndDrafts();
+
+		$pages = match ($status) {
+			'draft' => $pages->filter(static fn(Page $page): bool => $page->isDraft()),
+			'published' => $pages->filter(static fn(Page $page): bool => !$page->isDraft()),
+			'listed' => $pages->filter(static fn(Page $page): bool => $page->isListed()),
+			'unlisted' => $pages->filter(static fn(Page $page): bool => $page->isUnlisted()),
+			default => $pages,
+		};
+
+		$templates = self::templatesProp($section);
+		$ignore = self::strings($section['templatesIgnore'] ?? null);
+
+		return $pages
+			->filter(
+				static fn(Page $page): bool => (
+					($templates === [] || in_array($page->intendedTemplate()->name(), $templates, true))
+					&& !in_array($page->intendedTemplate()->name(), $ignore, true)
+				),
+			)
+			->count();
+	}
+
+	private static function title(string $name): string
+	{
+		try {
+			$title = Blueprint::load('pages/' . $name)['title'] ?? $name;
+		} catch (Throwable) {
+			return ucfirst($name);
+		}
+
+		$title = is_array($title) ? I18n::translate($title) : $title;
+
+		return is_string($title) ? $title : $name;
 	}
 }
