@@ -1,0 +1,126 @@
+/**
+ * Registers the tools of the site with WebMCP, for agents in the browser.
+ * The tools run on the server through the Kirby API, with the Panel session.
+ * Does nothing in browsers without WebMCP.
+ */
+export default function webmcp(app) {
+	// `navigator.modelContext` is the old place of the API in early Chrome builds
+	const modelContext = document.modelContext ?? navigator.modelContext
+
+	if (typeof modelContext?.registerTool !== "function") {
+		return
+	}
+
+	let controller = null
+
+	const unregister = () => {
+		controller?.abort()
+		controller = null
+	}
+
+	const register = async () => {
+		unregister()
+		const current = new AbortController()
+		controller = current
+
+		let definitions
+
+		try {
+			definitions = await app.$panel.api.get("agents/tools", {}, { silent: true })
+		} catch {
+			return
+		}
+
+		if (definitions.enabled !== true || current.signal.aborted) {
+			return
+		}
+
+		const tools = [...definitions.tools.map((tool) => serverTool(app, tool)), viewTool(app)]
+
+		for (const tool of tools) {
+			try {
+				await modelContext.registerTool(tool, { signal: current.signal })
+			} catch (error) {
+				console.warn(`Kirby Agents: could not register the WebMCP tool ${tool.name}`, error)
+			}
+		}
+	}
+
+	// the Panel loads plugins before the login, so follow the user
+	app.$watch(
+		() => app.$panel.user.id,
+		(id) => (id ? register() : unregister()),
+		{ immediate: true }
+	)
+}
+
+function serverTool(app, tool) {
+	return {
+		...tool,
+		async execute(input, options = {}) {
+			let result
+
+			try {
+				result = await app.$panel.api.post(`agents/tools/${tool.name}`, input ?? {}, {
+					signal: options.signal,
+					silent: true
+				})
+			} catch (error) {
+				// a rejected promise reaches the agent only as a failure without the message
+				return { content: [{ type: "text", text: error.message ?? String(error) }], isError: true }
+			}
+
+			// the user sees the change at once
+			if (result.isError !== true && tool.annotations.readOnlyHint !== true) {
+				app.$panel.view.reload()
+			}
+
+			return result
+		}
+	}
+}
+
+/**
+ * What the user has open in the Panel, so "this page" has a meaning for the agent
+ */
+function viewTool(app) {
+	return {
+		name: "panel_view",
+		title: "Current Panel view",
+		description:
+			'Returns what the user has open in the Kirby Panel: the `id` of the page, file, or site, and the content `language`. Use the `id` as `page` with the other tools, for example when the user says "this page".',
+		inputSchema: { type: "object", properties: {} },
+		annotations: { readOnlyHint: true },
+		async execute() {
+			return {
+				...parseViewPath(app.$panel.view.path ?? ""),
+				title: app.$panel.view.title ?? null,
+				language: app.$panel.language?.code ?? null
+			}
+		}
+	}
+}
+
+/**
+ * `pages/blog+my-post/files/photo.jpg` to `{ type: "file", id: "blog/my-post/photo.jpg" }`
+ */
+export function parseViewPath(path) {
+	const id = (value) => decodeURIComponent(value).replaceAll("+", "/")
+	const page = path.match(/^pages\/([^/]+)(?:\/files\/([^/]+))?$/)
+
+	if (page) {
+		return page[2]
+			? { type: "file", id: `${id(page[1])}/${decodeURIComponent(page[2])}` }
+			: { type: "page", id: id(page[1]) }
+	}
+
+	const site = path.match(/^site(?:\/files\/([^/]+))?$/)
+
+	if (site) {
+		return site[1]
+			? { type: "file", id: decodeURIComponent(site[1]) }
+			: { type: "site", id: "site" }
+	}
+
+	return { type: "other", id: null, view: path }
+}
