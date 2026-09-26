@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace tobimori\Agents\Tools;
 
 use tobimori\Agents\OAuth\Access;
+use tobimori\Agents\OAuth\Scope;
 
 final class Tools
 {
@@ -34,13 +35,18 @@ final class Tools
 	}
 
 	/**
-	 * Tools the access token has the scope for
+	 * Tools the role of the user allows, also if the token does not have the scope yet.
+	 * A call without the scope asks the client to authorize again with it.
 	 *
 	 * @return list<Tool>
 	 */
 	public static function for(Access $access): array
 	{
-		return array_values(array_filter(self::all(), static fn(Tool $tool): bool => $access->allows($tool->scope())));
+		$grantable = new Access($access->user, $access->grant, Scope::allowedFor($access->user, Scope::all()));
+
+		return array_values(array_filter(self::all(), static fn(Tool $tool): bool => $grantable->allows(
+			$tool->scope(),
+		)));
 	}
 
 	public static function find(string $name): ?Tool

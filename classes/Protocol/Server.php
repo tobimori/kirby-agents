@@ -184,15 +184,21 @@ final class Server
 	private static function listTools(Access $access): array
 	{
 		return [
-			'tools' => array_map(static function (Tool $tool): array {
+			'tools' => array_map(static function (Tool $tool) use ($access): array {
 				$definition = $tool->definition();
 				$schema = is_array($definition['inputSchema'] ?? null) ? $definition['inputSchema'] : [];
 				$summary = is_string($definition['description'] ?? null) ? $definition['description'] : '';
 				$definition['description'] = $summary . "\n\n" . Guide::parameters($schema);
 
+				if ($access->allows($tool->scope()) === false) {
+					$definition['description'] =
+						"Needs the `{$tool->scope()->value}` scope, which this connection does not have yet. A call asks the user to allow it in the browser, so ask the user first.\n\n"
+						. $definition['description'];
+				}
+
 				return ['name' => $tool->name(), ...$definition];
 			}, Tools::for($access)),
-			// the list depends on the token scopes
+			// the list depends on the role and the token scopes
 			'ttlMs' => 5 * 60 * 1000,
 			'cacheScope' => 'private',
 		];
@@ -208,7 +214,7 @@ final class Server
 		}
 
 		if ($access->allows($tool->scope()) === false) {
-			return McpEndpoint::insufficientScope($tool->scope());
+			return McpEndpoint::insufficientScope($tool->scope(), $access);
 		}
 
 		$arguments = new Arguments(is_array($params['arguments'] ?? null) ? $params['arguments'] : []);
@@ -222,7 +228,7 @@ final class Server
 				'isError' => true,
 			]);
 		} catch (ScopeRequired $error) {
-			return McpEndpoint::insufficientScope($error->scope);
+			return McpEndpoint::insufficientScope($error->scope, $access);
 		}
 
 		if (is_string($data)) {

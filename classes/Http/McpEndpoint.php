@@ -60,11 +60,14 @@ final class McpEndpoint
 	}
 
 	/**
-	 * 403 response that asks the client to authorize again with more scopes
+	 * 403 response that asks the client to authorize again with more scopes.
+	 * Clients often request exactly these scopes, so keep the ones the token has.
 	 */
-	public static function insufficientScope(Scope $scope): Response
+	public static function insufficientScope(Scope $scope, Access $access): Response
 	{
-		return self::authenticate(403, 'insufficient_scope', [$scope->value], true);
+		$scopes = array_values(array_unique([...$access->scopes, $scope->value]));
+
+		return self::authenticate(403, 'insufficient_scope', $scopes, true);
 	}
 
 	/**
