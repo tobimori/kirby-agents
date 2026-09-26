@@ -17,5 +17,5 @@
 	"scope.content:write": "Prepare content changes for review",
 	"scope.content:publish": "Publish and discard content changes",
 	"scope.pages:manage": "Create, move, and rename pages, and upload files",
-	"scope.pages:delete": "Delete pages"
+	"scope.pages:delete": "Delete pages and files"
 }
