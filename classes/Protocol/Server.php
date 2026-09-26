@@ -181,23 +181,62 @@ final class Server
 		];
 	}
 
+	/**
+	 * Tool definitions for the role, with the parameter guide in the description.
+	 * Also used by the WebMCP bridge.
+	 *
+	 * @return list<array<string, mixed>>
+	 */
+	public static function definitions(Access $access): array
+	{
+		return array_map(static function (Tool $tool) use ($access): array {
+			$definition = $tool->definition();
+			$schema = is_array($definition['inputSchema'] ?? null) ? $definition['inputSchema'] : [];
+			$summary = is_string($definition['description'] ?? null) ? $definition['description'] : '';
+			$definition['description'] = $summary . "\n\n" . Guide::parameters($schema);
+
+			if ($access->allows($tool->scope()) === false) {
+				$definition['description'] =
+					"Needs the `{$tool->scope()->value}` scope, which this connection does not have yet. A call asks the user to allow it in the browser, so ask the user first.\n\n"
+					. $definition['description'];
+			}
+
+			return ['name' => $tool->name(), ...$definition];
+		}, Tools::for($access));
+	}
+
+	/**
+	 * Runs a tool and returns an MCP tool result. Rule errors are results with `isError`.
+	 * Also used by the WebMCP bridge.
+	 *
+	 * @throws ScopeRequired if the access needs another scope
+	 *
+	 * @return array<string, mixed>
+	 */
+	public static function run(Tool $tool, array $arguments, Access $access): array
+	{
+		if ($access->allows($tool->scope()) === false) {
+			throw new ScopeRequired($tool->scope());
+		}
+
+		try {
+			$data = $tool->call(new Arguments($arguments), $access);
+		} catch (ToolError|KirbyException $error) {
+			// Kirby exceptions are rule violations with messages for users, like a duplicate slug
+			return ['content' => [['type' => 'text', 'text' => $error->getMessage()]], 'isError' => true];
+		}
+
+		if (is_string($data)) {
+			return ['content' => [['type' => 'text', 'text' => $data]]];
+		}
+
+		return ['content' => [['type' => 'text', 'text' => self::json($data)]], 'structuredContent' => $data];
+	}
+
 	private static function listTools(Access $access): array
 	{
 		return [
-			'tools' => array_map(static function (Tool $tool) use ($access): array {
-				$definition = $tool->definition();
-				$schema = is_array($definition['inputSchema'] ?? null) ? $definition['inputSchema'] : [];
-				$summary = is_string($definition['description'] ?? null) ? $definition['description'] : '';
-				$definition['description'] = $summary . "\n\n" . Guide::parameters($schema);
-
-				if ($access->allows($tool->scope()) === false) {
-					$definition['description'] =
-						"Needs the `{$tool->scope()->value}` scope, which this connection does not have yet. A call asks the user to allow it in the browser, so ask the user first.\n\n"
-						. $definition['description'];
-				}
-
-				return ['name' => $tool->name(), ...$definition];
-			}, Tools::for($access)),
+			'tools' => self::definitions($access),
 			// the list depends on the role and the token scopes
 			'ttlMs' => 5 * 60 * 1000,
 			'cacheScope' => 'private',
@@ -213,32 +252,13 @@ final class Server
 			return self::error($id, self::INVALID_PARAMS, 'Unknown tool: ' . (is_string($name) ? $name : ''), 400);
 		}
 
-		if ($access->allows($tool->scope()) === false) {
-			return McpEndpoint::insufficientScope($tool->scope(), $access);
-		}
-
-		$arguments = new Arguments(is_array($params['arguments'] ?? null) ? $params['arguments'] : []);
-
 		try {
-			$data = $tool->call($arguments, $access);
-		} catch (ToolError|KirbyException $error) {
-			// Kirby exceptions are rule violations with messages for users, like a duplicate slug
-			return self::result($id, [
-				'content' => [['type' => 'text', 'text' => $error->getMessage()]],
-				'isError' => true,
-			]);
+			$result = self::run($tool, is_array($params['arguments'] ?? null) ? $params['arguments'] : [], $access);
 		} catch (ScopeRequired $error) {
 			return McpEndpoint::insufficientScope($error->scope, $access);
 		}
 
-		if (is_string($data)) {
-			return self::result($id, ['content' => [['type' => 'text', 'text' => $data]]]);
-		}
-
-		return self::result($id, [
-			'content' => [['type' => 'text', 'text' => self::json($data)]],
-			'structuredContent' => $data,
-		]);
+		return self::result($id, $result);
 	}
 
 	/**
