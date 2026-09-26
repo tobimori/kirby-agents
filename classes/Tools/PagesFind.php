@@ -108,28 +108,13 @@ final class PagesFind implements Tool
 
 		$pages = $pages->filter(static fn(Page $page): bool => $page->isListable());
 		$limit = $arguments->int('limit', 20, 1, 100);
-		$offset = self::offset($arguments->string('cursor'));
+		$offset = $arguments->offset();
 		$total = $pages->count();
 
 		return [
 			'total' => $total,
 			'pages' => array_values(array_map(PageInfo::summary(...), $pages->slice($offset, $limit)->values())),
-			'nextCursor' => ($offset + $limit) < $total ? base64_encode((string) ($offset + $limit)) : null,
+			'nextCursor' => Arguments::nextCursor($offset, $limit, $total),
 		];
-	}
-
-	private static function offset(?string $cursor): int
-	{
-		if ($cursor === null) {
-			return 0;
-		}
-
-		$offset = base64_decode($cursor, true);
-
-		if ($offset === false || !ctype_digit($offset)) {
-			throw new ToolError('`cursor` is not valid. Use `nextCursor` from the previous result.');
-		}
-
-		return (int) $offset;
 	}
 }

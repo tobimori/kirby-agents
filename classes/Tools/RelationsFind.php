@@ -54,11 +54,9 @@ final class RelationsFind implements Tool
 						'description' => 'Pages fields without a query: list the children and drafts of this page id. Without it, the top-level pages',
 					],
 					'limit' => ['type' => 'integer', 'minimum' => 1, 'maximum' => 50, 'default' => 20],
-					'pageNumber' => [
-						'type' => 'integer',
-						'minimum' => 1,
-						'default' => 1,
-						'description' => 'Page of the result list, for more than `limit` items',
+					'cursor' => [
+						'type' => 'string',
+						'description' => '`nextCursor` from the previous result, with the same `limit`',
 					],
 				],
 				'required' => ['page', 'field'],
@@ -83,7 +81,10 @@ final class RelationsFind implements Tool
 		$search = $arguments->string('search');
 		$parent = $arguments->string('parent');
 		$limit = $arguments->int('limit', 20, 1, 50);
-		$number = $arguments->int('pageNumber', 1, 1, 10000);
+		$offset = $arguments->offset();
+
+		// the pickers count in pages of `limit` items
+		$number = intdiv($offset, $limit) + 1;
 		$options = ['model' => $model, 'query' => $query, 'search' => $search, 'limit' => $limit, 'page' => $number];
 
 		$result = match (true) {
@@ -96,6 +97,8 @@ final class RelationsFind implements Tool
 		};
 
 		$max = $props['max'] ?? null;
+		$total = $result['pagination']['total'] ?? 0;
+		$total = is_int($total) ? $total : 0;
 
 		return [
 			'field' => $path,
@@ -106,8 +109,9 @@ final class RelationsFind implements Tool
 				($props['multiple'] ?? true) === false => 1,
 				default => null,
 			},
-			'total' => $result['pagination']['total'] ?? 0,
+			'total' => $total,
 			'items' => $result['data'],
+			'nextCursor' => Arguments::nextCursor(($number - 1) * $limit, $limit, $total),
 		];
 	}
 

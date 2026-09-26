@@ -94,6 +94,34 @@ final class Arguments
 	}
 
 	/**
+	 * Offset from the `cursor` argument, which is the `nextCursor` of a previous list
+	 */
+	public function offset(): int
+	{
+		$cursor = $this->string('cursor');
+
+		if ($cursor === null) {
+			return 0;
+		}
+
+		$offset = base64_decode($cursor, true);
+
+		if ($offset === false || !ctype_digit($offset)) {
+			throw new ToolError('`cursor` is not valid. Use `nextCursor` from the previous result.');
+		}
+
+		return (int) $offset;
+	}
+
+	/**
+	 * `nextCursor` for a list result, null on the last page
+	 */
+	public static function nextCursor(int $offset, int $limit, int $total): ?string
+	{
+		return ($offset + $limit) < $total ? base64_encode((string) ($offset + $limit)) : null;
+	}
+
+	/**
 	 * An object with names as keys, or an empty array when it is missing
 	 *
 	 * @return array<string, mixed>
