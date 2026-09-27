@@ -118,7 +118,6 @@ final class SiteOverview implements Tool
 				$title = null;
 			}
 
-			// blueprint titles can be translated: `title: { en: "Note", de: "Notiz" }`
 			$title = is_array($title) ? I18n::translate($title) : $title;
 
 			$blueprints[] = ['name' => $name, 'title' => is_string($title) ? $title : $name];
@@ -128,8 +127,6 @@ final class SiteOverview implements Tool
 	}
 
 	/**
-	 * Ids of the site and pages with a changes version, like the Changes dialog in the Panel
-	 *
 	 * @return list<string>
 	 */
 	private static function unsaved(): array

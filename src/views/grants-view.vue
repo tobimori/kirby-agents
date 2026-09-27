@@ -82,7 +82,6 @@ export default {
 </script>
 
 <style>
-/* like the view buttons of other views */
 .k-agents-grants-view .k-header-buttons {
 	align-self: center;
 }
@@ -95,7 +94,6 @@ export default {
 	width: 100%;
 	padding-block: 0;
 }
-/* Kirby only rounds the index column */
 .k-agents-grants-view .k-table tbody tr:last-child td:first-child {
 	border-end-start-radius: var(--rounded);
 }

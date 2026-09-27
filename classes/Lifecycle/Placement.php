@@ -15,15 +15,10 @@ use Kirby\Toolkit\I18n;
 use Throwable;
 
 /**
- * Where pages can be created and moved to, by the rules of the `pages` sections.
- * It reads the section props, because a `Section` object computes its Panel items,
- * which is slow and writes missing UUIDs into content files.
+ * Reads the section props: a `Section` object is slow and writes missing UUIDs into content files
  */
 final class Placement
 {
-	/**
-	 * Most pages to check for move targets
-	 */
 	public const MAX_MOVE_CHECKS = 300;
 
 	private const SORT = [
@@ -33,9 +28,6 @@ final class Placement
 		'datetime' => 'listed pages are sorted by their date field, the position is set automatically',
 	];
 
-	/**
-	 * How the page is sorted among its listed siblings, from `num` in its blueprint
-	 */
 	public static function sorting(Page $page): string
 	{
 		$num = $page->blueprint()->num();
@@ -44,10 +36,7 @@ final class Placement
 	}
 
 	/**
-	 * Templates for new children of the parent, like the add buttons of the pages sections
-	 * that list its children: in its own blueprint and, for pages, in the site blueprint
-	 *
-	 * @return array<string, string> title by template name
+	 * @return array<string, string>
 	 */
 	public static function templates(Site|Page $parent): array
 	{
@@ -66,7 +55,6 @@ final class Placement
 			}
 		}
 
-		// the role may not create some templates (`options.create` in the blueprint)
 		return array_filter(
 			$templates,
 			static fn(string $title, string $template): bool => self::draft($parent, $template)
@@ -76,9 +64,6 @@ final class Placement
 		);
 	}
 
-	/**
-	 * Unsaved draft for the template, to read its blueprint and permissions
-	 */
 	public static function draft(Site|Page $parent, string $template, string $slug = '__new__'): Page
 	{
 		$page = Page::factory([
@@ -89,18 +74,13 @@ final class Placement
 			'isDraft' => true,
 		]);
 
-		// copy, never move: with the slug of an existing draft, moving deletes its content from the disk
+		// never move: with the slug of an existing draft, that deletes the draft from the disk
 		$page->changeStorage(MemoryStorage::class, copy: true);
 
 		return $page;
 	}
 
 	/**
-	 * Ids of the site and pages the page can move to, with the checks of `PageRules::move`:
-	 * not into itself, no page with the same slug, and a pages section in the blueprint
-	 * of the target that lists its children and accepts the template.
-	 * page_update runs the real `PageRules::move` before a move.
-	 *
 	 * @return array{targets: list<string>, complete: bool}
 	 */
 	public static function moveTargets(Page $page, int $limit): array
@@ -139,9 +119,6 @@ final class Placement
 	}
 
 	/**
-	 * Props of the sections of a type (`pages` or `files`) in the blueprint of the model
-	 * that list the children or files of the parent
-	 *
 	 * @return list<array<array-key, mixed>>
 	 */
 	public static function sections(Site|Page $model, Site|Page $parent, string $type = 'pages'): array
@@ -170,9 +147,6 @@ final class Placement
 		return $sections;
 	}
 
-	/**
-	 * The `parent` prop is a query from the model. Without it, the section lists the children of the model.
-	 */
 	public static function lists(Site|Page $model, array $section, Site|Page $parent): bool
 	{
 		try {
@@ -191,13 +165,10 @@ final class Placement
 	}
 
 	/**
-	 * Templates the add button offers: `create`, else `templates`, else all page blueprints
-	 *
 	 * @return list<string>
 	 */
 	private static function names(array $section): array
 	{
-		// `create: true` only allows creation, like no `create`
 		$names = self::strings($section['create'] ?? null);
 		$names = $names !== [] ? $names : self::templatesProp($section);
 		$names = $names !== [] ? $names : self::strings(App::instance()->blueprints());
@@ -214,8 +185,6 @@ final class Placement
 	}
 
 	/**
-	 * A string or a list as a list of non-empty strings
-	 *
 	 * @return list<string>
 	 */
 	private static function strings(mixed $value): array
@@ -232,9 +201,6 @@ final class Placement
 	}
 
 	/**
-	 * The `add` value of the section: false when creation is off, the section is full,
-	 * or it would not show the new pages because of its status filter
-	 *
 	 * @param list<string> $names
 	 */
 	private static function canAdd(Site|Page $model, Site|Page $parent, array $section, array $names): bool
@@ -275,9 +241,6 @@ final class Placement
 		return in_array($status, ['draft', 'published', 'listed', 'unlisted'], true) ? $status : 'all';
 	}
 
-	/**
-	 * Number of pages the section shows, to compare with `max`
-	 */
 	private static function listed(Site|Page $model, Site|Page $parent, array $section, string $status): int
 	{
 		$query = $section['query'] ?? null;

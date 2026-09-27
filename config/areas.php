@@ -8,8 +8,6 @@ use tobimori\Agents\OAuth\Authorization;
 use tobimori\Agents\Panel\Grants;
 
 /**
- * Panel routes for the endpoints, unless the `path` option puts them outside the Panel
- *
  * @return array<string, array<string, mixed>>
  */
 $public = static function (): array {

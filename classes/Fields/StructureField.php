@@ -11,9 +11,6 @@ use tobimori\Agents\Content\Presenter;
 use tobimori\Agents\Schema\Compiler;
 use tobimori\Agents\Tools\ToolError;
 
-/**
- * Rows with the same fields. Each row is a node of kind `row`.
- */
 class StructureField extends ObjectField
 {
 	public function describe(Compiler $schema): string
@@ -26,9 +23,6 @@ class StructureField extends ObjectField
 		return 'row';
 	}
 
-	/**
-	 * Rows are a list, so ignored sub-fields cannot be kept like in an object
-	 */
 	public function input(mixed $value, mixed $current): mixed
 	{
 		return self::json($value);

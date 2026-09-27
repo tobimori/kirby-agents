@@ -16,14 +16,8 @@ use tobimori\Agents\OAuth\Grant;
 use tobimori\Agents\OAuth\GrantStore;
 use tobimori\Agents\OAuth\Scope;
 
-/**
- * Panel view of connected agents. Users see their own grants, admins see all.
- */
 final class Grants
 {
-	/**
-	 * `GET /panel/agents`
-	 */
 	public static function view(): array
 	{
 		$current = self::current();
@@ -39,7 +33,6 @@ final class Grants
 			}
 		}
 
-		// the most recently active first
 		usort($grants, static fn(array $a, array $b): int => $b['active'] <=> $a['active']);
 
 		return [
@@ -53,9 +46,6 @@ final class Grants
 		];
 	}
 
-	/**
-	 * Dialog to confirm a revoke
-	 */
 	public static function confirm(string $userId, string $grantId): array
 	{
 		[$user, $grant] = self::find($userId, $grantId);
@@ -63,7 +53,7 @@ final class Grants
 		return [
 			'component' => 'k-remove-dialog',
 			'props' => [
-				// the client chose its name, and the dialog shows the text as HTML
+				// the client chose its name, and the dialog renders HTML
 				'text' => I18n::template('agents.grants.revoke.confirm', null, [
 					'name' => Escape::html($grant->name),
 					'user' => Escape::html($user->email() ?? $user->id()),
@@ -73,9 +63,6 @@ final class Grants
 		];
 	}
 
-	/**
-	 * Dialog to change the scopes. It offers the scopes that the role of the grant's user allows
-	 */
 	public static function scopesDialog(string $userId, string $grantId): array
 	{
 		[$user, $grant] = self::find($userId, $grantId);
@@ -97,16 +84,12 @@ final class Grants
 						], $allowed),
 					],
 				],
-				// scopes the role no longer allows are not offered, and saving removes them
 				'value' => ['scopes' => array_values(array_intersect($grant->scopes, $allowed))],
 				'submitButton' => I18n::translate('save'),
 			],
 		];
 	}
 
-	/**
-	 * Saves the scopes. The agent gets them with its next request, without a new login
-	 */
 	public static function changeScopes(string $userId, string $grantId): array
 	{
 		[$user] = self::find($userId, $grantId);
@@ -126,9 +109,6 @@ final class Grants
 		return ['event' => 'agents.grant.scopes'];
 	}
 
-	/**
-	 * Revokes the grant: its access token stops working at once, and the refresh token too
-	 */
 	public static function revoke(string $userId, string $grantId): array
 	{
 		[$user] = self::find($userId, $grantId);
@@ -168,7 +148,6 @@ final class Grants
 	 */
 	private static function item(User $user, Grant $grant): array
 	{
-		// clients with a metadata document are identified by their URL, the others registered themselves
 		$host = str_starts_with($grant->client, 'https://') ? parse_url($grant->client, PHP_URL_HOST) : null;
 		$dialogs = 'agents/grants/' . $user->id() . '/' . $grant->id;
 
@@ -180,7 +159,6 @@ final class Grants
 				'link' => $user->panel()->url(true),
 				'image' => $user->panel()->image(),
 			],
-			// scopes the role no longer allows do not apply, so they are not shown
 			'scopes' => array_map(
 				static fn(string $scope): array => [
 					'value' => $scope,
@@ -195,9 +173,6 @@ final class Grants
 		];
 	}
 
-	/**
-	 * Label of a scope, or its short label for the table
-	 */
 	private static function label(string $scope, string $variant = ''): string
 	{
 		$label = I18n::translate('agents.scope.' . $variant . $scope);

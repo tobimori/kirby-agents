@@ -7,9 +7,6 @@ namespace tobimori\Agents\Fields;
 use tobimori\Agents\Content\InputCheck;
 use tobimori\Agents\Schema\Compiler;
 
-/**
- * Writer: HTML with the marks and nodes the blueprint allows
- */
 class WriterField extends Field
 {
 	private const MARKS = [
@@ -32,9 +29,6 @@ class WriterField extends Field
 		'quote' => 'blockquote',
 	];
 
-	/**
-	 * HTML tags of the marks and nodes, to find tags the field does not allow
-	 */
 	private const TAGS = [
 		'bold' => ['strong', 'b'],
 		'italic' => ['em', 'i'],
@@ -65,10 +59,6 @@ class WriterField extends Field
 		return 'html, blocks: ' . self::tags($blocks) . ', inline: ' . self::tags($tags) . $this->length();
 	}
 
-	/**
-	 * Kirby stores any HTML, because the Panel only offers the enabled marks and nodes.
-	 * Tags of other plugins' nodes are unknown here, so they pass.
-	 */
 	public function check(mixed $value, InputCheck $check, string $where): void
 	{
 		if (
@@ -125,8 +115,6 @@ class WriterField extends Field
 	}
 
 	/**
-	 * Block nodes, none in inline mode. Outside inline mode, the writer always wraps text in paragraphs
-	 *
 	 * @return list<string>
 	 */
 	private function blockNodes(): array
@@ -145,8 +133,6 @@ class WriterField extends Field
 	}
 
 	/**
-	 * `null` means the defaults, `true` all, `false` none
-	 *
 	 * @param list<string> $defaults
 	 * @param array<string, string> $all
 	 *

@@ -60,7 +60,6 @@ final class FileDelete implements Tool
 
 		$fileId = $file->id();
 
-		// Kirby checks the permission (`options.delete` in the file blueprint)
 		$file->delete();
 
 		return "Deleted `{$fileId}`.";

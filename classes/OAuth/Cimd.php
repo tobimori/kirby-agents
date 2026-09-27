@@ -7,9 +7,6 @@ namespace tobimori\Agents\OAuth;
 use Kirby\Cms\App;
 use Throwable;
 
-/**
- * Client ID Metadata Documents: the client id is an HTTPS URL to a JSON document
- */
 final class Cimd
 {
 	private const MAX_BYTES = 10 * 1024;
@@ -40,9 +37,6 @@ final class Cimd
 		return self::toClient($url, $data);
 	}
 
-	/**
-	 * HTTPS with a path, no fragment, no credentials
-	 */
 	private static function isValidUrl(string $url): bool
 	{
 		$parts = parse_url($url);
@@ -82,9 +76,7 @@ final class Cimd
 	}
 
 	/**
-	 * Fetches the document from a public IP only, without redirects
-	 *
-	 * @return array{0: array, 1: int}|null document and cache time in minutes
+	 * @return array{0: array, 1: int}|null
 	 */
 	private static function fetch(string $url): ?array
 	{
@@ -142,9 +134,6 @@ final class Cimd
 		return [$data, self::cacheMinutes($headers['cache-control'] ?? '')];
 	}
 
-	/**
-	 * Resolves the host and returns an IP only if all addresses are public
-	 */
 	private static function publicIp(string $host): ?string
 	{
 		try {
@@ -181,9 +170,6 @@ final class Cimd
 		return $ips;
 	}
 
-	/**
-	 * `max-age` from Cache-Control, between 5 minutes and 1 day, default 1 hour
-	 */
 	private static function cacheMinutes(string $cacheControl): int
 	{
 		$match = [];

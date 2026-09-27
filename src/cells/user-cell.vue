@@ -7,7 +7,6 @@
 </template>
 
 <script>
-// Kirby's users preview, but as a link
 export default {
 	props: {
 		value: Object

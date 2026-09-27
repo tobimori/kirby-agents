@@ -8,14 +8,6 @@ use tobimori\Agents\Fields\Field;
 use tobimori\Agents\Fields\Fields;
 use tobimori\Agents\Tools\ToolError;
 
-/**
- * Applies operations to the form values of one read.
- *
- * All refs point to the read version. Each node carries a marker (`__ref` for
- * existing nodes, `__new` for inserted ones), so an operation finds its node
- * even after earlier operations moved or inserted other nodes.
- * The field classes create new items and check where nodes may go.
- */
 final class Editor
 {
 	private const REF = '__ref';
@@ -28,15 +20,12 @@ final class Editor
 	private array $values;
 
 	/**
-	 * What we know about each node: kind, type, the fields of its content,
-	 * and the props of the field that holds it
-	 *
 	 * @var array<int|string, array{kind: string, type: string, fields: array<array-key, mixed>, props: array<array-key, mixed>}>
 	 */
 	private array $nodes = [];
 
 	/**
-	 * @var array<string, true> top-level fields that the operations changed
+	 * @var array<string, true>
 	 */
 	private array $changed = [];
 
@@ -83,8 +72,6 @@ final class Editor
 	}
 
 	/**
-	 * Form values without markers, and where each new node is now
-	 *
 	 * @return array{values: array<array-key, mixed>, created: list<array{name: string|null, path: list<string|int>}>, changed: list<string>}
 	 */
 	public function result(): array
@@ -94,7 +81,6 @@ final class Editor
 		foreach (array_keys($this->nodes) as $key) {
 			$path = is_string($key) ? self::search($this->values, self::NEW, $key, []) : null;
 
-			// unnamed inserts have internal keys like `_4`, removed inserts have no path
 			if ($path !== null) {
 				$created[] = ['name' => str_starts_with((string) $key, '_') ? null : (string) $key, 'path' => $path];
 			}
@@ -215,8 +201,6 @@ final class Editor
 	}
 
 	/**
-	 * Where an insert or move goes: `after` or `before` a node, or `into` a field or node
-	 *
 	 * @return array{path: list<string|int>, index: int|null, props: array<array-key, mixed>, kind: string}
 	 */
 	private function target(array $op): array
@@ -247,9 +231,6 @@ final class Editor
 	}
 
 	/**
-	 * `into` a top-level field name, or into a node: a nested field (`slot`),
-	 * or what the field class allows, like a layout column
-	 *
 	 * @return array{path: list<string|int>, index: int|null, props: array<array-key, mixed>, kind: string}
 	 */
 	private function into(mixed $into, array $op): array
@@ -306,12 +287,8 @@ final class Editor
 		];
 	}
 
-	/**
-	 * A ref number from the read, or the `as` name of a node inserted earlier in this call
-	 */
 	private function key(mixed $ref): int|string
 	{
-		// clients that send refs as strings, like `"5"`
 		if (is_string($ref) && ctype_digit($ref)) {
 			$ref = (int) $ref;
 		}
@@ -328,8 +305,6 @@ final class Editor
 	}
 
 	/**
-	 * Current path of a node, found by its marker
-	 *
 	 * @return list<string|int>
 	 */
 	private function pathOf(int|string $key): array
@@ -405,8 +380,6 @@ final class Editor
 	}
 
 	/**
-	 * Inserts into the list at the path, at the end without an index
-	 *
 	 * @param list<string|int> $path
 	 */
 	private static function insertAt(array $values, array $path, ?int $index, mixed $node): array

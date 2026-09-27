@@ -13,9 +13,6 @@ final class Secret
 {
 	private static ?string $key = null;
 
-	/**
-	 * HMAC key from the `secret` option, or from a file that is generated on first use
-	 */
 	public static function key(): string
 	{
 		if (self::$key !== null) {
@@ -36,10 +33,6 @@ final class Secret
 		return Token::encode(hash_hmac('sha256', $data, self::key(), true));
 	}
 
-	/**
-	 * Reads the key, or writes a new one if the file is empty.
-	 * The lock makes sure that parallel requests use the same key.
-	 */
 	private static function fromFile(string $file): string
 	{
 		Dir::make(dirname($file));

@@ -7,8 +7,7 @@ namespace tobimori\Agents\Http;
 use Kirby\Http\Response;
 
 /**
- * Response with a `WWW-Authenticate` header. PHP changes the status to 401 when this
- * header is sent, and Kirby sends the status before the headers. This keeps a 403.
+ * PHP changes the status to 401 when `WWW-Authenticate` is sent after it, this keeps a 403
  */
 final class ChallengeResponse extends Response
 {

@@ -11,32 +11,18 @@ use tobimori\Agents\Content\Presenter;
 use tobimori\Agents\Schema\Compiler;
 use tobimori\Agents\Tools\ToolError;
 
-/**
- * What the agent tools know about one field type.
- * Kirby still reads and stores the values: these classes only add what the Panel does not need,
- * like a text notation of the field, previews, and checks for input the Panel never sends.
- *
- * Register a class for a custom field type with the option `fields`:
- * `'tobimori.agents.fields' => ['rating' => RatingField::class]`
- */
 abstract class Field
 {
 	/**
-	 * @param array<array-key, mixed> $props field props from the Kirby form
+	 * @param array<array-key, mixed> $props
 	 */
 	final public function __construct(
 		public readonly array $props,
 	) {}
 
-	/**
-	 * Type and constraints for schema_get, for example `text, max 120 characters`
-	 */
 	abstract public function describe(Compiler $schema): string;
 
 	/**
-	 * Nested field sets for field paths like `text > image > alt`:
-	 * by block type, `settings` for layout rows, or `''` for the fields of a structure or object
-	 *
 	 * @return array<string, array<array-key, mixed>>
 	 */
 	public function fieldSets(): array
@@ -44,17 +30,12 @@ abstract class Field
 		return [];
 	}
 
-	/**
-	 * Node kind of the items that agents can insert into the field
-	 */
 	public function itemKind(): ?string
 	{
 		return null;
 	}
 
 	/**
-	 * Creates an item of the node kind, and its node meta
-	 *
 	 * @param array<array-key, mixed> $op
 	 * @param array<array-key, mixed> $content
 	 *
@@ -66,8 +47,6 @@ abstract class Field
 	}
 
 	/**
-	 * Checks that a node can move into the field
-	 *
 	 * @param array{kind: string, type: string, fields: array<array-key, mixed>, props: array<array-key, mixed>} $node
 	 */
 	public function accept(string $kind, array $node): void
@@ -78,12 +57,10 @@ abstract class Field
 	}
 
 	/**
-	 * Where inserts `into` a node of the field go, if not into a nested field (`slot`): for example a layout column
-	 *
-	 * @param mixed $node value of the node
+	 * @param mixed $node
 	 * @param array<array-key, mixed> $op
 	 *
-	 * @return array{path: list<string|int>, kind: string}|null path from the node, and the node kind of the items
+	 * @return array{path: list<string|int>, kind: string}|null
 	 */
 	public function into(string $kind, mixed $node, array $op): ?array
 	{
@@ -91,8 +68,6 @@ abstract class Field
 	}
 
 	/**
-	 * Keys from a node of the field to the values of its fields, for example `content` for blocks
-	 *
 	 * @return list<string>
 	 */
 	public function contentPath(string $kind): array
@@ -100,30 +75,20 @@ abstract class Field
 		return [];
 	}
 
-	/**
-	 * Input from the agent before Kirby gets it. `$current` is the value before the change
-	 */
 	public function input(mixed $value, mixed $current): mixed
 	{
 		return $value;
 	}
 
-	/**
-	 * Adds errors for input that Kirby changes without an error
-	 */
 	public function check(mixed $value, InputCheck $check, string $where): void {}
 
 	/**
-	 * Numbers the nested nodes of the value
-	 *
 	 * @param array<array-key, mixed> $value
 	 * @param list<string|int> $path
 	 */
 	public function nodes(array $value, Nodes $index, array $path, ?int $parent, string $field): void {}
 
 	/**
-	 * Full value for content_get
-	 *
 	 * @param list<string|int> $path
 	 */
 	public function present(mixed $value, array $path, Presenter $presenter): mixed
@@ -131,49 +96,31 @@ abstract class Field
 		return $value;
 	}
 
-	/**
-	 * Full value of one node of this field
-	 */
 	public function presentNode(Node $node, mixed $value, Presenter $presenter): array
 	{
 		return ['ref' => $node->ref, 'value' => $value];
 	}
 
-	/**
-	 * Value in the outline, after the field name
-	 */
 	public function summary(mixed $value, Presenter $presenter): string
 	{
 		return Presenter::short($this->present($value, [], $presenter));
 	}
 
-	/**
-	 * One node of this field in the outline, after the ref number
-	 */
 	public function nodeSummary(Node $node, mixed $value, Presenter $presenter): string
 	{
 		return Presenter::short($value);
 	}
 
-	/**
-	 * Value in the short preview of a node or object, or null to leave it out
-	 */
 	public function preview(mixed $value, Presenter $presenter): ?string
 	{
 		return $this->summary($value, $presenter);
 	}
 
-	/**
-	 * Text says more about an item than options or flags, so previews show it first
-	 */
 	public function prominent(): bool
 	{
 		return false;
 	}
 
-	/**
-	 * Lists and objects sent as JSON text. Some clients do this, because the schema of `value` has no type.
-	 */
 	public static function json(mixed $value): mixed
 	{
 		if (!is_string($value)) {
@@ -191,9 +138,6 @@ abstract class Field
 		return is_array($decoded) ? $decoded : $value;
 	}
 
-	/**
-	 * A value in a notation: strings in quotes, the rest as JSON
-	 */
 	public static function quote(mixed $value): string
 	{
 		return is_string($value) ? '"' . $value . '"' : (string) json_encode($value);
@@ -209,9 +153,6 @@ abstract class Field
 		return "{$where} has no field `{$field}`. Fields: " . ($names === [] ? 'none' : implode(', ', $names));
 	}
 
-	/**
-	 * The field type, or the type from the blueprint hint `agents.as`
-	 */
 	protected function type(): string
 	{
 		$type = Fields::hint($this->props, 'as') ?? $this->props['type'] ?? null;
@@ -224,9 +165,6 @@ abstract class Field
 		return is_string($this->props['name'] ?? null) ? $this->props['name'] : 'item';
 	}
 
-	/**
-	 * Allowed values: `"a" | "b" (Label)`, or `strings` without options
-	 */
 	protected function options(): string
 	{
 		$options = is_array($this->props['options'] ?? null) ? $this->props['options'] : [];
@@ -263,8 +201,6 @@ abstract class Field
 	}
 
 	/**
-	 * `min`, `max`, and `step` as they are set
-	 *
 	 * @return list<string>
 	 */
 	protected function limits(): array
@@ -280,15 +216,11 @@ abstract class Field
 		return $parts;
 	}
 
-	/**
-	 * Number of items for list-like fields
-	 */
 	protected function count(): string
 	{
 		$min = is_int($this->props['min'] ?? null) ? $this->props['min'] : null;
 		$max = is_int($this->props['max'] ?? null) ? $this->props['max'] : null;
 
-		// relation fields with `multiple: false` take one item
 		if (($this->props['multiple'] ?? true) === false) {
 			$max = 1;
 		}
@@ -301,9 +233,6 @@ abstract class Field
 		};
 	}
 
-	/**
-	 * Outline value of a list field: `blocks, 3 items`
-	 */
 	protected function listSummary(mixed $value): string
 	{
 		$count = is_array($value) ? count($value) : 0;
@@ -312,8 +241,6 @@ abstract class Field
 	}
 
 	/**
-	 * Fails for content keys that are not fields
-	 *
 	 * @param array<array-key, mixed> $content
 	 * @param array<array-key, mixed> $fields
 	 */

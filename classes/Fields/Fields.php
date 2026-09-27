@@ -11,23 +11,12 @@ use Kirby\Form\FieldClass;
 use Kirby\Plugin\Plugin;
 use tobimori\Agents\Agents;
 
-/**
- * Finds the class for a field type: from the option `fields`, from other plugins,
- * from the core types, or CustomField for types that no class knows.
- *
- * Plugins declare classes for their field types in their plugin definition. Kirby ignores the key
- * without Kirby Agents, and the class is only loaded when Kirby Agents uses it:
- * `'tobimori.agents.fields' => ['alt-text' => AltTextAgentField::class]`
- */
 final class Fields
 {
-	/**
-	 * Key in the plugin definition of other plugins
-	 */
 	public const EXTENSION = 'tobimori.agents.fields';
 
 	/**
-	 * @var array<array-key, mixed>|null classes by type, from the site option and all plugins
+	 * @var array<array-key, mixed>|null
 	 */
 	private static ?array $registered = null;
 
@@ -70,10 +59,7 @@ final class Fields
 	];
 
 	/**
-	 * The class for a field. The blueprint hint `agents.as` uses the class of another type,
-	 * for example `as: number` for a custom rating field.
-	 *
-	 * @param array<array-key, mixed> $props field props from the Kirby form
+	 * @param array<array-key, mixed> $props
 	 */
 	public static function for(array $props): Field
 	{
@@ -92,15 +78,10 @@ final class Fields
 		return $class === null ? new CustomField($props) : new $class($props);
 	}
 
-	/**
-	 * Props of a top-level form field, with the blueprint hints
-	 */
 	public static function props(FormField|FieldClass $field): array
 	{
 		$props = $field->toArray();
 
-		// class-based fields (blocks, layout, entries) leave unknown blueprint keys out of `toArray()`.
-		// Nested in other fields, Kirby only keeps `toArray()`, so hints on them get lost there
 		// @mago-expect analysis:non-documented-method (Kirby reads unknown keys with __call)
 		$agents = $field instanceof FieldClass ? $field->agents() : null;
 
@@ -112,11 +93,9 @@ final class Fields
 	}
 
 	/**
-	 * Fields without the hint `agents.ignore: true`
-	 *
 	 * @template K of array-key
 	 *
-	 * @param array<K, mixed> $fields props by field name
+	 * @param array<K, mixed> $fields
 	 *
 	 * @return array<K, mixed>
 	 */
@@ -129,10 +108,7 @@ final class Fields
 	}
 
 	/**
-	 * Field classes from other plugins and from the site option. The site option wins,
-	 * so a site can replace the class of a plugin
-	 *
-	 * @return array<array-key, mixed> classes by type
+	 * @return array<array-key, mixed>
 	 */
 	private static function registered(): array
 	{
@@ -153,16 +129,12 @@ final class Fields
 	}
 
 	/**
-	 * The class for a type: registered by a plugin or the site, from the core types,
-	 * or the class of the type it extends in Kirby, like `writer` for a `seo-writer` field
-	 *
 	 * @return class-string<Field>|null
 	 */
 	private static function find(string $type): ?string
 	{
 		$registered = self::registered();
 
-		// a limit, in case field definitions extend each other in a loop
 		for ($depth = 0; $depth < 10 && $type !== null; $depth++) {
 			$class = $registered[$type] ?? self::CORE[$type] ?? null;
 
@@ -189,10 +161,6 @@ final class Fields
 		return null;
 	}
 
-	/**
-	 * The type that a field type of a plugin extends: `extends` in an array definition,
-	 * or the parent class of a class-based field, like Kirby's BlocksField
-	 */
 	private static function extended(string $type): ?string
 	{
 		$definition = FormField::$types[$type] ?? null;
@@ -209,7 +177,6 @@ final class Fields
 			return null;
 		}
 
-		// definitions in a file are loaded on first use
 		if (is_string($definition) || is_array($definition)) {
 			$definition = FormField::load($type);
 		}
@@ -218,8 +185,6 @@ final class Fields
 	}
 
 	/**
-	 * A blueprint hint: a key under `agents` in the field definition
-	 *
 	 * @param array<array-key, mixed> $props
 	 */
 	public static function hint(array $props, string $key): mixed

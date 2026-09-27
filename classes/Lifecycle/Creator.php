@@ -16,10 +16,6 @@ use tobimori\Agents\Content\Writer;
 use tobimori\Agents\Schema\Compiler;
 use tobimori\Agents\Tools\ToolError;
 
-/**
- * Creates pages with the logic of the Panel's create dialog: the `create` options of the
- * blueprint set the title and slug templates, the fields to fill, and the status
- */
 final class Creator
 {
 	private readonly PageCreateDialog $dialog;
@@ -40,9 +36,6 @@ final class Creator
 		);
 	}
 
-	/**
-	 * Status of new pages: `draft` unless the blueprint sets `create.status`
-	 */
 	public function status(): string
 	{
 		$status = $this->option('status');
@@ -51,8 +44,6 @@ final class Creator
 	}
 
 	/**
-	 * The create options for page_rules
-	 *
 	 * @return array{status: string, title: string, slug: string, sort: string, fields?: array<string, string>}
 	 */
 	public function describe(): array
@@ -71,9 +62,7 @@ final class Creator
 	}
 
 	/**
-	 * Checks the input and creates the page. Without `$save`, only checks.
-	 *
-	 * @param array<array-key, mixed> $content values of the create fields
+	 * @param array<array-key, mixed> $content
 	 */
 	public function create(array $content, bool $save): ?Page
 	{
@@ -93,7 +82,6 @@ final class Creator
 		$input = [...$content, 'title' => $this->title ?? '', 'slug' => $this->slug ?? ''];
 		$resolved = $this->dialog->resolveFieldTemplates($input);
 
-		// the slug field of the Panel dialog follows the title
 		if (!is_string($resolved['slug'] ?? null) || $resolved['slug'] === '') {
 			$input['slug'] = Str::slug(is_string($resolved['title'] ?? null) ? $resolved['title'] : '');
 		}
@@ -120,10 +108,7 @@ final class Creator
 	}
 
 	/**
-	 * The dialog in the Panel checks the create fields in the browser, so check them here.
-	 * Then the checks of the dialog and of `PageRules::create`, which runs only when the page is saved.
-	 *
-	 * @param array<array-key, mixed> $data sanitized input
+	 * @param array<array-key, mixed> $data
 	 * @param array<string, array<array-key, mixed>> $fields
 	 * @param array<array-key, mixed> $content
 	 */
@@ -147,8 +132,6 @@ final class Creator
 	}
 
 	/**
-	 * Props of the create fields, with resolved options
-	 *
 	 * @return array<string, array<array-key, mixed>>
 	 */
 	private function fields(): array

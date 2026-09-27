@@ -12,9 +12,6 @@ use tobimori\Agents\Http\Json;
 
 final class Metadata
 {
-	/**
-	 * OAuth 2.0 Protected Resource Metadata (RFC 9728)
-	 */
 	public static function protectedResource(): array
 	{
 		return [
@@ -26,9 +23,6 @@ final class Metadata
 		];
 	}
 
-	/**
-	 * OAuth 2.0 Authorization Server Metadata (RFC 8414)
-	 */
 	public static function authorizationServer(): array
 	{
 		$issuer = Agents::issuer();
@@ -50,9 +44,6 @@ final class Metadata
 		];
 	}
 
-	/**
-	 * URL of the protected resource metadata, for `WWW-Authenticate`
-	 */
 	public static function protectedResourceUrl(): string
 	{
 		return (
@@ -62,9 +53,6 @@ final class Metadata
 		);
 	}
 
-	/**
-	 * URL path without slashes at the ends
-	 */
 	public static function path(string $url): string
 	{
 		return trim(Url::path($url), '/');

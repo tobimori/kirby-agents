@@ -63,10 +63,10 @@ final class ContentUpdate implements Tool
 							'type' => 'object',
 							'properties' => [
 								'op' => ['type' => 'string', 'enum' => ['set', 'insert', 'move', 'remove']],
-								// string first: some clients use only the first type, and names like `a` must work
+								// string first: some clients use only the first type
 								'ref' => ['type' => ['string', 'integer']],
 								'field' => ['type' => 'string'],
-								// any JSON value, so no type. Lists and objects may also come as JSON text
+								// no type: strict clients drop tools with an empty schema
 								'value' => ['description' => 'New value in the format of the field in schema_get'],
 								'type' => ['type' => 'string'],
 								'content' => ['type' => 'object'],
@@ -120,7 +120,7 @@ final class ContentUpdate implements Tool
 		$version = $arguments->enum('version', ['changes', 'latest'], 'changes');
 		$model = Models::content((string) $arguments->string('page'));
 
-		// drafts are not public, so saving their latest version publishes nothing
+		// drafts are not public
 		$publishes = $version === 'latest' && !($model instanceof Page && $model->isDraft());
 
 		if ($publishes && $access->allows(Scope::ContentPublish) === false) {
@@ -153,7 +153,7 @@ final class ContentUpdate implements Tool
 			$lines[] = 'Dry run: the operations are valid. Nothing was saved. The content would be:';
 			$after = $base->withValues($outcome['values']);
 		} else {
-			// after a change, Kirby keeps the old state in the old model object
+			// the old model object keeps the old state
 			$after = Reader::read(Models::content((string) $arguments->string('page')), null, $language);
 			$lines[] = match (true) {
 				$publishes => 'Saved and published.',
@@ -185,8 +185,6 @@ final class ContentUpdate implements Tool
 	}
 
 	/**
-	 * `r = 17 (layout row)` or `19 (block heading)` for each insert, from its path after the change
-	 *
 	 * @param list<array{name: string|null, path: list<string|int>}> $created
 	 *
 	 * @return list<string>

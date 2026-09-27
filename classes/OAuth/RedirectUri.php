@@ -10,9 +10,6 @@ final class RedirectUri
 
 	private const BLOCKED_SCHEMES = ['http', 'javascript', 'data', 'file', 'vbscript', 'blob', 'about', 'ws', 'wss'];
 
-	/**
-	 * HTTPS, loopback HTTP, or a custom app scheme like `cursor://`, never with a fragment
-	 */
 	public static function isValid(string $uri): bool
 	{
 		$parts = parse_url($uri);
@@ -42,9 +39,6 @@ final class RedirectUri
 		);
 	}
 
-	/**
-	 * Exact match, but loopback URIs match on any port (OAuth 2.1, RFC 8252)
-	 */
 	public static function matches(string $registered, string $given): bool
 	{
 		if ($registered === $given) {
@@ -58,9 +52,6 @@ final class RedirectUri
 		return self::withoutPort($registered) === self::withoutPort($given);
 	}
 
-	/**
-	 * Hostname to show on the consent screen, or the scheme for app URIs
-	 */
 	public static function display(string $uri): string
 	{
 		$parts = parse_url($uri);

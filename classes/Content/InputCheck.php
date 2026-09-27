@@ -7,10 +7,6 @@ namespace tobimori\Agents\Content;
 use Kirby\Cms\ModelWithContent;
 use tobimori\Agents\Fields\Fields;
 
-/**
- * Checks input that Kirby changes without an error, because the Panel never sends it.
- * For example, option fields drop values that are not an option. The field classes do the checks.
- */
 final class InputCheck
 {
 	/**
@@ -19,7 +15,7 @@ final class InputCheck
 	private array $errors = [];
 
 	/**
-	 * @var array<string, true> JSON of each value in the content before the change
+	 * @var array<string, true>
 	 */
 	private array $old = [];
 
@@ -28,8 +24,8 @@ final class InputCheck
 	) {}
 
 	/**
-	 * @param array<array-key, mixed> $fields props by field name
-	 * @param array<array-key, mixed> $before content before the change: its values are not checked
+	 * @param array<array-key, mixed> $fields
+	 * @param array<array-key, mixed> $before
 	 *
 	 * @return list<string>
 	 */
@@ -45,8 +41,6 @@ final class InputCheck
 	}
 
 	/**
-	 * Checks the values of some fields. `$where` comes before each field name in the errors
-	 *
 	 * @param array<array-key, mixed> $fields
 	 */
 	public function fields(array $fields, array $values, string $where): void
@@ -58,10 +52,6 @@ final class InputCheck
 		}
 	}
 
-	/**
-	 * False for a single value (text, option, reference) that the content had before,
-	 * anywhere. Old content should not block a change, also when it moved.
-	 */
 	public function isNew(mixed $value): bool
 	{
 		return ($this->old[(string) json_encode($value)] ?? false) === false;

@@ -10,16 +10,11 @@ use Kirby\Content\LockedContentException;
 use Kirby\Form\Fields;
 use tobimori\Agents\Tools\ToolError;
 
-/**
- * Saves form values like the Panel does: fill the fields from the changes
- * (or latest) version, submit the new values, save to the changes version.
- * Unlike the Panel, invalid values in the changed fields are not saved.
- */
 final class Writer
 {
 	/**
-	 * @param array<array-key, mixed> $values form values
-	 * @param list<string> $changed top-level fields to submit
+	 * @param array<array-key, mixed> $values
+	 * @param list<string> $changed
 	 *
 	 * @return array{errors: list<string>, warnings: list<string>, values: array<array-key, mixed>}
 	 */
@@ -46,11 +41,8 @@ final class Writer
 		$fields->fill(input: $source->content($language)->toArray());
 		$fields->submit(input: array_intersect_key($values, array_flip($changed)));
 
-		// the values as Kirby will store them, with defaults and normalized relations
 		$result = array_intersect_key($fields->toFormValues(), $base->fields);
 
-		// Kirby drops unknown options and references without an error, so check the input.
-		// Values from the content before are not checked, so old content does not block a change
 		$errors = InputCheck::errors(
 			$model,
 			array_intersect_key($base->fields, array_flip($changed)),
@@ -59,7 +51,6 @@ final class Writer
 		);
 		$warnings = [];
 
-		// Kirby keeps these fields the same in all languages and ignores them in translations
 		if ($language->isDefault() === false) {
 			$default = App::instance()->defaultLanguage()?->code() ?? 'default';
 
@@ -85,7 +76,6 @@ final class Writer
 		try {
 			$changes->save(fields: $fields->toStoredValues(), language: $language);
 
-			// the Panel does the same: no changes version without changes
 			if ($changes->isIdentical(version: $latest, language: $language)) {
 				$changes->delete($language);
 			} elseif ($publish) {
@@ -99,8 +89,6 @@ final class Writer
 	}
 
 	/**
-	 * `name: message` by field name
-	 *
 	 * @return array<string, string>
 	 */
 	public static function errors(Fields $fields): array
@@ -116,7 +104,7 @@ final class Writer
 	}
 
 	/**
-	 * @param array<array-key, mixed> $lock `Lock::toArray()`
+	 * @param array<array-key, mixed> $lock
 	 */
 	public static function locked(array $lock): ToolError
 	{

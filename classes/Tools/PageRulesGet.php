@@ -122,8 +122,6 @@ final class PageRulesGet implements Tool
 	}
 
 	/**
-	 * Templates the page can change to
-	 *
 	 * @return list<string>
 	 */
 	private static function templates(Page $page): array
@@ -142,7 +140,7 @@ final class PageRulesGet implements Tool
 	}
 
 	/**
-	 * @return array<string, string> label by status
+	 * @return array<string, string>
 	 */
 	private static function statuses(Page $page): array
 	{

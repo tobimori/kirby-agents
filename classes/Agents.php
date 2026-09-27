@@ -9,17 +9,11 @@ use Kirby\Content\Field;
 
 final class Agents
 {
-	/**
-	 * Returns a plugin option
-	 */
 	public static function option(string $key, mixed $default = null): mixed
 	{
 		return App::instance()->option("tobimori.agents.{$key}", $default);
 	}
 
-	/**
-	 * Path of the endpoints outside the Panel (option `path`), or null for the Panel
-	 */
 	public static function path(): ?string
 	{
 		$path = static::option('path');
@@ -27,9 +21,6 @@ final class Agents
 		return is_string($path) ? trim($path, '/') : null;
 	}
 
-	/**
-	 * OAuth issuer and base of all endpoints: the Panel URL, or the URL of the `path` option
-	 */
 	public static function issuer(): string
 	{
 		$kirby = App::instance();
@@ -38,9 +29,6 @@ final class Agents
 		return rtrim($path === null ? (string) $kirby->url('panel') : (string) $kirby->url() . '/' . $path, '/');
 	}
 
-	/**
-	 * Canonical URL of the MCP endpoint
-	 */
 	public static function resource(): string
 	{
 		return static::issuer() . '/mcp';

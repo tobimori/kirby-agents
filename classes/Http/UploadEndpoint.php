@@ -22,10 +22,6 @@ use tobimori\Agents\OAuth\Secret;
 use tobimori\Agents\OAuth\Token;
 use tobimori\Agents\Tools\ToolError;
 
-/**
- * Uploads with a signed link from file_upload, so the file does not go through the model.
- * The link is valid for one page, template, and filename, for a short time.
- */
 final class UploadEndpoint
 {
 	public const PATH = 'mcp/upload/(:any)';
@@ -34,13 +30,10 @@ final class UploadEndpoint
 
 	private const TTL = 600;
 
-	/**
-	 * Most bytes of field values in a link, longer values can be set with content_update
-	 */
 	public const MAX_CONTENT = 4000;
 
 	/**
-	 * @param array<string, mixed> $content stored values for the fields of the file
+	 * @param array<string, mixed> $content
 	 *
 	 * @return array{url: string, expires: int}
 	 */
@@ -112,16 +105,12 @@ final class UploadEndpoint
 
 		try {
 			$parent = Models::find($data['page']);
-			$file = $parent->createFile(
-				[
-					'source' => $upload['tmp_name'],
-					'filename' => $data['filename'],
-					'template' => $data['template'] === Uploads::DEFAULT ? null : $data['template'],
-					// at the end of the sort order, like an upload in the Panel
-					'content' => [...$data['content'], 'sort' => $parent->files()->count() + 1],
-				],
-				move: true,
-			);
+			$file = $parent->createFile([
+				'source' => $upload['tmp_name'],
+				'filename' => $data['filename'],
+				'template' => $data['template'] === Uploads::DEFAULT ? null : $data['template'],
+				'content' => [...$data['content'], 'sort' => $parent->files()->count() + 1],
+			], move: true);
 		} catch (KirbyException|ToolError $exception) {
 			return self::error(400, $exception->getMessage());
 		}
@@ -133,8 +122,6 @@ final class UploadEndpoint
 	}
 
 	/**
-	 * Valid signature, not expired, and the grant still exists with the `files:manage` scope
-	 *
 	 * @return array{user: User, grant: string, page: string, template: string, filename: string, content: array<array-key, mixed>}|null
 	 */
 	private static function parse(#[SensitiveParameter] string $token): ?array
@@ -172,7 +159,6 @@ final class UploadEndpoint
 			return null;
 		}
 
-		// the role permissions can change after the link was made
 		$access = new Access($user, $grant->id, Scope::allowedFor($user, $grant->scopes));
 
 		if ($access->allows(Scope::FilesManage) === false) {

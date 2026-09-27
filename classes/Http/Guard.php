@@ -12,9 +12,6 @@ use tobimori\Agents\Agents;
 
 final class Guard
 {
-	/**
-	 * Error response for plain HTTP, except for direct requests from this machine
-	 */
 	public static function https(Request $request): ?Response
 	{
 		if ($request->ssl() || self::isLoopback()) {
@@ -24,9 +21,6 @@ final class Guard
 		return Json::error('invalid_request', 'HTTPS is required', 403);
 	}
 
-	/**
-	 * Error response for browser requests from other sites (DNS rebinding)
-	 */
 	public static function origin(Request $request): ?Response
 	{
 		$origin = (string) $request->header('Origin');
@@ -38,9 +32,6 @@ final class Guard
 		return Json::error('invalid_request', 'Origin is not allowed', 403);
 	}
 
-	/**
-	 * Direct request from this machine, not through a proxy
-	 */
 	private static function isLoopback(): bool
 	{
 		$environment = App::instance()->environment();

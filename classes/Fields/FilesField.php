@@ -14,9 +14,6 @@ class FilesField extends RelationField
 		return 'file';
 	}
 
-	/**
-	 * Filenames are found in the model that holds the field
-	 */
 	protected function find(string $id, ModelWithContent $model): ?ModelWithContent
 	{
 		return App::instance()->file($id, $model);

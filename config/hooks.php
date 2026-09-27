@@ -13,12 +13,10 @@ $endpoints = require __DIR__ . '/endpoints.php';
 return [
 	// without a session, GET requests match the login fallback route first
 	'panel.route:before' => function (Route $route, ?string $path, string $method) use ($endpoints): Route {
-		// with the `path` option, the endpoints are routes of the site
 		$action = Agents::path() === null ? $endpoints[$path ?? ''] ?? null : null;
 
 		return $action === null ? $route : new Route((string) $path, $method, $action);
 	},
-	// grants were approved with the permissions of the old role
 	'user.changeRole:after' => function (User $newUser): void {
 		(new GrantStore($newUser))->revokeAll();
 	},

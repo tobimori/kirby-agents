@@ -7,9 +7,6 @@ namespace tobimori\Agents\Fields;
 use tobimori\Agents\Content\InputCheck;
 use tobimori\Agents\Schema\Compiler;
 
-/**
- * A list of values: checkboxes, multiselect, tags
- */
 class OptionsField extends OptionField
 {
 	public function describe(Compiler $schema): string
@@ -22,9 +19,6 @@ class OptionsField extends OptionField
 		return self::json($value);
 	}
 
-	/**
-	 * Like Kirby: tags accept any value by default (`accept: all`), the others only options
-	 */
 	public function check(mixed $value, InputCheck $check, string $where): void
 	{
 		if (($this->props['accept'] ?? 'options') === 'options') {

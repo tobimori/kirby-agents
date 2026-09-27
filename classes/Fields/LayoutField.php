@@ -12,10 +12,6 @@ use tobimori\Agents\Content\Presenter;
 use tobimori\Agents\Schema\Compiler;
 use tobimori\Agents\Tools\ToolError;
 
-/**
- * Rows with columns, and blocks in the columns. Nodes: `layout` for a row with its settings in `attrs`,
- * `column` for a column, and `block` for the blocks in it.
- */
 class LayoutField extends BlocksField
 {
 	private const COLUMN_ERROR = 'columns belong to their layout row. Insert blocks `into` the column instead';
@@ -95,9 +91,6 @@ class LayoutField extends BlocksField
 		parent::accept($kind, $node);
 	}
 
-	/**
-	 * Into a column, or into a layout row with `column` as a number
-	 */
 	public function into(string $kind, mixed $node, array $op): ?array
 	{
 		if ($kind === 'column') {
@@ -199,8 +192,6 @@ class LayoutField extends BlocksField
 	}
 
 	/**
-	 * Fields of the settings of a layout row
-	 *
 	 * @return array<array-key, mixed>
 	 */
 	private function settings(): array
@@ -209,8 +200,6 @@ class LayoutField extends BlocksField
 	}
 
 	/**
-	 * Allowed column widths per row, like `['1/2', '1/2']`
-	 *
 	 * @return list<list<string>>
 	 */
 	private function layouts(): array

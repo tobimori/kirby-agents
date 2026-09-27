@@ -10,13 +10,10 @@ use Kirby\Content\LockedContentException;
 use Kirby\Form\Fields;
 use tobimori\Agents\Tools\ToolError;
 
-/**
- * Unsaved changes of a page or the site in one language, checked against the etag of a read
- */
 final class Pending
 {
 	/**
-	 * @param list<string> $changed fields that differ from the published version
+	 * @param list<string> $changed
 	 */
 	private function __construct(
 		public readonly ModelWithContent $model,
@@ -43,17 +40,15 @@ final class Pending
 		}
 
 		$language = Language::ensure($read->language);
-		// with the values of the default language for a missing translation, like the read
 		$latest = $model->version('latest')->content($language)->toArray();
 
-		// compare form values like `Version::isIdentical()`, because the stored text of the same value can differ
+		// form values, because the stored text of the same value can differ
 		$fields = Fields::for($model, $language);
 		$changes = $read->values;
 		$latest = array_intersect_key($fields->reset()->fill(input: $latest)->toFormValues(), $read->fields);
 		$changed = [];
 
 		foreach ($read->fields as $key => $props) {
-			// in translations, these fields come from the default language and are not part of the changes
 			if (!$language->isDefault() && is_array($props) && ($props['translate'] ?? true) === false) {
 				continue;
 			}
@@ -73,7 +68,6 @@ final class Pending
 		$fields->fill(input: $version->content($this->language)->toArray());
 		$errors = Writer::errors($fields);
 
-		// invalid content must not go live, also when an editor saved it in the Panel
 		if ($errors !== []) {
 			throw new ToolError(
 				"Nothing was published. Fix these fields with content_update first:\n- " . implode("\n- ", $errors),

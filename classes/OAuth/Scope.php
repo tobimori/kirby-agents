@@ -6,10 +6,6 @@ namespace tobimori\Agents\OAuth;
 
 use Kirby\Cms\User;
 
-/**
- * Scopes follow the permission groups of Kirby (`pages.*`, `files.*`). Kirby still checks
- * each action with the role of the user, the scope only limits what the agent may try.
- */
 enum Scope: string
 {
 	case ContentRead = 'content:read';
@@ -29,8 +25,6 @@ enum Scope: string
 	}
 
 	/**
-	 * Scopes needed for basic use
-	 *
 	 * @return list<string>
 	 */
 	public static function minimal(): array
@@ -39,9 +33,6 @@ enum Scope: string
 	}
 
 	/**
-	 * Scopes the user may grant: the plugin permissions (`tobimori.agents.*`) allow it,
-	 * and the role has at least one of the Kirby permissions behind the scope
-	 *
 	 * @param list<string> $scopes
 	 *
 	 * @return list<string>
@@ -81,9 +72,6 @@ enum Scope: string
 		return $allowed;
 	}
 
-	/**
-	 * A broader scope includes the narrower ones. Creating pages or files includes writing their content.
-	 */
 	public function includes(self $scope): bool
 	{
 		return match ($this) {
@@ -97,9 +85,6 @@ enum Scope: string
 		};
 	}
 
-	/**
-	 * Extra plugin permission needed to grant this scope
-	 */
 	public function permission(): ?string
 	{
 		return match ($this) {
@@ -110,8 +95,6 @@ enum Scope: string
 	}
 
 	/**
-	 * Kirby role permissions behind the scope. The role needs at least one of them.
-	 *
 	 * @return list<string>
 	 */
 	public function kirbyPermissions(): array

@@ -9,9 +9,6 @@ use tobimori\Agents\Content\Nodes;
 use tobimori\Agents\Content\Presenter;
 use tobimori\Agents\Schema\Compiler;
 
-/**
- * An object with its own fields
- */
 class ObjectField extends Field
 {
 	public function describe(Compiler $schema): string
@@ -24,9 +21,6 @@ class ObjectField extends Field
 		return ['' => $this->fields()];
 	}
 
-	/**
-	 * Agents do not see the sub-fields with `agents.ignore`, so their values stay
-	 */
 	public function input(mixed $value, mixed $current): mixed
 	{
 		$value = self::json($value);
@@ -66,8 +60,6 @@ class ObjectField extends Field
 	}
 
 	/**
-	 * Sub-fields, without the ones that agents should ignore
-	 *
 	 * @return array<array-key, mixed>
 	 */
 	protected function fields(): array

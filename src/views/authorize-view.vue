@@ -9,7 +9,6 @@
 					:text="$t(`agents.authorize.error.${error}`)"
 				/>
 
-				<!-- a native form post, so the server can redirect to the client -->
 				<form v-else ref="form" method="post" :action="action">
 					<input type="hidden" name="csrf" :value="csrf" />
 					<input type="hidden" name="decision" :value="decision" />

@@ -89,8 +89,6 @@ final class SchemaGet implements Tool
 		}
 
 		if ($blueprint !== null && str_starts_with($blueprint, 'files/')) {
-			// a file that exists only in memory, to build the form of a new file.
-			// Templates without a blueprint (like `blocks/image`) use the `default` file blueprint, the header shows it
 			return new File([
 				'filename' => 'new-file.tmp',
 				'parent' => $kirby->site(),
@@ -105,7 +103,6 @@ final class SchemaGet implements Tool
 				throw new ToolError("No page blueprint `{$blueprint}`. Blueprints: " . implode(', ', $names));
 			}
 
-			// a page that exists only in memory, to build the form of a new page
 			return new Page(['slug' => 'new-page', 'template' => $blueprint]);
 		}
 

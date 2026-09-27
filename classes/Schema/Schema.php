@@ -4,15 +4,11 @@ declare(strict_types=1);
 
 namespace tobimori\Agents\Schema;
 
-/**
- * Compiled schema of a page or the site: field lines and named types.
- * Nested parts are named types, so the notation never nests.
- */
 final class Schema
 {
 	/**
-	 * @param array<string, string> $fields name => description
-	 * @param array<string, array<string, string>> $types `kind name` => fields
+	 * @param array<string, string> $fields
+	 * @param array<string, array<string, string>> $types
 	 */
 	public function __construct(
 		public readonly string $title,
@@ -20,9 +16,6 @@ final class Schema
 		public readonly array $types,
 	) {}
 
-	/**
-	 * Compact notation, or only one named type with `focus`
-	 */
 	public function render(?string $focus = null): ?string
 	{
 		if ($focus !== null) {
@@ -40,10 +33,6 @@ final class Schema
 		return implode("\n\n", $parts);
 	}
 
-	/**
-	 * Accepts the full name (`block columns`), or only the name (`columns`)
-	 * if exactly one kind has it
-	 */
 	public function findType(string $focus): ?string
 	{
 		if (array_key_exists($focus, $this->types)) {

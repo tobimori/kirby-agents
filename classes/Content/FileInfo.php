@@ -17,7 +17,7 @@ final class FileInfo
 	 */
 	public static function summary(File $file): array
 	{
-		// `uuid()` would generate and write a missing UUID, which a read must not do
+		// `uuid()` would write a missing UUID
 		$uuid = FileUuid::retrieveId($file);
 		$asset = $file->asset();
 		$summary = [

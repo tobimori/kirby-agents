@@ -13,7 +13,6 @@ const UNITS = [
 	["second", 1]
 ]
 
-// relative time, the exact time on hover
 export default {
 	props: {
 		value: String

@@ -11,10 +11,6 @@ use tobimori\Agents\Http\Guard;
 use tobimori\Agents\Http\Json;
 use tobimori\Agents\Http\RateLimit;
 
-/**
- * Dynamic client registration (RFC 7591) without storage.
- * The client id carries the signed metadata: `kad.<metadata>.<signature>`.
- */
 final class Registration
 {
 	private const PREFIX = 'kad';
@@ -56,7 +52,6 @@ final class Registration
 			}
 		}
 
-		// RFC 7591 default
 		$method = $data['token_endpoint_auth_method'] ?? 'client_secret_basic';
 
 		if (!in_array($method, self::AUTH_METHODS, true)) {
@@ -101,9 +96,6 @@ final class Registration
 		return Json::response($client, 201);
 	}
 
-	/**
-	 * Returns the client if the signature is valid
-	 */
 	public static function client(string $id): ?Client
 	{
 		$parts = explode('.', $id);
@@ -136,9 +128,6 @@ final class Registration
 		);
 	}
 
-	/**
-	 * Client secret for confidential clients, derived from the client id
-	 */
 	public static function secret(string $id): string
 	{
 		return Secret::sign('client-secret.' . $id);

@@ -9,19 +9,10 @@ use tobimori\Agents\Content\InputCheck;
 use tobimori\Agents\Content\Presenter;
 use tobimori\Agents\Schema\Compiler;
 
-/**
- * A list of pages, files, or users
- */
 abstract class RelationField extends Field
 {
-	/**
-	 * `page`, `file`, or `user`
-	 */
 	abstract protected function noun(): string;
 
-	/**
-	 * The model for an id or UUID, or null
-	 */
 	abstract protected function find(string $id, ModelWithContent $model): ?ModelWithContent;
 
 	public function describe(Compiler $schema): string
@@ -36,10 +27,6 @@ abstract class RelationField extends Field
 		return self::json($value);
 	}
 
-	/**
-	 * Kirby drops references it cannot find. Items can be ids, UUIDs,
-	 * or objects with `uuid` or `id`, like content_get returns them
-	 */
 	public function check(mixed $value, InputCheck $check, string $where): void
 	{
 		foreach (is_array($value) ? $value : [] as $item) {
@@ -69,7 +56,6 @@ abstract class RelationField extends Field
 		return $items === []
 			? '(empty)'
 			: implode(', ', array_map(
-				// files without a title show their filename, which is in the id already
 				static fn(array $item): string => (
 					(
 						$item['title'] !== '' && $item['title'] !== basename((string) $item['id'])

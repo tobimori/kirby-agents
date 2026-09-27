@@ -6,11 +6,10 @@ use Kirby\Http\Route;
 use tobimori\Agents\Agents;
 use tobimori\Agents\OAuth\Metadata;
 
-// a closure, so the `path` option of the site config is known
+// a closure, so the `path` option is known
 return function (): array {
 	$routes = [
 		[
-			// with the resource path (`panel/mcp`) or without a path
 			'pattern' => '.well-known/oauth-protected-resource/(:all?)',
 			'action' => function (string $path = ''): mixed {
 				if ($path !== '' && $path !== Metadata::path(Agents::resource())) {
@@ -21,7 +20,6 @@ return function (): array {
 			},
 		],
 		[
-			// with the issuer path (`panel`), or without a path if the endpoints are at the site root
 			'pattern' => '.well-known/oauth-authorization-server/(:all?)',
 			'action' => function (string $path = ''): mixed {
 				if ($path !== Metadata::path(Agents::issuer())) {
@@ -35,7 +33,6 @@ return function (): array {
 
 	$path = Agents::path();
 
-	// with the `path` option, the endpoints are routes of the site instead of Panel routes
 	if ($path !== null) {
 		/** @var array<string, Closure> $endpoints */
 		$endpoints = require __DIR__ . '/endpoints.php';

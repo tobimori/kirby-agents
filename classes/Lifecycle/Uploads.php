@@ -15,19 +15,12 @@ use tobimori\Agents\Fields\Fields;
 use tobimori\Agents\Fields\FilesField;
 use tobimori\Agents\Tools\ToolError;
 
-/**
- * File templates that can be uploaded to a page, like the upload buttons of the Panel:
- * files sections that list its files, and files fields that upload to it
- */
 final class Uploads
 {
-	/**
-	 * Name for files without a template
-	 */
 	public const DEFAULT = 'default';
 
 	/**
-	 * @return array<string, array{title: string, from: list<string>, accept: array<array-key, mixed>}> by template
+	 * @return array<string, array{title: string, from: list<string>, accept: array<array-key, mixed>}>
 	 */
 	public static function templates(Site|Page $parent): array
 	{
@@ -53,7 +46,6 @@ final class Uploads
 		foreach ($templates as $template => $from) {
 			$file = self::draft($parent, (string) $template);
 
-			// the role may not upload some templates (`options.create` in the file blueprint)
 			if ($file->permissions()->can('create')) {
 				$result[(string) $template] = [
 					'title' => $file->blueprint()->title(),
@@ -70,10 +62,7 @@ final class Uploads
 	}
 
 	/**
-	 * Checks the values for the fields of a new file, required fields included,
-	 * and returns them as Kirby stores them
-	 *
-	 * @param array<string, mixed> $content form values
+	 * @param array<string, mixed> $content
 	 *
 	 * @return array<string, mixed>
 	 */
@@ -98,7 +87,6 @@ final class Uploads
 
 		$form->fill(input: $content);
 
-		// the Panel lets the upload through and shows the errors later, but the file is public at once
 		$errors = [
 			...InputCheck::errors($draft, array_intersect_key($props, $content), $content),
 			...array_values(Writer::errors($form->fields())),
@@ -121,9 +109,6 @@ final class Uploads
 		return $stored;
 	}
 
-	/**
-	 * Unsaved file with the template, to read its blueprint and permissions
-	 */
 	public static function draft(Site|Page $parent, string $template, string $filename = 'upload.tmp'): File
 	{
 		return new File([
@@ -141,11 +126,9 @@ final class Uploads
 	}
 
 	/**
-	 * Files fields that upload to the parent, also inside blocks, layouts, structures, and objects
-	 *
 	 * @param array<array-key, mixed> $fields
 	 *
-	 * @return array<string, string|null> upload template by field path
+	 * @return array<string, string|null>
 	 */
 	private static function fields(Site|Page $parent, array $fields, string $where): array
 	{
@@ -162,14 +145,12 @@ final class Uploads
 			if (
 				$field instanceof FilesField
 				&& is_array($props['uploads'] ?? null)
-				// `uploads.parent` is a query like the `parent` of a section
 				&& Placement::lists($parent, $props['uploads'], $parent)
 			) {
 				$template = $props['uploads']['template'] ?? null;
 				$found[$path] = is_string($template) ? $template : null;
 			}
 
-			// block types and layout settings are part of the path, the fields of structures and objects not
 			foreach ($field->fieldSets() as $set => $nested) {
 				$prefix = $set === '' ? "{$path} > " : "{$path} > {$set} > ";
 				$found = [...$found, ...self::fields($parent, $nested, $prefix)];

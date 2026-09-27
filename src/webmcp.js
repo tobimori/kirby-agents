@@ -1,10 +1,4 @@
-/**
- * Registers the tools of the site with WebMCP, for agents in the browser.
- * The tools run on the server through the Kirby API, with the Panel session.
- * Does nothing in browsers without WebMCP.
- */
 export default function webmcp(app) {
-	// `navigator.modelContext` is the old place of the API in early Chrome builds
 	const modelContext = document.modelContext ?? navigator.modelContext
 
 	if (typeof modelContext?.registerTool !== "function") {
@@ -46,7 +40,6 @@ export default function webmcp(app) {
 		}
 	}
 
-	// the Panel loads plugins before the login, so follow the user
 	app.$watch(
 		() => app.$panel.user.id,
 		(id) => (id ? register() : unregister()),
@@ -66,11 +59,10 @@ function serverTool(app, tool) {
 					silent: true
 				})
 			} catch (error) {
-				// a rejected promise reaches the agent only as a failure without the message
+				// a rejected promise reaches the agent without the message
 				return { content: [{ type: "text", text: error.message ?? String(error) }], isError: true }
 			}
 
-			// the user sees the change at once
 			if (result.isError !== true && tool.annotations.readOnlyHint !== true) {
 				app.$panel.view.reload()
 			}
@@ -80,9 +72,6 @@ function serverTool(app, tool) {
 	}
 }
 
-/**
- * What the user has open in the Panel, so "this page" has a meaning for the agent
- */
 function viewTool(app) {
 	return {
 		name: "panel_view",
@@ -101,9 +90,6 @@ function viewTool(app) {
 	}
 }
 
-/**
- * `pages/blog+my-post/files/photo.jpg` to `{ type: "file", id: "blog/my-post/photo.jpg" }`
- */
 export function parseViewPath(path) {
 	const id = (value) => decodeURIComponent(value).replaceAll("+", "/")
 	const page = path.match(/^pages\/([^/]+)(?:\/files\/([^/]+))?$/)

@@ -6,9 +6,6 @@ namespace tobimori\Agents\Fields;
 
 use tobimori\Agents\Schema\Compiler;
 
-/**
- * Number or range
- */
 class NumberField extends Field
 {
 	public function describe(Compiler $schema): string

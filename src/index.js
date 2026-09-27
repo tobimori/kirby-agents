@@ -10,7 +10,6 @@ panel.plugin("tobimori/agents", {
 	components: {
 		"k-agents-authorize-view": AuthorizeView,
 		"k-agents-grants-view": GrantsView,
-		// `k-table` finds cells by column type: `k-table-<type>-cell`
 		"k-table-agents-client-cell": ClientCell,
 		"k-table-agents-scopes-cell": ScopesCell,
 		"k-table-agents-time-cell": TimeCell,

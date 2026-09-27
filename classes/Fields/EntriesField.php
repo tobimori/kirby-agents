@@ -8,9 +8,6 @@ use tobimori\Agents\Content\Nodes;
 use tobimori\Agents\Content\Presenter;
 use tobimori\Agents\Schema\Compiler;
 
-/**
- * A list of values of one simple field. Each value is a node of kind `entry`.
- */
 class EntriesField extends Field
 {
 	public function describe(Compiler $schema): string
@@ -44,8 +41,6 @@ class EntriesField extends Field
 	}
 
 	/**
-	 * Props of the field of each entry
-	 *
 	 * @return array<array-key, mixed>
 	 */
 	private function field(): array

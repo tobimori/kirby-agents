@@ -12,9 +12,6 @@ use tobimori\Agents\Content\Presenter;
 use tobimori\Agents\Schema\Compiler;
 use tobimori\Agents\Tools\ToolError;
 
-/**
- * A list of blocks. Each block is a node of kind `block`, with the fields of its fieldset in `content`.
- */
 class BlocksField extends Field
 {
 	public function describe(Compiler $schema): string
@@ -161,8 +158,6 @@ class BlocksField extends Field
 	}
 
 	/**
-	 * Fields of one block type, from all its tabs
-	 *
 	 * @return array<array-key, mixed>
 	 */
 	public function fieldset(string $type): array
@@ -172,9 +167,6 @@ class BlocksField extends Field
 		return self::tabs(is_array($fieldset) ? $fieldset : []);
 	}
 
-	/**
-	 * Registers each fieldset as `block <type>` and returns `a | b | c`
-	 */
 	protected function describeFieldsets(Compiler $schema): string
 	{
 		$names = [];
@@ -207,8 +199,6 @@ class BlocksField extends Field
 	}
 
 	/**
-	 * Fields of a fieldset from all its tabs, without the ones that agents should ignore
-	 *
 	 * @return array<array-key, mixed>
 	 */
 	protected static function tabs(array $fieldset): array

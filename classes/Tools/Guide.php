@@ -4,10 +4,6 @@ declare(strict_types=1);
 
 namespace tobimori\Agents\Tools;
 
-/**
- * Writes the parameters of an input schema as text for the tool description,
- * because some clients show only the description, not the property schemas
- */
 final class Guide
 {
 	public static function parameters(array $schema): string

@@ -14,9 +14,7 @@ class DateField extends Field
 		return $this->hasTime() ? 'date "YYYY-MM-DD HH:MM:SS"' : 'date "YYYY-MM-DD"';
 	}
 
-	/**
-	 * Kirby stores a time also for dates without time, so it is left out
-	 */
+	// Kirby stores a time also for dates without time
 	public function present(mixed $value, array $path, Presenter $presenter): mixed
 	{
 		return !$this->hasTime() && is_string($value) ? substr($value, 0, 10) : $value;

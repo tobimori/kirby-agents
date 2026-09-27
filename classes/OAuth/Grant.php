@@ -4,13 +4,10 @@ declare(strict_types=1);
 
 namespace tobimori\Agents\OAuth;
 
-/**
- * One approved authorization of a client by a user
- */
 final class Grant
 {
 	/**
-	 * @param list<string> $scopes the user can change them in the Panel
+	 * @param list<string> $scopes
 	 */
 	public function __construct(
 		public readonly string $id,
@@ -28,9 +25,6 @@ final class Grant
 		public ?int $used = null,
 	) {}
 
-	/**
-	 * Hashes of the code and refresh token are stored, never the tokens
-	 */
 	public static function create(
 		string $client,
 		string $name,
@@ -108,9 +102,6 @@ final class Grant
 		];
 	}
 
-	/**
-	 * Replaces the refresh token and keeps the old hash to detect reuse
-	 */
 	public function rotate(string $refresh): void
 	{
 		$this->previous = $this->refresh;

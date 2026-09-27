@@ -7,17 +7,12 @@ namespace tobimori\Agents\Content;
 use tobimori\Agents\Fields\Fields;
 use tobimori\Agents\Tools\ToolError;
 
-/**
- * Finds the props of a nested field by a path like `text > image > image`:
- * a field name, then a block type for blocks and layouts (or `settings` for layout rows),
- * then a field name in it, and so on. Structures and objects are followed by a field name.
- */
 final class FieldPath
 {
 	/**
-	 * @param array<array-key, mixed> $fields top-level field props by name
+	 * @param array<array-key, mixed> $fields
 	 *
-	 * @return array<array-key, mixed> props of the field at the end of the path
+	 * @return array<array-key, mixed>
 	 */
 	public static function resolve(array $fields, string $path): array
 	{
@@ -43,7 +38,6 @@ final class FieldPath
 				throw new ToolError("`{$where}` is a {$type} field and has no nested fields");
 			}
 
-			// structures and objects have their fields directly, blocks and layouts per block type
 			$fields = $sets[''] ?? null;
 
 			if ($fields === null) {

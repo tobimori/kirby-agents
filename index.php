@@ -6,8 +6,7 @@ use Kirby\Cms\App;
 use Kirby\Data\Json;
 use Kirby\Filesystem\F;
 
-// Own classes only. The vendor folder holds dev tools and a Kirby copy for analysis,
-// and its autoloader would load that Kirby copy before the site's Kirby.
+// not the vendor autoloader: it would load the Kirby copy in vendor/ before the site's Kirby
 spl_autoload_register(static function (string $class): void {
 	$prefix = 'tobimori\\Agents\\';
 
@@ -24,7 +23,6 @@ if (version_compare(App::version() ?? '0.0.0', '5.0.0', '<') === true) {
 	throw new Exception('Kirby Agents requires Kirby 5 or later');
 }
 
-// translation files have keys without the `agents.` prefix
 $translations = [];
 $files = glob(__DIR__ . '/translations/*.json');
 

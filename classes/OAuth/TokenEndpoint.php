@@ -15,9 +15,6 @@ use tobimori\Agents\Http\RateLimit;
 
 final class TokenEndpoint
 {
-	/**
-	 * `POST /panel/oauth/token`
-	 */
 	public static function token(): Response
 	{
 		$request = App::instance()->request();
@@ -41,9 +38,6 @@ final class TokenEndpoint
 		};
 	}
 
-	/**
-	 * `POST /panel/oauth/revoke` (RFC 7009), answers 200 even for unknown tokens
-	 */
 	public static function revoke(): Response
 	{
 		$request = App::instance()->request();
@@ -88,10 +82,6 @@ final class TokenEndpoint
 		return Guard::https($request) ?? RateLimit::hit('token');
 	}
 
-	/**
-	 * Public clients send only their id, confidential clients also their secret
-	 * with HTTP Basic auth or in the body (RFC 6749 section 2.3.1)
-	 */
 	private static function client(Request $request, array $body): ?Client
 	{
 		$auth = $request->auth();
@@ -136,7 +126,6 @@ final class TokenEndpoint
 				return Json::error('invalid_grant', 'Unknown code');
 			}
 
-			// a code that is used twice may have leaked, so the grant is revoked
 			if ($grant->challenge === null) {
 				unset($grants[$grant->id]);
 
@@ -177,7 +166,6 @@ final class TokenEndpoint
 				return Json::error('invalid_grant', 'Unknown refresh token');
 			}
 
-			// an old refresh token may have leaked, so the grant is revoked
 			if ($grant->previous !== null && hash_equals($grant->previous, $hash)) {
 				unset($grants[$grant->id]);
 
@@ -192,10 +180,6 @@ final class TokenEndpoint
 		});
 	}
 
-	/**
-	 * New access and refresh token. The access token gets only the scopes
-	 * that the role still allows.
-	 */
 	private static function issue(User $user, Grant $grant): Response
 	{
 		$scopes = Scope::allowedFor($user, $grant->scopes);

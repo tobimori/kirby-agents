@@ -10,8 +10,6 @@ use tobimori\Agents\OAuth\Scope;
 final class Tools
 {
 	/**
-	 * Sorted by name, so the list is stable for client caches
-	 *
 	 * @return list<Tool>
 	 */
 	public static function all(): array
@@ -39,9 +37,6 @@ final class Tools
 	}
 
 	/**
-	 * Tools the role of the user allows, also if the token does not have the scope yet.
-	 * A call without the scope asks the client to authorize again with it.
-	 *
 	 * @return list<Tool>
 	 */
 	public static function for(Access $access): array

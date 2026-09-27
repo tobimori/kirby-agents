@@ -12,15 +12,8 @@ use tobimori\Agents\Tools\ToolError;
 
 final class Models
 {
-	/**
-	 * Description of the `page` argument of tools that work on content
-	 */
 	public const CONTENT_ID = 'Page id, for example `blog/my-post`, `site`, or a file id, for example `blog/my-post/photo.jpg`';
 
-	/**
-	 * A page, the site, or a file: all models with content fields.
-	 * Files are found by id (`blog/my-post/photo.jpg`, or only the filename for site files) or UUID.
-	 */
 	public static function content(string $id): Site|Page|File
 	{
 		$kirby = App::instance();
@@ -38,9 +31,6 @@ final class Models
 		return $model;
 	}
 
-	/**
-	 * A page by id, drafts included, or `site`. Pages the user may not access do not exist here.
-	 */
 	public static function find(string $id): Site|Page
 	{
 		$kirby = App::instance();

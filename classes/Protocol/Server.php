@@ -19,11 +19,6 @@ use tobimori\Agents\Tools\Tool;
 use tobimori\Agents\Tools\ToolError;
 use tobimori\Agents\Tools\Tools;
 
-/**
- * Stateless MCP over HTTP, for both protocol eras:
- * - modern (2026-07-28): each request carries its version and capabilities in `_meta`
- * - legacy (2025-11-25 and earlier): `initialize` is answered, but no session is kept
- */
 final class Server
 {
 	private const MODERN = ['2026-07-28'];
@@ -57,7 +52,6 @@ final class Server
 
 		$method = $message['method'] ?? null;
 
-		// notifications, and responses from legacy clients, need no answer
 		if (!array_key_exists('id', $message) || !is_string($method)) {
 			return new Response('', null, 202);
 		}
@@ -100,9 +94,6 @@ final class Server
 		}
 	}
 
-	/**
-	 * Headers must mirror the body, and the version must be supported
-	 */
 	private static function validate(
 		Request $request,
 		string|int $id,
@@ -140,9 +131,6 @@ final class Server
 		return null;
 	}
 
-	/**
-	 * Header values outside plain ASCII come as `=?base64?...?=`
-	 */
 	private static function decodeHeader(mixed $value): ?string
 	{
 		if (!is_string($value)) {
@@ -182,9 +170,6 @@ final class Server
 	}
 
 	/**
-	 * Tool definitions for the role, with the parameter guide in the description.
-	 * Also used by the WebMCP bridge.
-	 *
 	 * @return list<array<string, mixed>>
 	 */
 	public static function definitions(Access $access): array
@@ -206,10 +191,7 @@ final class Server
 	}
 
 	/**
-	 * Runs a tool and returns an MCP tool result. Rule errors are results with `isError`.
-	 * Also used by the WebMCP bridge.
-	 *
-	 * @throws ScopeRequired if the access needs another scope
+	 * @throws ScopeRequired
 	 *
 	 * @return array<string, mixed>
 	 */
@@ -222,7 +204,6 @@ final class Server
 		try {
 			$data = $tool->call(new Arguments($arguments), $access);
 		} catch (ToolError|KirbyException $error) {
-			// Kirby exceptions are rule violations with messages for users, like a duplicate slug
 			return ['content' => [['type' => 'text', 'text' => $error->getMessage()]], 'isError' => true];
 		}
 
@@ -237,7 +218,6 @@ final class Server
 	{
 		return [
 			'tools' => self::definitions($access),
-			// the list depends on the role and the token scopes
 			'ttlMs' => 5 * 60 * 1000,
 			'cacheScope' => 'private',
 		];

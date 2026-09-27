@@ -18,7 +18,6 @@
 			</ul>
 		</k-dropdown-content>
 
-		<!-- measures what fits -->
 		<div ref="measure" aria-hidden="true" class="k-agents-scopes-measure">
 			<span v-for="(part, index) in parts" :key="index" data-label>{{ part }}</span>
 			<span ref="more">{{ $t("agents.grants.more", { count: value.length }) }}</span>
@@ -27,7 +26,6 @@
 </template>
 
 <script>
-// the labels that fit, the rest in a dropdown
 export default {
 	props: {
 		value: Array
@@ -75,7 +73,6 @@ export default {
 			const labels = [...this.$refs.measure.querySelectorAll("[data-label]")].map(
 				(el) => el.offsetWidth
 			)
-			// gap, padding, and caret
 			const button = this.$refs.more.offsetWidth + 40
 			let used = 0
 			let shown = 0

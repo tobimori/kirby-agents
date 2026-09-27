@@ -6,14 +6,6 @@ namespace tobimori\Agents\OAuth;
 
 use SensitiveParameter;
 
-/**
- * Token formats:
- * - code:    `kac.<userId>.<grantId>.<secret>`
- * - refresh: `kar.<userId>.<grantId>.<secret>`
- * - access:  `kat.<payload>.<signature>`, payload is JSON with user, grant, scopes, audience, expiry
- *
- * Only hashes of code and refresh secrets are stored.
- */
 final class Token
 {
 	public const CODE = 'kac';
@@ -34,9 +26,6 @@ final class Token
 		return hash('sha256', $secret);
 	}
 
-	/**
-	 * Code or refresh token
-	 */
 	public static function opaque(
 		string $type,
 		string $user,
@@ -78,8 +67,6 @@ final class Token
 	}
 
 	/**
-	 * Returns the payload if the signature is valid and the token has not expired
-	 *
 	 * @return array{user: string, grant: string, scopes: list<string>, audience: string}|null
 	 */
 	public static function parseAccess(#[SensitiveParameter] string $token): ?array
@@ -116,9 +103,6 @@ final class Token
 		];
 	}
 
-	/**
-	 * Base64url without padding
-	 */
 	public static function encode(string $data): string
 	{
 		return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');

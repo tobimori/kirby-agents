@@ -14,9 +14,6 @@ use tobimori\Agents\Protocol\Server;
 
 final class McpEndpoint
 {
-	/**
-	 * Path of the endpoint in the Panel
-	 */
 	public const PATH = 'mcp';
 
 	public static function handle(): Response
@@ -33,7 +30,6 @@ final class McpEndpoint
 			return new Response('', null, 405, ['Allow' => 'POST']);
 		}
 
-		// only bearer tokens count, the Panel session cookie is ignored
 		$auth = $request->auth();
 
 		if (!$auth instanceof BearerAuth) {
@@ -48,22 +44,14 @@ final class McpEndpoint
 
 		App::instance()->auth()->setUser($access->user);
 
-		// per agent, so a runaway agent does not slow down the site
 		return RateLimit::hit('mcp', 'grant ' . $access->grant) ?? Server::handle($request, $access);
 	}
 
-	/**
-	 * 401 response that tells the client where to get a token
-	 */
 	public static function challenge(?string $error = null): Response
 	{
 		return self::authenticate(401, $error ?? 'unauthorized', Scope::minimal(), $error !== null);
 	}
 
-	/**
-	 * 403 response that asks the client to authorize again with more scopes.
-	 * Clients often request exactly these scopes, so keep the ones the token has.
-	 */
 	public static function insufficientScope(Scope $scope, Access $access): Response
 	{
 		$scopes = array_values(array_unique([...$access->scopes, $scope->value]));

@@ -94,7 +94,6 @@ final class PageUpdate implements Tool
 			throw new ScopeRequired(Scope::ContentPublish);
 		}
 
-		// with the slug rules of the language, like the Panel (German: `ü` becomes `ue`)
 		if ($slug !== null) {
 			$rules = Str::$language;
 			Str::$language = $language->rules();
@@ -105,7 +104,6 @@ final class PageUpdate implements Tool
 		$parent = $parentId !== null ? Models::find($parentId) : null;
 		$listed = $status ?? ($position !== null ? 'listed' : null);
 
-		// check everything first, like the Panel dialogs do one by one
 		if ($title !== null) {
 			PageRules::changeTitle($page, $title);
 		}
@@ -136,7 +134,7 @@ final class PageUpdate implements Tool
 
 		$before = self::state($page, $language);
 
-		// template first, because the new blueprint can have other rules for the rest
+		// template first: the new blueprint can have other rules for the rest
 		if ($template !== null) {
 			$page = $page->changeTemplate($template);
 		}
@@ -174,8 +172,6 @@ final class PageUpdate implements Tool
 	}
 
 	/**
-	 * What page_update can change, with the title and slug in the language
-	 *
 	 * @return array<string, string|int|null>
 	 */
 	private static function state(Page $page, Language $language): array

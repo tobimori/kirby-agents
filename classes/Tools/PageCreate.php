@@ -95,7 +95,6 @@ final class PageCreate implements Tool
 
 		$creator = new Creator($parent, $template, $arguments->string('title'), $arguments->string('slug'));
 
-		// the blueprint can create pages as listed or unlisted, which publishes them
 		if ($creator->status() !== 'draft' && $access->allows(Scope::ContentPublish) === false) {
 			throw new ScopeRequired(Scope::ContentPublish);
 		}

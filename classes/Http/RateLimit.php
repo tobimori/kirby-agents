@@ -8,15 +8,8 @@ use Kirby\Cms\App;
 use Kirby\Http\Response;
 use tobimori\Agents\Agents;
 
-/**
- * Counts requests in fixed time windows, in the `tobimori.agents.limits` cache.
- * The counters are not atomic with the file cache, so a limit can let a few more through.
- */
 final class RateLimit
 {
-	/**
-	 * Requests per window in seconds
-	 */
 	private const DEFAULTS = [
 		'register' => [20, 3600],
 		'authorize' => [30, 60],
@@ -25,10 +18,6 @@ final class RateLimit
 		'upload' => [30, 60],
 	];
 
-	/**
-	 * Counts a request. Returns a 429 response if the limit is reached, else null.
-	 * Without a key, the limit is per IP address.
-	 */
 	public static function hit(string $bucket, ?string $key = null): ?Response
 	{
 		$limit = self::limit($bucket);
@@ -39,7 +28,6 @@ final class RateLimit
 
 		[$max, $window] = $limit;
 		$kirby = App::instance();
-		// behind a proxy, all requests share the address of the proxy
 		$ip = $kirby->environment()->get('REMOTE_ADDR');
 		$key ??= 'ip ' . (is_string($ip) ? $ip : '');
 		$slot = intdiv(time(), $window);
@@ -48,7 +36,7 @@ final class RateLimit
 		$count = $cache->get($id, 0);
 		$count = (is_int($count) ? $count : 0) + 1;
 
-		// minutes, a little longer than the window
+		// Kirby's cache expires in minutes
 		$cache->set($id, $count, intdiv($window, 60) + 1);
 
 		if ($count <= $max) {
@@ -68,8 +56,6 @@ final class RateLimit
 	}
 
 	/**
-	 * `[requests, seconds]` from the `limits` option, or null if the limit is off
-	 *
 	 * @return array{0: int, 1: int}|null
 	 */
 	private static function limit(string $bucket): ?array

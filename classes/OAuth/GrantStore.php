@@ -11,8 +11,7 @@ use Kirby\Filesystem\F;
 use RuntimeException;
 
 /**
- * Grants of one user in `site/accounts/<id>/.agents/grants.json`.
- * Kirby ignores dot folders in user folders and deletes them with the user.
+ * A dot folder, so Kirby ignores it in the user folder and deletes it with the user
  */
 final class GrantStore
 {
@@ -31,8 +30,6 @@ final class GrantStore
 	}
 
 	/**
-	 * Connected agents: grants with tokens, not the ones that wait for the code exchange
-	 *
 	 * @return array<string, Grant>
 	 */
 	public function connected(): array
@@ -41,8 +38,6 @@ final class GrantStore
 	}
 
 	/**
-	 * Returns false if the grant does not exist
-	 *
 	 * @param list<string> $scopes
 	 */
 	public function changeScopes(string $id, array $scopes): bool
@@ -60,9 +55,6 @@ final class GrantStore
 		});
 	}
 
-	/**
-	 * Returns false if the grant does not exist
-	 */
 	public function revoke(string $id): bool
 	{
 		return $this->change(static function (array &$grants) use ($id): bool {
@@ -74,8 +66,6 @@ final class GrantStore
 	}
 
 	/**
-	 * Grants that have not expired, read under a shared lock
-	 *
 	 * @return array<string, Grant>
 	 */
 	private function read(): array
@@ -103,9 +93,6 @@ final class GrantStore
 	}
 
 	/**
-	 * Runs `$change` on all grants under an exclusive lock and saves the result.
-	 * Expired grants are removed. `$change` gets the grants by reference.
-	 *
 	 * @template T
 	 *
 	 * @param Closure(array<string, Grant>): T $change

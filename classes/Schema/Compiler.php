@@ -11,11 +11,6 @@ use Kirby\Form\Form;
 use tobimori\Agents\Fields\Field;
 use tobimori\Agents\Fields\Fields;
 
-/**
- * Turns the Kirby form of a page or the site into a Schema.
- * The form layer resolves `extends`, tabs, sections, custom fields, and option queries.
- * The field classes write the type of each field.
- */
 final class Compiler
 {
 	/**
@@ -52,26 +47,17 @@ final class Compiler
 		return new Schema($title, $fields, $compiler->types);
 	}
 
-	/**
-	 * One line for a simple field, like the fields of the create dialog. Nested types are not listed
-	 */
 	public static function line(array $props): string
 	{
 		return (new self())->describe($props);
 	}
 
-	/**
-	 * Type of a field, without constraints like `required`
-	 */
 	public function expression(array $props): string
 	{
 		return Fields::for($props)->describe($this);
 	}
 
 	/**
-	 * Adds a named type once, like `block image` with its fields, and returns the name.
-	 * The same name with other fields gets a number: `links2`.
-	 *
 	 * @param array<array-key, mixed> $fields
 	 */
 	public function type(string $kind, string $name, array $fields): string
@@ -96,9 +82,6 @@ final class Compiler
 		return $unique;
 	}
 
-	/**
-	 * One line for one field: type, then constraints
-	 */
 	private function describe(array $props): string
 	{
 		$parts = [$this->expression($props)];
@@ -135,7 +118,6 @@ final class Compiler
 			$parts[] = 'help: ' . self::shorten(strip_tags($props['help']), 100);
 		}
 
-		// blueprint hints, with more room than `help`: the author wrote them for agents
 		$description = Fields::hint($props, 'description');
 
 		if (is_string($description) && $description !== '') {

@@ -6,11 +6,6 @@ namespace tobimori\Agents\Content;
 
 use tobimori\Agents\Fields\Fields;
 
-/**
- * Numbers all nodes of the form values depth-first, in document order.
- * The numbers come from the content alone, so they are the same on every request
- * until the content changes. The field classes add the nodes of their type.
- */
 final class Nodes
 {
 	/**
@@ -19,9 +14,9 @@ final class Nodes
 	private array $nodes = [];
 
 	/**
-	 * @param array<array-key, mixed> $fields props by field name
+	 * @param array<array-key, mixed> $fields
 	 *
-	 * @return array<int, Node> by ref number
+	 * @return array<int, Node>
 	 */
 	public static function index(array $fields, array $values): array
 	{
@@ -32,8 +27,6 @@ final class Nodes
 	}
 
 	/**
-	 * Adds the nodes in the values of some fields
-	 *
 	 * @param array<array-key, mixed> $fields
 	 * @param list<string|int> $path
 	 */
@@ -49,8 +42,6 @@ final class Nodes
 	}
 
 	/**
-	 * Adds one node and returns its ref number
-	 *
 	 * @param list<string|int> $path
 	 * @param array<array-key, mixed> $fields
 	 */

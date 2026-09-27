@@ -6,9 +6,6 @@ namespace tobimori\Agents\Fields;
 
 use tobimori\Agents\Schema\Compiler;
 
-/**
- * Field types without a class: the notation shows what the props tell
- */
 class CustomField extends Field
 {
 	public function describe(Compiler $schema): string
@@ -33,7 +30,6 @@ class CustomField extends Field
 			$parts[] = 'default ' . self::quote($default);
 		}
 
-		// top-level fields carry their current value, which shows the value type
 		if (($this->props['value'] ?? null) !== null) {
 			$parts[] = 'value ' . get_debug_type($this->props['value']);
 		}

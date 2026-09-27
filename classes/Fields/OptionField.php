@@ -7,9 +7,6 @@ namespace tobimori\Agents\Fields;
 use tobimori\Agents\Content\InputCheck;
 use tobimori\Agents\Schema\Compiler;
 
-/**
- * One value from options: select, radio, toggles
- */
 class OptionField extends Field
 {
 	public function describe(Compiler $schema): string
@@ -23,8 +20,6 @@ class OptionField extends Field
 	}
 
 	/**
-	 * Kirby drops values that are not an option
-	 *
 	 * @param array<array-key, mixed> $given
 	 */
 	protected function checkOptions(array $given, InputCheck $check, string $where): void

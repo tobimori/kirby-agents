@@ -15,21 +15,11 @@ use tobimori\Agents\Protocol\Server;
 use tobimori\Agents\Tools\ScopeRequired;
 use tobimori\Agents\Tools\Tools;
 
-/**
- * Bridge for WebMCP: the Panel registers the MCP tools with `document.modelContext`,
- * and calls them through the Kirby API with the Panel session and its CSRF token.
- * The user is at the browser, so the agent gets all scopes the role allows.
- */
 final class WebMcp
 {
-	/**
-	 * Id of the access, used where MCP uses the grant id, for example in confirm codes
-	 */
 	private const GRANT = 'panel';
 
 	/**
-	 * `GET /api/agents/tools`: definitions in the WebMCP format
-	 *
 	 * @return array{enabled: bool, tools: list<array<string, mixed>>}
 	 */
 	public static function tools(): array
@@ -53,9 +43,7 @@ final class WebMcp
 				'inputSchema' => $definition['inputSchema'] ?? ['type' => 'object'],
 				'annotations' => [
 					'readOnlyHint' => $readOnly,
-					// changes that cannot be undone, like deleting, need a confirmation in the browser
 					'consequentialHint' => ($annotations['destructiveHint'] ?? false) === true,
-					// read tools return content that editors wrote, which can contain instructions
 					'untrustedContentHint' => $readOnly,
 				],
 			];
@@ -65,8 +53,6 @@ final class WebMcp
 	}
 
 	/**
-	 * `POST /api/agents/tools/<name>`: runs a tool, returns an MCP tool result
-	 *
 	 * @return array<string, mixed>|Response
 	 */
 	public static function call(string $name, array $arguments): array|Response
@@ -93,9 +79,6 @@ final class WebMcp
 		}
 	}
 
-	/**
-	 * The logged-in user with all scopes of the role, or null if WebMCP is off or the role may not connect agents
-	 */
 	private static function access(): ?Access
 	{
 		$user = App::instance()->user();

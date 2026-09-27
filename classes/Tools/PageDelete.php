@@ -67,7 +67,6 @@ final class PageDelete implements Tool
 			throw new ToolError('The site cannot be deleted');
 		}
 
-		// check the permission first, so the user is not asked for something that is not possible
 		PageRules::delete($page, force: true);
 
 		$confirm = $arguments->string('confirm');
@@ -118,9 +117,6 @@ final class PageDelete implements Tool
 		);
 	}
 
-	/**
-	 * What the code is for: the connection, the page, and what would be deleted
-	 */
 	private static function state(Page $page, Access $access, int $expires): string
 	{
 		return implode('|', [

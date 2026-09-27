@@ -18,7 +18,6 @@
 </template>
 
 <script>
-// a badge only for verified clients
 export default {
 	props: {
 		value: Object

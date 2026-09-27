@@ -9,9 +9,6 @@ use Kirby\Cms\User;
 use SensitiveParameter;
 use tobimori\Agents\Agents;
 
-/**
- * A verified access token: who the agent acts as, and with which scopes
- */
 final class Access
 {
 	/**
@@ -23,11 +20,6 @@ final class Access
 		public readonly array $scopes,
 	) {}
 
-	/**
-	 * Valid signature and expiry, issued for this server,
-	 * and the user and grant still exist. The scopes come from the grant, not from the token,
-	 * so changes in the Panel apply at once. Scopes the role may no longer grant are removed
-	 */
 	public static function fromToken(#[SensitiveParameter] string $token): ?self
 	{
 		$data = Token::parseAccess($token);
@@ -44,7 +36,6 @@ final class Access
 			return null;
 		}
 
-		// role permissions can change after the grant, so they apply to each request
 		return new self($user, $data['grant'], Scope::allowedFor($user, $grant->scopes));
 	}
 

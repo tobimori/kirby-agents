@@ -12,21 +12,12 @@ use tobimori\Agents\Agents;
 use tobimori\Agents\Http\Guard;
 use tobimori\Agents\Http\RateLimit;
 
-/**
- * Authorization code flow:
- * 1. `start()` checks the request and keeps it in the session
- * 2. `view()` shows the consent screen in the Panel, after login if needed
- * 3. `decide()` creates the grant and sends the code back to the client
- */
 final class Authorization
 {
 	private const SESSION = 'tobimori.agents.authorize.';
 
 	private const TTL = 10 * 60;
 
-	/**
-	 * `GET /panel/oauth/authorize`
-	 */
 	public static function start(): Response
 	{
 		$kirby = App::instance();
@@ -36,7 +27,6 @@ final class Authorization
 			return new Response('', null, 405, ['Allow' => 'GET']);
 		}
 
-		// the limit also covers the fetches of client metadata documents
 		$refused = Guard::https($request) ?? RateLimit::hit('authorize');
 
 		if ($refused !== null) {
@@ -47,7 +37,6 @@ final class Authorization
 		$client = Client::find((string) $query->get('client_id'));
 		$redirect = (string) $query->get('redirect_uri');
 
-		// without a known client and redirect URI, errors cannot go back to the client
 		if ($client === null) {
 			return self::page('The client is unknown or its metadata document is not available.');
 		}
@@ -82,7 +71,6 @@ final class Authorization
 			return self::back($redirect, $state, 'invalid_scope', 'Unknown scope');
 		}
 
-		// for clients that cannot ask for more scopes later, the consent view shows them all
 		$extra = Agents::option('scopes', []);
 		$extra = is_array($extra) ? array_intersect($extra, Scope::all()) : [];
 		$scopes = array_values(array_unique([...$scopes, ...$extra]));
@@ -98,13 +86,10 @@ final class Authorization
 			'expires' => time() + self::TTL,
 		]);
 
-		// the id is part of the path, because the Panel drops the query after login
+		// in the path, because the Panel drops the query after the login
 		return Response::redirect(Panel::url('agents/authorize/' . $id));
 	}
 
-	/**
-	 * `GET /panel/agents/authorize/<id>`, Panel view with the consent screen
-	 */
 	public static function view(string $id): array
 	{
 		$kirby = App::instance();
@@ -148,9 +133,6 @@ final class Authorization
 		];
 	}
 
-	/**
-	 * `POST /panel/agents/authorize/<id>`, form submit from the consent screen
-	 */
 	public static function decide(string $id): Response
 	{
 		$kirby = App::instance();
@@ -161,7 +143,6 @@ final class Authorization
 			return self::page('The request is not valid. Start the connection again from your app.', 403);
 		}
 
-		// single use, also when the user denies
 		$pending = self::pending($id);
 		$kirby
 			->session()
@@ -231,9 +212,6 @@ final class Authorization
 		];
 	}
 
-	/**
-	 * Scheme and host are case-insensitive, a trailing slash is ignored
-	 */
 	private static function isResource(string $resource): bool
 	{
 		$normalize = static fn(string $url): string => rtrim(
@@ -248,9 +226,6 @@ final class Authorization
 		return $normalize($resource) === $normalize(Agents::resource());
 	}
 
-	/**
-	 * Error redirect to the client (RFC 6749 section 4.1.2.1)
-	 */
 	private static function back(string $redirect, ?string $state, string $error, string $description): Response
 	{
 		return self::redirect($redirect, [
@@ -260,9 +235,6 @@ final class Authorization
 		]);
 	}
 
-	/**
-	 * Adds `iss` to every response for mix-up protection (RFC 9207)
-	 */
 	private static function redirect(string $uri, array $params): Response
 	{
 		$params['iss'] = Agents::issuer();
@@ -271,9 +243,6 @@ final class Authorization
 		return Response::redirect($uri . (str_contains($uri, '?') ? '&' : '?') . $query);
 	}
 
-	/**
-	 * Error page for problems that cannot go back to the client
-	 */
 	private static function page(string $message, int $code = 400): Response
 	{
 		$html =

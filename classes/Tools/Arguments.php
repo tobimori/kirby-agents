@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace tobimori\Agents\Tools;
 
-/**
- * Typed access to tool arguments. Wrong types become a ToolError for the agent.
- */
 final class Arguments
 {
 	public function __construct(
@@ -78,8 +75,6 @@ final class Arguments
 	}
 
 	/**
-	 * A list of values of any type, with a maximum length
-	 *
 	 * @return list<mixed>
 	 */
 	public function list(string $key, int $max): array
@@ -93,9 +88,6 @@ final class Arguments
 		return $value;
 	}
 
-	/**
-	 * Offset from the `cursor` argument, which is the `nextCursor` of a previous list
-	 */
 	public function offset(): int
 	{
 		$cursor = $this->string('cursor');
@@ -113,17 +105,12 @@ final class Arguments
 		return (int) $offset;
 	}
 
-	/**
-	 * `nextCursor` for a list result, null on the last page
-	 */
 	public static function nextCursor(int $offset, int $limit, int $total): ?string
 	{
 		return ($offset + $limit) < $total ? base64_encode((string) ($offset + $limit)) : null;
 	}
 
 	/**
-	 * An object with names as keys, or an empty array when it is missing
-	 *
 	 * @return array<string, mixed>
 	 */
 	public function object(string $key): array
@@ -144,8 +131,6 @@ final class Arguments
 	}
 
 	/**
-	 * A string or a list of strings
-	 *
 	 * @return list<string>
 	 */
 	public function strings(string $key): array

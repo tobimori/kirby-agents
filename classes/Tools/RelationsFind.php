@@ -83,12 +83,10 @@ final class RelationsFind implements Tool
 		$limit = $arguments->int('limit', 20, 1, 50);
 		$offset = $arguments->offset();
 
-		// the pickers count in pages of `limit` items
 		$number = intdiv($offset, $limit) + 1;
 		$options = ['model' => $model, 'query' => $query, 'search' => $search, 'limit' => $limit, 'page' => $number];
 
 		$result = match (true) {
-			// the Panel picker lists no drafts and searches one level, but all pages are valid values
 			$type === 'pages' && $query === null => self::pages($parent, $search, $limit, $number),
 			$type === 'pages' => (new PagePicker([...$options, 'map' => self::page(...)]))->toArray(),
 			$type === 'files' => (new FilePicker([...$options, 'map' => self::file(...)]))->toArray(),
@@ -116,8 +114,6 @@ final class RelationsFind implements Tool
 	}
 
 	/**
-	 * Children and drafts of the parent, or with a search, all pages of the site
-	 *
 	 * @return array{data: list<array<string, mixed>>, pagination: array{total: int}}
 	 */
 	private static function pages(?string $parent, ?string $search, int $limit, int $page): array
@@ -138,8 +134,6 @@ final class RelationsFind implements Tool
 	}
 
 	/**
-	 * `retrieveId()` reads the stored UUID, `uuid()` would write a missing one
-	 *
 	 * @return array<string, mixed>
 	 */
 	private static function page(Page $page): array

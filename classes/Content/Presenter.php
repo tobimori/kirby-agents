@@ -9,17 +9,12 @@ use Kirby\Cms\Page;
 use tobimori\Agents\Fields\Fields;
 use tobimori\Agents\Tools\ToolError;
 
-/**
- * Shows content to agents: a short outline with ref numbers, or full values
- * where nested nodes carry their ref number instead of their UUID.
- * The field classes show the values of their type.
- */
 final class Presenter
 {
 	private const PREVIEW = 60;
 
 	/**
-	 * @var array<string, int> node path => ref
+	 * @var array<string, int>
 	 */
 	private array $refs = [];
 
@@ -62,8 +57,6 @@ final class Presenter
 	}
 
 	/**
-	 * Full values of some fields
-	 *
 	 * @param list<string> $names
 	 */
 	public static function fields(Reader $content, array $names, bool $ids): array
@@ -84,9 +77,6 @@ final class Presenter
 		return [...$presenter->meta(), 'fields' => $values];
 	}
 
-	/**
-	 * Full values of one node
-	 */
 	public static function node(Reader $content, int $ref, bool $ids): array
 	{
 		$presenter = new self($content, $ids);
@@ -97,8 +87,6 @@ final class Presenter
 	}
 
 	/**
-	 * Full values of the fields in a node or object
-	 *
 	 * @param array<array-key, mixed> $fields
 	 * @param list<string|int> $path
 	 */
@@ -109,7 +97,6 @@ final class Presenter
 		foreach ($values as $name => $value) {
 			$props = $fields[$name] ?? null;
 
-			// only fields from the blueprint, without the ones that agents should ignore
 			if (is_array($props)) {
 				$result[$name] = Fields::for($props)->present($value, [...$path, $name], $this);
 			}
@@ -119,8 +106,6 @@ final class Presenter
 	}
 
 	/**
-	 * Short values of simple fields: `label "Docs", url "https://…"`
-	 *
 	 * @param array<array-key, mixed> $fields
 	 */
 	public function preview(array $fields, array $values, int $limit = 3): string
@@ -155,8 +140,6 @@ final class Presenter
 	}
 
 	/**
-	 * `ref` number of the node at the path, and the UUID only on request
-	 *
 	 * @param list<string|int> $path
 	 */
 	public function ref(array $path, ?array $value): array
@@ -217,8 +200,6 @@ final class Presenter
 	}
 
 	/**
-	 * Outline lines for all nodes of one top-level field, indented by nesting
-	 *
 	 * @return list<string>
 	 */
 	private function nodeLines(string $field): array
@@ -235,8 +216,6 @@ final class Presenter
 			$depth = $node->parent !== null ? ($depths[$node->parent] ?? 0) + 1 : 1;
 			$depths[$node->ref] = $depth;
 
-			// name the nested field once, for example `left` in a columns block,
-			// and indent all its items under the name. Layout columns and their blocks need no name
 			if ($node->parent !== null && !in_array($node->field, ['columns', 'blocks'], true)) {
 				$slot = $node->parent . '/' . $node->field;
 

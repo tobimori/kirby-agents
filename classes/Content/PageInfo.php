@@ -7,14 +7,8 @@ namespace tobimori\Agents\Content;
 use Kirby\Cms\Page;
 use Kirby\Uuid\PageUuid;
 
-/**
- * How pages are shown to agents in lists and trees
- */
 final class PageInfo
 {
-	/**
-	 * Explains the summary fields in tool descriptions
-	 */
 	public const FIELDS = 'Each page has: `id` (its path, use it with other tools), `uuid` (null until the page has a stored UUID), `title`, `template`, `blueprint` (pages without an own blueprint use `default`), `status` (listed, unlisted, or draft), `num` (sort number), `children` (count, drafts included), `modified`, `changes` (true when the page has unsaved changes).';
 
 	/**
@@ -22,7 +16,7 @@ final class PageInfo
 	 */
 	public static function summary(Page $page): array
 	{
-		// `uuid()` would generate and write a missing UUID, which a read must not do
+		// `uuid()` would write a missing UUID
 		$uuid = PageUuid::retrieveId($page);
 
 		return [
