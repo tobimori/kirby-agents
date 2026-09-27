@@ -4,13 +4,11 @@ declare(strict_types=1);
 
 namespace tobimori\Agents\Tools;
 
-use Kirby\Cms\App;
 use Kirby\Cms\File;
 use Kirby\Cms\Page;
 use Kirby\Cms\PageRules;
 use Kirby\Content\VersionCache;
 use Kirby\Filesystem\Dir;
-use Kirby\Filesystem\F;
 use tobimori\Agents\Content\Models;
 use tobimori\Agents\Content\PageInfo;
 use tobimori\Agents\Content\Writer;
@@ -139,25 +137,20 @@ final class PageDelete implements Tool
 
 	/**
 	 * What the deletion removes: the folder of the page, as it is on disk now, and not as loaded models
-	 * show it. The text of content files, because times have only seconds
+	 * show it. The contents of all files, because times have only seconds and a replaced file can keep
+	 * its size and inode. xxh128 is fast, but large media makes the check slower
 	 */
 	private static function fingerprint(Page $page): string
 	{
 		$root = (string) $page->root();
-		$extension = '.' . App::instance()->contentExtension();
 		$parts = [];
 
 		foreach (is_dir($root) ? Dir::index($root, recursive: true) : [] as $path) {
 			$file = $root . '/' . (string) $path;
 
-			if (is_file($file) === false) {
-				continue;
+			if (is_file($file)) {
+				$parts[$path] = hash_file('xxh128', $file);
 			}
-
-			// hashing the files themselves would be slow: a replaced file changes its size, time, or inode
-			$parts[$path] = str_ends_with($file, $extension)
-				? hash_file('xxh128', $file)
-				: [F::size($file), F::modified($file), fileinode($file)];
 		}
 
 		return hash('sha256', (string) json_encode($parts));
