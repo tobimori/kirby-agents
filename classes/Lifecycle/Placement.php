@@ -119,6 +119,20 @@ final class Placement
 	}
 
 	/**
+	 * `drafts()` of a collection returns the drafts of its pages, not the drafts in it
+	 */
+	public static function withStatus(Pages $pages, string $status): Pages
+	{
+		return match ($status) {
+			'published' => $pages->published(),
+			'listed' => $pages->listed(),
+			'unlisted' => $pages->unlisted(),
+			'draft' => $pages->filter('isDraft', '==', true),
+			default => $pages,
+		};
+	}
+
+	/**
 	 * @return list<array<array-key, mixed>>
 	 */
 	public static function sections(Site|Page $model, Site|Page $parent, string $type = 'pages'): array
@@ -247,24 +261,11 @@ final class Placement
 		$pages = is_string($query) ? $model->query($query, Pages::class) : null;
 		$pages = $pages instanceof Pages ? $pages : $parent->childrenAndDrafts();
 
-		$pages = match ($status) {
-			'draft' => $pages->filter(static fn(Page $page): bool => $page->isDraft()),
-			'published' => $pages->filter(static fn(Page $page): bool => !$page->isDraft()),
-			'listed' => $pages->filter(static fn(Page $page): bool => $page->isListed()),
-			'unlisted' => $pages->filter(static fn(Page $page): bool => $page->isUnlisted()),
-			default => $pages,
-		};
-
-		$templates = self::templatesProp($section);
 		$ignore = self::strings($section['templatesIgnore'] ?? null);
 
-		return $pages
-			->filter(
-				static fn(Page $page): bool => (
-					($templates === [] || in_array($page->intendedTemplate()->name(), $templates, true))
-					&& !in_array($page->intendedTemplate()->name(), $ignore, true)
-				),
-			)
+		return self::withStatus($pages, $status)
+			->template(self::templatesProp($section))
+			->filter(static fn(Page $page): bool => !in_array($page->intendedTemplate()->name(), $ignore, true))
 			->count();
 	}
 

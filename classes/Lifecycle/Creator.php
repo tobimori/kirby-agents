@@ -28,7 +28,7 @@ final class Creator
 		private readonly ?string $slug = null,
 	) {
 		$this->dialog = new PageCreateDialog(
-			parentId: $parent instanceof Page ? 'pages/' . str_replace('/', '+', $parent->id()) : 'site',
+			parentId: $parent->panel()->path(),
 			sectionId: null,
 			template: $template,
 			viewId: null,

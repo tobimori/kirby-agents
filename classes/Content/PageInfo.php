@@ -28,7 +28,7 @@ final class PageInfo
 			'status' => $page->status(),
 			'num' => $page->num(),
 			'children' => $page->childrenAndDrafts()->count(),
-			'modified' => date('c', (int) $page->modified()),
+			'modified' => (string) $page->modified('c'),
 			'changes' => $page->version('changes')->exists('*'),
 		];
 	}

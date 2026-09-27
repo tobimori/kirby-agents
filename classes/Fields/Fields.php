@@ -169,11 +169,14 @@ final class Fields
 		$definition = FormField::$types[$type] ?? null;
 
 		if (is_string($definition) && class_exists($definition)) {
+			// the first parent that Kirby registers as a field type
 			$parents = class_parents($definition);
 
 			foreach ($parents === false ? [] : $parents as $parent) {
-				if (str_starts_with($parent, 'Kirby\\Form\\Field\\')) {
-					return lcfirst(substr(basename(str_replace('\\', '/', $parent)), 0, -5));
+				$type = array_search($parent, FormField::$types, true);
+
+				if (is_string($type)) {
+					return $type;
 				}
 			}
 

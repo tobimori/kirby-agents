@@ -8,6 +8,7 @@ use Kirby\Cms\App;
 use Kirby\Cms\File;
 use Kirby\Cms\ModelWithContent;
 use Kirby\Cms\Page;
+use Kirby\Toolkit\Str;
 use tobimori\Agents\Content\Models;
 use tobimori\Agents\OAuth\Access;
 use tobimori\Agents\OAuth\Scope;
@@ -92,7 +93,7 @@ final class SchemaGet implements Tool
 			return new File([
 				'filename' => 'new-file.tmp',
 				'parent' => $kirby->site(),
-				'template' => substr($blueprint, 6),
+				'template' => Str::after($blueprint, 'files/'),
 			]);
 		}
 

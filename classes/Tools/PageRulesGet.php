@@ -6,7 +6,6 @@ namespace tobimori\Agents\Tools;
 
 use Kirby\Cms\Page;
 use Kirby\Cms\Site;
-use Kirby\Toolkit\I18n;
 use tobimori\Agents\Agents;
 use tobimori\Agents\Content\Models;
 use tobimori\Agents\Content\PageInfo;
@@ -146,9 +145,9 @@ final class PageRulesGet implements Tool
 	{
 		$statuses = [];
 
+		// Kirby translates the labels and always sets one
 		foreach ($page->blueprint()->status() as $status => $props) {
-			$label = is_array($props) ? $props['label'] ?? $status : $status;
-			$label = is_array($label) ? I18n::translate($label) : $label;
+			$label = is_array($props) ? $props['label'] ?? null : null;
 			$statuses[(string) $status] = is_string($label) ? $label : (string) $status;
 		}
 

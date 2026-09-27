@@ -7,6 +7,7 @@ namespace tobimori\Agents\Tools;
 use Kirby\Cms\App;
 use Kirby\Cms\Page;
 use tobimori\Agents\Content\PageInfo;
+use tobimori\Agents\Lifecycle\Placement;
 use tobimori\Agents\OAuth\Access;
 use tobimori\Agents\OAuth\Scope;
 
@@ -81,22 +82,7 @@ final class PagesFind implements Tool
 
 		$templates = $arguments->strings('template');
 
-		if ($templates !== []) {
-			$pages = $pages->filter(static fn(Page $page): bool => in_array(
-				$page->intendedTemplate()->name(),
-				$templates,
-				true,
-			));
-		}
-
-		$status = $arguments->enum('status', self::STATUSES, 'all');
-
-		if ($status !== 'all') {
-			$pages = $pages->filter(static fn(Page $page): bool => match ($status) {
-				'published' => $page->isDraft() === false,
-				default => $page->status() === $status,
-			});
-		}
+		$pages = Placement::withStatus($pages->template($templates), $arguments->enum('status', self::STATUSES, 'all'));
 
 		$query = $arguments->string('query');
 

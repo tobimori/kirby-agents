@@ -7,6 +7,7 @@ namespace tobimori\Agents\Protocol;
 use Kirby\Cms\App;
 use Kirby\Http\Request;
 use Kirby\Http\Response;
+use Kirby\Toolkit\Str;
 use Throwable;
 use tobimori\Agents\Agents;
 use tobimori\Agents\Http\McpEndpoint;
@@ -133,7 +134,7 @@ final class Server
 		}
 
 		if (str_starts_with($value, '=?base64?') && str_ends_with($value, '?=')) {
-			$decoded = base64_decode(substr($value, 9, -2), true);
+			$decoded = base64_decode(Str::between($value, '=?base64?', '?='), true);
 
 			return $decoded === false ? null : $decoded;
 		}
