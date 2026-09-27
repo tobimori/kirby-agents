@@ -85,6 +85,7 @@ final class Uploads
 			);
 		}
 
+		$content = Fields::input($props, $content, [], 'the file');
 		$form->fill(input: $content);
 
 		$errors = [

@@ -7,6 +7,7 @@ namespace tobimori\Agents\Fields;
 use tobimori\Agents\Content\Nodes;
 use tobimori\Agents\Content\Presenter;
 use tobimori\Agents\Schema\Compiler;
+use tobimori\Agents\Tools\ToolError;
 
 class EntriesField extends Field
 {
@@ -17,13 +18,31 @@ class EntriesField extends Field
 
 	public function input(mixed $value, mixed $current): mixed
 	{
-		return self::json($value);
+		$value = self::json($value);
+
+		if (!is_array($value)) {
+			return $value;
+		}
+
+		$field = Fields::for($this->field());
+
+		return array_map(static fn(mixed $item): mixed => $field->input($item, null), $value);
+	}
+
+	public function accept(string $kind, array $node): void
+	{
+		parent::accept($kind, $node);
+
+		$type = $this->entryType();
+
+		if ($node['type'] !== $type) {
+			throw new ToolError("an entry of type `{$node['type']}` cannot move into entries of type `{$type}`");
+		}
 	}
 
 	public function nodes(array $value, Nodes $index, array $path, ?int $parent, string $field): void
 	{
-		$type = $this->field()['type'] ?? null;
-		$type = is_string($type) ? $type : 'entry';
+		$type = $this->entryType();
 
 		foreach (array_keys($value) as $i) {
 			$index->add('entry', $type, [...$path, $i], [], null, $parent, $field, $this->props);
@@ -38,6 +57,13 @@ class EntriesField extends Field
 	public function preview(mixed $value, Presenter $presenter): ?string
 	{
 		return null;
+	}
+
+	private function entryType(): string
+	{
+		$type = $this->field()['type'] ?? null;
+
+		return is_string($type) ? $type : 'entry';
 	}
 
 	/**

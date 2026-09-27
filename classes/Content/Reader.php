@@ -30,6 +30,7 @@ final class Reader
 		public readonly array $nodes,
 		public readonly string $title,
 		public readonly array $untranslated,
+		public readonly ?string $editor,
 	) {}
 
 	public static function read(ModelWithContent $model, ?string $version = null, ?string $language = null): self
@@ -80,7 +81,21 @@ final class Reader
 		}
 
 		$fallback = $language->isDefault() ? null : $content->read('default');
-		$stored = json_encode([$version, $language->code(), $raw, $fallback]);
+		$editor = null;
+
+		// another user made the unsaved changes, maybe in the Panel
+		if ($version === 'changes') {
+			$user = $content->lock($language)->user();
+
+			if ($user !== null && $user->is(App::instance()->user()) === false) {
+				$editor = $user->email() ?? $user->id();
+			}
+		}
+		$nodes = Nodes::index($fields, $values);
+
+		// refs also depend on the blueprint, for example on the order of its fields
+		$refs = array_map(static fn(Node $node): array => [$node->kind, $node->type, $node->key()], $nodes);
+		$stored = json_encode([$version, $language->code(), $raw, $fallback, $refs]);
 
 		return new self(
 			model: $model,
@@ -89,9 +104,10 @@ final class Reader
 			etag: substr(hash('sha256', (string) $stored), 0, 12),
 			fields: $fields,
 			values: $values,
-			nodes: Nodes::index($fields, $values),
+			nodes: $nodes,
 			title: is_string($title) ? $title : '',
 			untranslated: $untranslated,
+			editor: $editor,
 		);
 	}
 
@@ -110,6 +126,7 @@ final class Reader
 			nodes: Nodes::index($this->fields, $values),
 			title: $this->title,
 			untranslated: $this->untranslated,
+			editor: $this->editor,
 		);
 	}
 

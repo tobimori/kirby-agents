@@ -60,15 +60,20 @@ final class ChangesPublish implements Tool
 
 	public function call(Arguments $arguments, Access $access): string
 	{
-		$pending = Pending::for(
+		$pending = Pending::publish(
 			Models::content((string) $arguments->string('page')),
 			(string) $arguments->string('etag'),
 			$arguments->string('language'),
 		);
-		$pending->publish();
 
-		return $pending->changed === []
+		$text = $pending->changed === []
 			? 'Published. The changes were the same as the published content.'
 			: 'Published. Changed fields: ' . implode(', ', $pending->changed) . '.';
+
+		if ($pending->editor !== null) {
+			$text .= " These were the unsaved changes of {$pending->editor}, and they are published now.";
+		}
+
+		return $text;
 	}
 }

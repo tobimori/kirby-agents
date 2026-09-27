@@ -19,32 +19,72 @@ final class Pending
 		public readonly ModelWithContent $model,
 		public readonly Language $language,
 		public readonly array $changed,
+		public readonly ?string $editor,
 	) {}
 
-	public static function for(ModelWithContent $model, string $etag, ?string $language): self
+	public static function publish(ModelWithContent $model, string $etag, ?string $language): self
 	{
-		if ($model->permissions()->can('update') === false) {
-			throw new ToolError('your role may not change this content');
-		}
+		return Writer::exclusive($model, static function () use ($model, $etag, $language): self {
+			$pending = self::read($model, $etag, $language);
+			$version = $model->version('changes');
+			$fields = Fields::for($model, $pending->language);
+			$fields->fill(input: $version->content($pending->language)->toArray());
+			$errors = Writer::errors($fields);
 
-		$read = Reader::read($model, null, $language);
+			if ($errors !== []) {
+				throw new ToolError(
+					"Nothing was published. Fix these fields with content_update first:\n- " . implode("\n- ", $errors),
+				);
+			}
+
+			try {
+				$version->publish($pending->language);
+			} catch (LockedContentException $exception) {
+				throw Writer::locked($exception->getDetails());
+			}
+
+			return $pending;
+		});
+	}
+
+	public static function discard(ModelWithContent $model, string $etag, ?string $language): self
+	{
+		return Writer::exclusive($model, static function () use ($model, $etag, $language): self {
+			$pending = self::read($model, $etag, $language);
+
+			try {
+				$model->version('changes')->delete($pending->language);
+			} catch (LockedContentException $exception) {
+				throw Writer::locked($exception->getDetails());
+			}
+
+			return $pending;
+		});
+	}
+
+	private static function read(ModelWithContent $model, string $etag, ?string $language): self
+	{
+		$read = Writer::read($model, $language, $etag);
 
 		if ($read->version !== 'changes') {
 			throw new ToolError('This content has no unsaved changes');
 		}
 
-		if ($etag !== $read->etag) {
-			throw new ToolError(
-				"The changes are different from your read. The current etag is {$read->etag}. Read them again with content_get.",
-			);
-		}
+		return new self($model, Language::ensure($read->language), self::changedFields($read), $read->editor);
+	}
 
+	/**
+	 * The fields in which a read of the unsaved changes differs from the saved content
+	 *
+	 * @return list<string>
+	 */
+	public static function changedFields(Reader $read): array
+	{
 		$language = Language::ensure($read->language);
-		$latest = $model->version('latest')->content($language)->toArray();
+		$latest = $read->model->version('latest')->content($language)->toArray();
 
 		// form values, because the stored text of the same value can differ
-		$fields = Fields::for($model, $language);
-		$changes = $read->values;
+		$fields = Fields::for($read->model, $language);
 		$latest = array_intersect_key($fields->reset()->fill(input: $latest)->toFormValues(), $read->fields);
 		$changed = [];
 
@@ -53,40 +93,11 @@ final class Pending
 				continue;
 			}
 
-			if (($changes[$key] ?? null) !== ($latest[$key] ?? null)) {
+			if (($read->values[$key] ?? null) !== ($latest[$key] ?? null)) {
 				$changed[] = (string) $key;
 			}
 		}
 
-		return new self($model, $language, $changed);
-	}
-
-	public function publish(): void
-	{
-		$version = $this->model->version('changes');
-		$fields = Fields::for($this->model, $this->language);
-		$fields->fill(input: $version->content($this->language)->toArray());
-		$errors = Writer::errors($fields);
-
-		if ($errors !== []) {
-			throw new ToolError(
-				"Nothing was published. Fix these fields with content_update first:\n- " . implode("\n- ", $errors),
-			);
-		}
-
-		try {
-			$version->publish($this->language);
-		} catch (LockedContentException $exception) {
-			throw Writer::locked($exception->getDetails());
-		}
-	}
-
-	public function discard(): void
-	{
-		try {
-			$this->model->version('changes')->delete($this->language);
-		} catch (LockedContentException $exception) {
-			throw Writer::locked($exception->getDetails());
-		}
+		return $changed;
 	}
 }

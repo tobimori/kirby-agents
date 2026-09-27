@@ -26,6 +26,7 @@ final class ContentGet implements Tool
 				'Without `fields` and `ref`, returns an outline: each field with a short preview in plain text, without HTML. Items in blocks, layouts, structures, and entries have a ref number, and nested items are indented under the name of their field.',
 				'With `fields` or `ref`, returns full values as JSON. Nested items carry their `ref` number.',
 				'Ref numbers and the `etag` belong to this version of the content. They change when the content changes, so read again after a change.',
+				'If another user made the unsaved changes, the read names them (`editor`). Their edits are part of these changes: if you publish, you publish their edits too, so tell the user first.',
 			]),
 			'inputSchema' => [
 				'type' => 'object',

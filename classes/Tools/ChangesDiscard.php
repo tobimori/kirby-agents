@@ -59,17 +59,22 @@ final class ChangesDiscard implements Tool
 
 	public function call(Arguments $arguments, Access $access): string
 	{
-		$pending = Pending::for(
+		$pending = Pending::discard(
 			Models::content((string) $arguments->string('page')),
 			(string) $arguments->string('etag'),
 			$arguments->string('language'),
 		);
-		$pending->discard();
 
-		return $pending->changed === []
+		$text = $pending->changed === []
 			? 'Discarded. The changes were the same as the published content.'
 			: 'Discarded the changes to: '
 			. implode(', ', $pending->changed)
 			. '. The published content applies again.';
+
+		if ($pending->editor !== null) {
+			$text .= " These were the unsaved changes of {$pending->editor}, and they are discarded now.";
+		}
+
+		return $text;
 	}
 }

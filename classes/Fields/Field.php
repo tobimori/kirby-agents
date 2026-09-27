@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace tobimori\Agents\Fields;
 
+use Kirby\Toolkit\A;
+use Kirby\Toolkit\V;
 use tobimori\Agents\Content\InputCheck;
 use tobimori\Agents\Content\Node;
 use tobimori\Agents\Content\Nodes;
@@ -81,6 +83,14 @@ abstract class Field
 	}
 
 	public function check(mixed $value, InputCheck $check, string $where): void {}
+
+	/**
+	 * If the value has content in fields that agents cannot change: hidden with `agents.ignore`, or read-only
+	 */
+	public function locks(array $value): bool
+	{
+		return false;
+	}
 
 	/**
 	 * @param array<array-key, mixed> $value
@@ -241,15 +251,31 @@ abstract class Field
 	}
 
 	/**
-	 * @param array<array-key, mixed> $content
-	 * @param array<array-key, mixed> $fields
+	 * A new whole value would remove content that the agent cannot see or change
 	 */
-	protected static function ensureKnown(array $content, array $fields, string $where): void
+	protected function lockedError(): ToolError
 	{
-		foreach (array_keys($content) as $field) {
-			if (!is_array($fields[$field] ?? null)) {
-				throw new ToolError(self::unknownField((string) $field, $fields, $where));
+		return new ToolError(
+			"`{$this->name()}` has content in fields that are hidden from agents or read-only. A new whole value would change it, so change its items with `ref` operations instead",
+		);
+	}
+
+	/**
+	 * @param array<array-key, mixed> $fields all fields, also the hidden ones
+	 */
+	protected static function lockedIn(array $fields, mixed $content): bool
+	{
+		$content = A::wrap($content);
+
+		return A::some($fields, static function (mixed $props, int|string $name) use ($content): bool {
+			$value = $content[$name] ?? null;
+
+			// @mago-expect analysis:non-documented-method (Kirby validators are called with __callStatic)
+			if (!is_array($props) || V::empty($value)) {
+				return false;
 			}
-		}
+
+			return Fields::isLocked($props) || is_array($value) && Fields::for($props)->locks($value);
+		});
 	}
 }

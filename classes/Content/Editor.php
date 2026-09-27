@@ -14,6 +14,9 @@ final class Editor
 
 	private const NEW = '__new';
 
+	// wraps nodes that are not arrays, like entries, so that they can carry a marker
+	private const VALUE = '__value';
+
 	/**
 	 * @var array<array-key, mixed>
 	 */
@@ -29,13 +32,34 @@ final class Editor
 	 */
 	private array $changed = [];
 
+	/**
+	 * Nodes in read-only fields, also through a parent
+	 *
+	 * @var array<int, true>
+	 */
+	private array $locked = [];
+
 	public function __construct(
 		private readonly Reader $content,
 	) {
 		$this->values = $content->values;
 
 		foreach ($content->nodes as $node) {
-			$this->values = self::setAt($this->values, [...$node->path, self::REF], $node->ref);
+			$value = self::getAt($this->values, $node->path);
+
+			if (!is_array($value)) {
+				$value = [self::VALUE => $value];
+			}
+
+			$value[self::REF] = $node->ref;
+
+			$this->values = self::setAt($this->values, $node->path, $value);
+
+			$inLocked = $node->parent !== null && ($this->locked[$node->parent] ?? false);
+
+			if ($inLocked || ($node->props['disabled'] ?? false) === true) {
+				$this->locked[$node->ref] = true;
+			}
 			$this->nodes[$node->ref] = [
 				'kind' => $node->kind,
 				'type' => $node->type,
@@ -97,14 +121,25 @@ final class Editor
 
 	private function set(array $op): void
 	{
+		if (!array_key_exists('value', $op)) {
+			throw new ToolError('`value` is required');
+		}
+
+		[$props, $path] = $this->slot($op);
+		$this->write($props, $path, $op['value']);
+	}
+
+	/**
+	 * The field that `set` changes, from `field` and an optional `ref`
+	 *
+	 * @return array{0: array<array-key, mixed>, 1: list<string|int>}
+	 */
+	private function slot(array $op): array
+	{
 		$field = $op['field'] ?? null;
 
 		if (!is_string($field)) {
 			throw new ToolError('`field` is required');
-		}
-
-		if (!array_key_exists('value', $op)) {
-			throw new ToolError('`value` is required');
 		}
 
 		$ref = $op['ref'] ?? null;
@@ -117,13 +152,12 @@ final class Editor
 			}
 
 			self::ensureEditable($field, $props);
-			$this->values[$field] = Fields::for($props)->input($op['value'], $this->values[$field] ?? null);
-			$this->changed[$field] = true;
 
-			return;
+			return [$props, [$field]];
 		}
 
 		$key = $this->key($ref);
+		$this->ensureOpen($key);
 		$node = $this->nodes[$key];
 		$props = $node['fields'][$field] ?? null;
 
@@ -133,15 +167,17 @@ final class Editor
 
 		self::ensureEditable($field, $props);
 
-		$path = $this->pathOf($key);
-		$slot = [...Fields::for($node['props'])->contentPath($node['kind']), $field];
+		return [$props, [...$this->pathOf($key), ...Fields::for($node['props'])->contentPath($node['kind']), $field]];
+	}
 
-		$current = self::getAt($this->values, [...$path, ...$slot]);
-		$this->values = self::setAt(
-			$this->values,
-			[...$path, ...$slot],
-			Fields::for($props)->input($op['value'], $current),
-		);
+	/**
+	 * @param array<array-key, mixed> $props
+	 * @param list<string|int> $path
+	 */
+	private function write(array $props, array $path, mixed $value): void
+	{
+		$current = self::getAt($this->values, $path);
+		$this->values = self::setAt($this->values, $path, Fields::for($props)->input($value, $current));
 		$this->touch($path);
 	}
 
@@ -177,6 +213,7 @@ final class Editor
 	private function move(array $op): void
 	{
 		$key = $this->key($op['ref'] ?? null);
+		$this->ensureOpen($key);
 		$from = $this->pathOf($key);
 		$node = self::getAt($this->values, $from);
 		$meta = $this->nodes[$key];
@@ -194,6 +231,7 @@ final class Editor
 	private function remove(array $op): void
 	{
 		$key = $this->key($op['ref'] ?? null);
+		$this->ensureOpen($key);
 		$path = $this->pathOf($key);
 
 		$this->values = self::removeAt($this->values, $path);
@@ -218,6 +256,7 @@ final class Editor
 		}
 
 		$key = $this->key($op[$mode]);
+		$this->ensureOpen($key);
 		$path = $this->pathOf($key);
 		$index = (int) array_pop($path);
 		$meta = $this->nodes[$key];
@@ -237,6 +276,7 @@ final class Editor
 	{
 		if (is_string($into) && is_array($this->content->fields[$into] ?? null)) {
 			$props = $this->content->fields[$into];
+			self::ensureEditable($into, $props);
 
 			return [
 				'path' => [$into],
@@ -247,6 +287,7 @@ final class Editor
 		}
 
 		$key = $this->key($into);
+		$this->ensureOpen($key);
 		$meta = $this->nodes[$key];
 		$path = $this->pathOf($key);
 		$owner = Fields::for($meta['props']);
@@ -278,6 +319,8 @@ final class Editor
 				. ($slots === [] ? 'none' : implode(', ', $slots)),
 			);
 		}
+
+		self::ensureEditable($slot, $props);
 
 		return [
 			'path' => [...$path, ...$owner->contentPath($meta['kind']), $slot],
@@ -415,9 +458,20 @@ final class Editor
 			return $value;
 		}
 
+		if (array_key_exists(self::VALUE, $value)) {
+			return $value[self::VALUE];
+		}
+
 		unset($value[self::REF], $value[self::NEW]);
 
 		return array_map(self::strip(...), $value);
+	}
+
+	private function ensureOpen(int|string $key): void
+	{
+		if ($this->locked[$key] ?? false) {
+			throw new ToolError("node {$key} is in a read-only field");
+		}
 	}
 
 	private static function ensureEditable(string $field, array $props): void

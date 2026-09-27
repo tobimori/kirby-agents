@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace tobimori\Agents\Tools;
 
 use Kirby\Cms\Page;
-use tobimori\Agents\Content\Editor;
 use tobimori\Agents\Content\Models;
 use tobimori\Agents\Content\Presenter;
 use tobimori\Agents\Content\Reader;
@@ -127,21 +126,17 @@ final class ContentUpdate implements Tool
 			throw new ScopeRequired(Scope::ContentPublish);
 		}
 		$language = $arguments->string('language');
-		$base = Reader::read($model, null, $language);
-
-		if ($arguments->string('etag') !== $base->etag) {
-			throw new ToolError(
-				"The content changed since your read. The current etag is {$base->etag}. Read it again with content_get, because the ref numbers may have changed too.",
-			);
-		}
-
-		$ops = $arguments->list('ops', self::MAX_OPS);
-		$editor = new Editor($base);
-		$editor->apply($ops);
-		$result = $editor->result();
-
 		$dryRun = $arguments->bool('dryRun', false);
-		$outcome = Writer::write($base, $result['values'], $result['changed'], $version === 'latest', $dryRun);
+		$outcome = Writer::write(
+			$model,
+			$language,
+			(string) $arguments->string('etag'),
+			$arguments->list('ops', self::MAX_OPS),
+			$version === 'latest',
+			$dryRun,
+		);
+		$base = $outcome['base'];
+		$result = $outcome['edit'];
 
 		if ($outcome['errors'] !== []) {
 			throw new ToolError("Nothing was saved. Invalid values:\n" . self::messages($outcome['errors']));
@@ -168,6 +163,18 @@ final class ContentUpdate implements Tool
 
 		if ($created !== []) {
 			$lines[] = 'New items: ' . implode(', ', $created) . '.';
+		}
+
+		if ($outcome['others'] !== null) {
+			$lines[] =
+				"The unsaved changes also had edits by {$outcome['others']['editor']} in: " . implode(
+					', ',
+					$outcome['others']['fields'],
+				) . '. ' . match (true) {
+					$version === 'latest' && $dryRun => 'They would be published too.',
+					$version === 'latest' => 'They are published now too.',
+					default => 'They stay in the unsaved changes.',
+				};
 		}
 
 		if ($outcome['warnings'] !== []) {

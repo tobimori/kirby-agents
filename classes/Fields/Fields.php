@@ -9,7 +9,9 @@ use Kirby\Exception\InvalidArgumentException;
 use Kirby\Form\Field as FormField;
 use Kirby\Form\FieldClass;
 use Kirby\Plugin\Plugin;
+use Kirby\Toolkit\V;
 use tobimori\Agents\Agents;
+use tobimori\Agents\Tools\ToolError;
 
 final class Fields
 {
@@ -182,6 +184,48 @@ final class Fields
 		}
 
 		return is_array($definition) && is_string($definition['extends'] ?? null) ? $definition['extends'] : null;
+	}
+
+	/**
+	 * Agents cannot change these fields: hidden with `agents.ignore`, or read-only
+	 *
+	 * @param array<array-key, mixed> $props
+	 */
+	public static function isLocked(array $props): bool
+	{
+		return self::hint($props, 'ignore') === true || ($props['disabled'] ?? false) === true;
+	}
+
+	/**
+	 * Converts the input of an agent for a set of fields, like the content of a new block
+	 *
+	 * @param array<array-key, mixed> $fields the fields that agents see
+	 * @param array<array-key, mixed> $content
+	 * @param array<array-key, mixed> $current
+	 *
+	 * @return array<array-key, mixed>
+	 */
+	public static function input(array $fields, array $content, array $current, string $where): array
+	{
+		foreach ($content as $name => $value) {
+			$props = $fields[$name] ?? null;
+
+			if (!is_array($props)) {
+				throw new ToolError(Field::unknownField((string) $name, $fields, $where));
+			}
+
+			$old = $current[$name] ?? null;
+
+			// agents see read-only values, and can send them back unchanged
+			// @mago-expect analysis:non-documented-method (Kirby validators are called with __callStatic)
+			if (($props['disabled'] ?? false) === true && !V::empty($value) && $value !== $old) {
+				throw new ToolError("{$where}: field `{$name}` is read-only");
+			}
+
+			$content[$name] = self::for($props)->input($value, $old);
+		}
+
+		return $content;
 	}
 
 	/**

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace tobimori\Agents\Fields;
 
+use Kirby\Toolkit\A;
 use tobimori\Agents\Content\InputCheck;
 use tobimori\Agents\Content\Nodes;
 use tobimori\Agents\Content\Presenter;
@@ -24,14 +25,36 @@ class ObjectField extends Field
 	public function input(mixed $value, mixed $current): mixed
 	{
 		$value = self::json($value);
-		$all = is_array($this->props['fields'] ?? null) ? $this->props['fields'] : [];
-		$ignored = array_diff_key($all, Fields::visible($all));
+		$current = A::wrap($current);
 
-		if (!is_array($value) || !is_array($current) || $ignored === []) {
+		if (!is_array($value)) {
+			// an empty object would remove the values of hidden and read-only fields
+			if ($this->locks($current)) {
+				throw $this->lockedError();
+			}
+
 			return $value;
 		}
 
-		return [...$value, ...array_intersect_key($current, $ignored)];
+		// hidden and read-only fields of the object keep their values, but not those in nested fields
+		$open = A::filter(
+			$this->fields(),
+			static fn(mixed $props): bool => is_array($props) && !Fields::isLocked($props),
+		);
+
+		if (self::lockedIn($open, $current)) {
+			throw $this->lockedError();
+		}
+
+		$value = Fields::input($this->fields(), $value, $current, $this->name());
+		$locked = array_diff_key($this->allFields(), $open);
+
+		return [...$value, ...array_intersect_key($current, $locked)];
+	}
+
+	public function locks(array $value): bool
+	{
+		return self::lockedIn($this->allFields(), $value);
 	}
 
 	public function check(mixed $value, InputCheck $check, string $where): void
@@ -64,6 +87,14 @@ class ObjectField extends Field
 	 */
 	protected function fields(): array
 	{
-		return Fields::visible(is_array($this->props['fields'] ?? null) ? $this->props['fields'] : []);
+		return Fields::visible($this->allFields());
+	}
+
+	/**
+	 * @return array<array-key, mixed>
+	 */
+	private function allFields(): array
+	{
+		return A::wrap($this->props['fields'] ?? null);
 	}
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace tobimori\Agents\Fields;
 
+use Kirby\Toolkit\A;
 use Kirby\Toolkit\Str;
 use tobimori\Agents\Content\InputCheck;
 use tobimori\Agents\Content\Node;
@@ -66,7 +67,7 @@ class LayoutField extends BlocksField
 			throw new ToolError('`columns` must be one of: ' . implode(', ', $options));
 		}
 
-		self::ensureKnown($content, $this->settings(), 'layout row settings');
+		$content = Fields::input($this->settings(), $content, [], 'layout row settings');
 
 		return [
 			[
@@ -131,6 +132,63 @@ class LayoutField extends BlocksField
 				parent::check($blocks, $check, "{$where} > row {$number} > column " . ($c + 1));
 			}
 		}
+	}
+
+	public function input(mixed $value, mixed $current): mixed
+	{
+		if (is_array($current) && $this->locks($current)) {
+			throw $this->lockedError();
+		}
+
+		$value = self::json($value);
+
+		if (!is_array($value)) {
+			return $value;
+		}
+
+		$rows = array_values($value);
+
+		foreach ($rows as $r => $row) {
+			$row = A::wrap($row);
+			$where = $this->name() . ' > row ' . ($r + 1);
+			$row['attrs'] = Fields::input($this->settings(), A::wrap($row['attrs'] ?? null), [], "{$where} settings");
+			$columns = array_values(A::wrap($row['columns'] ?? null));
+
+			foreach ($columns as $c => $column) {
+				$column = A::wrap($column);
+				$column['blocks'] = $this->blocksInput(
+					A::wrap($column['blocks'] ?? null),
+					"{$where} > column " . ($c + 1),
+				);
+				$columns[$c] = $column;
+			}
+
+			$row['columns'] = $columns;
+			$rows[$r] = $row;
+		}
+
+		return $rows;
+	}
+
+	public function locks(array $value): bool
+	{
+		$settings = self::tabFields(A::wrap($this->props['settings'] ?? null));
+
+		foreach ($value as $row) {
+			$row = A::wrap($row);
+
+			if (self::lockedIn($settings, $row['attrs'] ?? null)) {
+				return true;
+			}
+
+			foreach (A::wrap($row['columns'] ?? null) as $column) {
+				if (parent::locks(A::wrap($column['blocks'] ?? null))) {
+					return true;
+				}
+			}
+		}
+
+		return false;
 	}
 
 	public function nodes(array $value, Nodes $index, array $path, ?int $parent, string $field): void

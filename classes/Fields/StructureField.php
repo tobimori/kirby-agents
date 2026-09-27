@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace tobimori\Agents\Fields;
 
+use Kirby\Toolkit\A;
 use tobimori\Agents\Content\InputCheck;
 use tobimori\Agents\Content\Node;
 use tobimori\Agents\Content\Nodes;
@@ -25,7 +26,28 @@ class StructureField extends ObjectField
 
 	public function input(mixed $value, mixed $current): mixed
 	{
-		return self::json($value);
+		if (is_array($current) && $this->locks($current)) {
+			throw $this->lockedError();
+		}
+
+		$value = self::json($value);
+
+		if (!is_array($value)) {
+			return $value;
+		}
+
+		$rows = array_values($value);
+
+		foreach ($rows as $index => $row) {
+			$rows[$index] = Fields::input($this->fields(), A::wrap($row), [], "{$this->name()} > row " . ($index + 1));
+		}
+
+		return $rows;
+	}
+
+	public function locks(array $value): bool
+	{
+		return A::some($value, fn(mixed $row): bool => is_array($row) && parent::locks($row));
 	}
 
 	public function newItem(string $kind, array $op, array $content): array
@@ -34,7 +56,7 @@ class StructureField extends ObjectField
 			return parent::newItem($kind, $op, $content);
 		}
 
-		self::ensureKnown($content, $this->fields(), "row {$this->name()}");
+		$content = Fields::input($this->fields(), $content, [], "row {$this->name()}");
 
 		return [
 			$content,

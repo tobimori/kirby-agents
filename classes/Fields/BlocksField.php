@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace tobimori\Agents\Fields;
 
+use Kirby\Toolkit\A;
 use Kirby\Toolkit\Str;
 use tobimori\Agents\Content\InputCheck;
 use tobimori\Agents\Content\Node;
@@ -42,13 +43,10 @@ class BlocksField extends Field
 		}
 
 		$type = $op['type'] ?? null;
-
-		if (!is_string($type) || !in_array($type, $this->blockTypes(), true)) {
-			throw new ToolError('`type` must be one of: ' . implode(', ', $this->blockTypes()));
-		}
+		$this->ensureType($type);
 
 		$fields = $this->fieldset($type);
-		self::ensureKnown($content, $fields, "block {$type}");
+		$content = Fields::input($fields, $content, [], "block {$type}");
 
 		return [
 			['id' => Str::uuid(), 'type' => $type, 'isHidden' => false, 'content' => $content],
@@ -74,7 +72,31 @@ class BlocksField extends Field
 
 	public function input(mixed $value, mixed $current): mixed
 	{
-		return self::json($value);
+		if (is_array($current) && $this->locks($current)) {
+			throw $this->lockedError();
+		}
+
+		$value = self::json($value);
+
+		if (!is_array($value)) {
+			return $value;
+		}
+
+		return $this->blocksInput($value, $this->name());
+	}
+
+	public function locks(array $value): bool
+	{
+		foreach ($value as $block) {
+			$block = A::wrap($block);
+			$fields = self::tabFields(A::wrap($this->props['fieldsets'][self::blockType($block)] ?? null));
+
+			if (self::lockedIn($fields, $block['content'] ?? null)) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	public function check(mixed $value, InputCheck $check, string $where): void
@@ -167,6 +189,32 @@ class BlocksField extends Field
 		return self::tabs(is_array($fieldset) ? $fieldset : []);
 	}
 
+	/**
+	 * @param array<array-key, mixed> $blocks
+	 *
+	 * @return list<mixed>
+	 */
+	protected function blocksInput(array $blocks, string $where): array
+	{
+		$blocks = array_values($blocks);
+
+		foreach ($blocks as $index => $block) {
+			$block = A::wrap($block);
+			$type = self::blockType($block);
+			$this->ensureType($type);
+
+			$block['content'] = Fields::input(
+				$this->fieldset($type),
+				A::wrap($block['content'] ?? null),
+				[],
+				"{$where} > block " . ($index + 1) . " ({$type})",
+			);
+			$blocks[$index] = $block;
+		}
+
+		return $blocks;
+	}
+
 	protected function describeFieldsets(Compiler $schema): string
 	{
 		$names = [];
@@ -203,13 +251,31 @@ class BlocksField extends Field
 	 */
 	protected static function tabs(array $fieldset): array
 	{
+		return Fields::visible(self::tabFields($fieldset));
+	}
+
+	/**
+	 * @return array<array-key, mixed> all fields, also the hidden ones
+	 */
+	protected static function tabFields(array $fieldset): array
+	{
 		$fields = [];
 
-		foreach (is_array($fieldset['tabs'] ?? null) ? $fieldset['tabs'] : [] as $tab) {
-			$fields += is_array($tab['fields'] ?? null) ? $tab['fields'] : [];
+		foreach (A::wrap($fieldset['tabs'] ?? null) as $tab) {
+			$fields += A::wrap($tab['fields'] ?? null);
 		}
 
-		return Fields::visible($fields);
+		return $fields;
+	}
+
+	/**
+	 * @phpstan-assert string $type
+	 */
+	private function ensureType(mixed $type): void
+	{
+		if (!is_string($type) || !in_array($type, $this->blockTypes(), true)) {
+			throw new ToolError('`type` must be one of: ' . implode(', ', $this->blockTypes()));
+		}
 	}
 
 	private static function blockType(mixed $block): string

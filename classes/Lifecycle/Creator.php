@@ -13,6 +13,7 @@ use Kirby\Panel\PageCreateDialog;
 use Kirby\Toolkit\Str;
 use tobimori\Agents\Content\InputCheck;
 use tobimori\Agents\Content\Writer;
+use tobimori\Agents\Fields\Fields;
 use tobimori\Agents\Schema\Compiler;
 use tobimori\Agents\Tools\ToolError;
 
@@ -78,6 +79,8 @@ final class Creator
 				. '` with content_update after the page exists.',
 			);
 		}
+
+		$content = Fields::input($fields, $content, [], 'the create dialog');
 
 		$input = [...$content, 'title' => $this->title ?? '', 'slug' => $this->slug ?? ''];
 		$resolved = $this->dialog->resolveFieldTemplates($input);

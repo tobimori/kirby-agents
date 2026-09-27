@@ -177,10 +177,16 @@ final class Presenter
 			default => 'site',
 		};
 
+		$version = $this->content->version;
+
+		if ($this->content->editor !== null) {
+			$version .= " by {$this->content->editor}";
+		}
+
 		return (
 			$name
 			. ', version '
-			. $this->content->version
+			. $version
 			. ', language '
 			. $this->content->language
 			. ', etag '
@@ -195,6 +201,10 @@ final class Presenter
 			'version' => $this->content->version,
 			'language' => $this->content->language,
 		];
+
+		if ($this->content->editor !== null) {
+			$meta['editor'] = $this->content->editor;
+		}
 
 		return $this->content->untranslated !== [] ? [...$meta, 'untranslated' => $this->content->untranslated] : $meta;
 	}
