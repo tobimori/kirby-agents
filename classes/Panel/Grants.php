@@ -6,6 +6,7 @@ namespace tobimori\Agents\Panel;
 
 use Kirby\Cms\App;
 use Kirby\Cms\User;
+use Kirby\Exception\InvalidArgumentException;
 use Kirby\Exception\NotFoundException;
 use Kirby\Exception\PermissionException;
 use Kirby\Toolkit\Escape;
@@ -13,6 +14,7 @@ use Kirby\Toolkit\I18n;
 use tobimori\Agents\Agents;
 use tobimori\Agents\OAuth\Grant;
 use tobimori\Agents\OAuth\GrantStore;
+use tobimori\Agents\OAuth\Scope;
 
 /**
  * Panel view of connected agents. Users see their own grants, admins see all.
@@ -72,6 +74,59 @@ final class Grants
 	}
 
 	/**
+	 * Dialog to change the scopes. It offers the scopes that the role of the grant's user allows
+	 */
+	public static function scopesDialog(string $userId, string $grantId): array
+	{
+		[$user, $grant] = self::find($userId, $grantId);
+		$allowed = Scope::allowedFor($user, Scope::all());
+
+		return [
+			'component' => 'k-form-dialog',
+			'props' => [
+				'fields' => [
+					'scopes' => [
+						'type' => 'checkboxes',
+						'label' => I18n::translate('agents.grants.scopes'),
+						'help' => I18n::translate('agents.grants.scopes.help'),
+						'required' => true,
+						'min' => 1,
+						'options' => array_map(static fn(string $scope): array => [
+							'value' => $scope,
+							'text' => self::label($scope),
+						], $allowed),
+					],
+				],
+				// scopes the role no longer allows are not offered, and saving removes them
+				'value' => ['scopes' => array_values(array_intersect($grant->scopes, $allowed))],
+				'submitButton' => I18n::translate('save'),
+			],
+		];
+	}
+
+	/**
+	 * Saves the scopes. The agent gets them with its next request, without a new login
+	 */
+	public static function changeScopes(string $userId, string $grantId): array
+	{
+		[$user] = self::find($userId, $grantId);
+		$scopes = App::instance()->request()->get('scopes');
+		$scopes = is_array($scopes) ? array_values(array_filter($scopes, is_string(...))) : [];
+
+		if ($scopes === []) {
+			throw new InvalidArgumentException(message: I18n::template('agents.grants.scopes.empty'));
+		}
+
+		if (Scope::allowedFor($user, $scopes) !== $scopes) {
+			throw new PermissionException(message: 'The role of the user does not allow these permissions');
+		}
+
+		(new GrantStore($user))->changeScopes($grantId, $scopes);
+
+		return ['event' => 'agents.grant.scopes'];
+	}
+
+	/**
 	 * Revokes the grant: its access token stops working at once, and the refresh token too
 	 */
 	public static function revoke(string $userId, string $grantId): array
@@ -91,7 +146,7 @@ final class Grants
 		$user = App::instance()->user($userId);
 
 		if (!$user instanceof User || !$current->is($user) && !$current->isAdmin()) {
-			throw new PermissionException(message: 'You may only revoke your own agents');
+			throw new PermissionException(message: 'You may only change your own agents');
 		}
 
 		$grant = (new GrantStore($user))->find($grantId);
@@ -115,20 +170,38 @@ final class Grants
 	{
 		// clients with a metadata document are identified by their URL, the others registered themselves
 		$host = str_starts_with($grant->client, 'https://') ? parse_url($grant->client, PHP_URL_HOST) : null;
+		$dialogs = 'agents/grants/' . $user->id() . '/' . $grant->id;
 
 		return [
 			'id' => $grant->id,
-			'name' => $grant->name,
-			'host' => is_string($host) ? $host : null,
-			'user' => $user->email() ?? $user->id(),
-			'scopes' => array_map(static function (string $scope): string {
-				$label = I18n::translate('agents.scope.' . $scope);
-
-				return is_string($label) ? $label : $scope;
-			}, $grant->scopes),
+			'client' => ['name' => $grant->name, 'host' => is_string($host) ? $host : null],
+			'user' => [
+				'text' => $user->username() ?? $user->id(),
+				'link' => $user->panel()->url(true),
+				'image' => $user->panel()->image(),
+			],
+			// scopes the role no longer allows do not apply, so they are not shown
+			'scopes' => array_map(
+				static fn(string $scope): array => [
+					'value' => $scope,
+					'short' => self::label($scope, 'short.'),
+					'text' => self::label($scope),
+				],
+				Scope::allowedFor($user, $grant->scopes),
+			),
 			'created' => date('c', $grant->created),
 			'used' => $grant->used !== null ? date('c', $grant->used) : null,
-			'dialog' => 'agents/grants/' . $user->id() . '/' . $grant->id . '/revoke',
+			'dialogs' => ['scopes' => $dialogs . '/scopes', 'revoke' => $dialogs . '/revoke'],
 		];
+	}
+
+	/**
+	 * Label of a scope, or its short label for the table
+	 */
+	private static function label(string $scope, string $variant = ''): string
+	{
+		$label = I18n::translate('agents.scope.' . $variant . $scope);
+
+		return is_string($label) ? $label : $scope;
 	}
 }

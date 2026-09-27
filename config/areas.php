@@ -58,6 +58,11 @@ return [
 			],
 		],
 		'dialogs' => [
+			'agents.grants.scopes' => [
+				'pattern' => 'agents/grants/(:any)/(:any)/scopes',
+				'load' => fn(string $user, string $grant) => Grants::scopesDialog($user, $grant),
+				'submit' => fn(string $user, string $grant) => Grants::changeScopes($user, $grant),
+			],
 			'agents.grants.revoke' => [
 				'pattern' => 'agents/grants/(:any)/(:any)/revoke',
 				'load' => fn(string $user, string $grant) => Grants::confirm($user, $grant),

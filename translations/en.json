@@ -15,7 +15,13 @@
 	"authorize.error.forbidden": "Your role is not allowed to connect agents.",
 	"grants.empty": "No agents are connected. Add the MCP URL above to your agent to connect it.",
 	"grants.active": "Last active",
-	"grants.self": "registered itself",
+	"grants.agent": "Agent",
+	"grants.unverified": "Unverified",
+	"grants.more": "+{count} more",
+	"grants.scopes": "Permissions",
+	"grants.scopes.change": "Change permissions",
+	"grants.scopes.help": "The agent gets the new permissions with its next request.",
+	"grants.scopes.empty": "Select at least one permission, or revoke the agent.",
 	"grants.revoke": "Revoke",
 	"grants.revoke.confirm": "Revoke the access of <strong>{name}</strong> for {user}? The agent loses access at once and must connect again.",
 	"grants.url": "MCP URL",
@@ -25,5 +31,12 @@
 	"scope.pages:manage": "Create, rename, move, and sort pages",
 	"scope.pages:delete": "Delete pages",
 	"scope.files:manage": "Upload files",
-	"scope.files:delete": "Delete files"
+	"scope.files:delete": "Delete files",
+	"scope.short.content:read": "Read content",
+	"scope.short.content:write": "Prepare changes",
+	"scope.short.content:publish": "Publish",
+	"scope.short.pages:manage": "Manage pages",
+	"scope.short.pages:delete": "Delete pages",
+	"scope.short.files:manage": "Upload files",
+	"scope.short.files:delete": "Delete files"
 }
