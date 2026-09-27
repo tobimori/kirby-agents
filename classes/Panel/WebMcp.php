@@ -11,7 +11,6 @@ use tobimori\Agents\Agents;
 use tobimori\Agents\Http\RateLimit;
 use tobimori\Agents\OAuth\Access;
 use tobimori\Agents\OAuth\Scope;
-use tobimori\Agents\Protocol\Server;
 use tobimori\Agents\Tools\ScopeRequired;
 use tobimori\Agents\Tools\Tools;
 
@@ -32,7 +31,7 @@ final class WebMcp
 
 		$tools = [];
 
-		foreach (Server::definitions($access) as $definition) {
+		foreach (Tools::definitions($access) as $definition) {
 			$annotations = is_array($definition['annotations'] ?? null) ? $definition['annotations'] : [];
 			$readOnly = ($annotations['readOnlyHint'] ?? false) === true;
 
@@ -73,7 +72,7 @@ final class WebMcp
 		}
 
 		try {
-			return Server::run($tool, $arguments, $access);
+			return Tools::run($tool, $arguments, $access);
 		} catch (ScopeRequired $error) {
 			return self::error("Your role may not do this (it needs `{$error->scope->value}`).");
 		}

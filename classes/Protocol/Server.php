@@ -5,18 +5,13 @@ declare(strict_types=1);
 namespace tobimori\Agents\Protocol;
 
 use Kirby\Cms\App;
-use Kirby\Exception\Exception as KirbyException;
 use Kirby\Http\Request;
 use Kirby\Http\Response;
 use Throwable;
 use tobimori\Agents\Agents;
 use tobimori\Agents\Http\McpEndpoint;
 use tobimori\Agents\OAuth\Access;
-use tobimori\Agents\Tools\Arguments;
-use tobimori\Agents\Tools\Guide;
 use tobimori\Agents\Tools\ScopeRequired;
-use tobimori\Agents\Tools\Tool;
-use tobimori\Agents\Tools\ToolError;
 use tobimori\Agents\Tools\Tools;
 
 final class Server
@@ -169,55 +164,10 @@ final class Server
 		];
 	}
 
-	/**
-	 * @return list<array<string, mixed>>
-	 */
-	public static function definitions(Access $access): array
-	{
-		return array_map(static function (Tool $tool) use ($access): array {
-			$definition = $tool->definition();
-			$schema = is_array($definition['inputSchema'] ?? null) ? $definition['inputSchema'] : [];
-			$summary = is_string($definition['description'] ?? null) ? $definition['description'] : '';
-			$definition['description'] = $summary . "\n\n" . Guide::parameters($schema);
-
-			if ($access->allows($tool->scope()) === false) {
-				$definition['description'] =
-					"Needs the `{$tool->scope()->value}` scope, which this connection does not have yet. A call asks the user to allow it in the browser, so ask the user first.\n\n"
-					. $definition['description'];
-			}
-
-			return ['name' => $tool->name(), ...$definition];
-		}, Tools::for($access));
-	}
-
-	/**
-	 * @throws ScopeRequired
-	 *
-	 * @return array<string, mixed>
-	 */
-	public static function run(Tool $tool, array $arguments, Access $access): array
-	{
-		if ($access->allows($tool->scope()) === false) {
-			throw new ScopeRequired($tool->scope());
-		}
-
-		try {
-			$data = $tool->call(new Arguments($arguments), $access);
-		} catch (ToolError|KirbyException $error) {
-			return ['content' => [['type' => 'text', 'text' => $error->getMessage()]], 'isError' => true];
-		}
-
-		if (is_string($data)) {
-			return ['content' => [['type' => 'text', 'text' => $data]]];
-		}
-
-		return ['content' => [['type' => 'text', 'text' => self::json($data)]], 'structuredContent' => $data];
-	}
-
 	private static function listTools(Access $access): array
 	{
 		return [
-			'tools' => self::definitions($access),
+			'tools' => Tools::definitions($access),
 			'ttlMs' => 5 * 60 * 1000,
 			'cacheScope' => 'private',
 		];
@@ -233,7 +183,7 @@ final class Server
 		}
 
 		try {
-			$result = self::run($tool, is_array($params['arguments'] ?? null) ? $params['arguments'] : [], $access);
+			$result = Tools::run($tool, is_array($params['arguments'] ?? null) ? $params['arguments'] : [], $access);
 		} catch (ScopeRequired $error) {
 			return McpEndpoint::insufficientScope($error->scope, $access);
 		}
