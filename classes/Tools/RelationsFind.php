@@ -16,6 +16,10 @@ use Kirby\Uuid\PageUuid;
 use tobimori\Agents\Content\FieldPath;
 use tobimori\Agents\Content\Models;
 use tobimori\Agents\Content\Reader;
+use tobimori\Agents\Fields\Fields;
+use tobimori\Agents\Fields\FilesField;
+use tobimori\Agents\Fields\PagesField;
+use tobimori\Agents\Fields\UsersField;
 use tobimori\Agents\OAuth\Access;
 use tobimori\Agents\OAuth\Scope;
 
@@ -86,11 +90,14 @@ final class RelationsFind implements Tool
 		$number = intdiv($offset, $limit) + 1;
 		$options = ['model' => $model, 'query' => $query, 'search' => $search, 'limit' => $limit, 'page' => $number];
 
+		// the adapter, not the type: custom fields can extend or map to a relation field
+		$field = Fields::for($props);
+
 		$result = match (true) {
-			$type === 'pages' && $query === null => self::pages($parent, $search, $limit, $number),
-			$type === 'pages' => (new PagePicker([...$options, 'map' => self::page(...)]))->toArray(),
-			$type === 'files' => (new FilePicker([...$options, 'map' => self::file(...)]))->toArray(),
-			$type === 'users' => (new UserPicker([...$options, 'map' => self::user(...)]))->toArray(),
+			$field instanceof PagesField && $query === null => self::pages($parent, $search, $limit, $number),
+			$field instanceof PagesField => (new PagePicker([...$options, 'map' => self::page(...)]))->toArray(),
+			$field instanceof FilesField => (new FilePicker([...$options, 'map' => self::file(...)]))->toArray(),
+			$field instanceof UsersField => (new UserPicker([...$options, 'map' => self::user(...)]))->toArray(),
 			default => throw new ToolError("`{$path}` is a {$type} field, not a pages, files, or users field"),
 		};
 
