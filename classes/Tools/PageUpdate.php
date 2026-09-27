@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace tobimori\Agents\Tools;
 
+use Closure;
 use Kirby\Cms\Language;
 use Kirby\Cms\Page;
 use Kirby\Cms\PageRules;
+use Kirby\Exception\Exception as KirbyException;
 use Kirby\Toolkit\Str;
 use tobimori\Agents\Content\Models;
 use tobimori\Agents\Content\PageInfo;
@@ -26,7 +28,7 @@ final class PageUpdate implements Tool
 			'title' => 'Change page title, URL, status, position, template, or parent',
 			'description' => implode("\n", [
 				'Changes the page itself, like the settings of a page in the Panel. For the content of fields, use content_update. Read page_rules first: it lists the allowed actions, statuses, templates, and move targets.',
-				'Send only what changes. All changes are checked first: if one is not allowed, nothing changes. These changes are live at once, there is no review step.',
+				'Send only what changes. The changes are checked first, and then made in this order: template, title, slug, parent, status. Some checks depend on earlier changes, for example the rules of a new template: these are checked when the change is made. If a change fails, the earlier ones stay, and the error lists them. These changes are live at once, there is no review step.',
 				'- `title`: the page title',
 				'- `slug`: the URL part. Other pages and links that use the old URL do not change',
 				'- `template`: one of `templates` from page_rules. Content of fields that the new template does not have is removed',
@@ -104,56 +106,70 @@ final class PageUpdate implements Tool
 		$parent = $parentId !== null ? Models::find($parentId) : null;
 		$listed = $status ?? ($position !== null ? 'listed' : null);
 
-		if ($title !== null) {
-			PageRules::changeTitle($page, $title);
-		}
+		$newTemplate = $template !== null && $template !== $page->intendedTemplate()->name();
+		$renames = $slug !== null && $language->isDefault();
 
-		if ($slug !== null && $language->isDefault()) {
-			PageRules::changeSlug($page, $slug);
-		}
-
-		if ($template !== null && $template !== $page->intendedTemplate()->name()) {
+		if ($newTemplate) {
 			PageRules::changeTemplate($page, $template);
 		}
 
-		if ($parent !== null) {
+		// checks with the page as it is now. After a template change, other rules can apply:
+		// then Kirby checks each change when it makes it
+		$check = !$newTemplate;
+
+		if ($check && $title !== null) {
+			PageRules::changeTitle($page, $title);
+		}
+
+		if ($check && $renames) {
+			PageRules::changeSlug($page, $slug);
+		}
+
+		// the move checks the slug: after a rename, Kirby checks it with the new one
+		if ($check && $parent !== null && !$renames) {
 			PageRules::move($page, $parent);
 		}
 
-		if ($position !== null && $page->blueprint()->num() !== 'default') {
-			throw new ToolError(
-				'The position of this page comes from its blueprint (`num: '
-				. $page->blueprint()->num()
-				. '`), so it cannot be set.',
-			);
+		if ($check && $position !== null) {
+			self::ensurePosition($page);
 		}
 
-		if ($listed !== null) {
+		if ($check && $listed !== null) {
 			PageRules::changeStatus($page, $listed, $position ?? 0);
 		}
 
 		$before = self::state($page, $language);
 
 		// template first: the new blueprint can have other rules for the rest
+		$actions = [];
+
 		if ($template !== null) {
-			$page = $page->changeTemplate($template);
+			$actions['template'] = static fn(Page $page): Page => $page->changeTemplate($template);
 		}
 
 		if ($title !== null) {
-			$page = $page->changeTitle($title, $language->code());
+			$actions['title'] = static fn(Page $page): Page => $page->changeTitle($title, $language->code());
 		}
 
 		if ($slug !== null) {
-			$page = $page->changeSlug($slug, $language->code());
+			$actions['slug'] = static fn(Page $page): Page => $page->changeSlug($slug, $language->code());
 		}
 
 		if ($parent !== null) {
-			$page = $page->move($parent);
+			$actions['parent'] = static fn(Page $page): Page => $page->move($parent);
 		}
 
 		if ($listed !== null) {
-			$page = $page->changeStatus($listed, $position);
+			$actions['status'] = static function (Page $page) use ($listed, $position): Page {
+				if ($position !== null) {
+					self::ensurePosition($page);
+				}
+
+				return $page->changeStatus($listed, $position);
+			};
 		}
+
+		$page = self::apply($page, $actions);
 
 		$after = self::state($page, $language);
 		$changed = array_keys(array_diff_assoc($after, $before));
@@ -169,6 +185,53 @@ final class PageUpdate implements Tool
 		}
 
 		return $result;
+	}
+
+	/**
+	 * The checks above use the page before the changes, so a later change can still fail
+	 *
+	 * @param array<string, Closure(Page): Page> $actions
+	 */
+	private static function apply(Page $page, array $actions): Page
+	{
+		$done = [];
+
+		foreach ($actions as $name => $action) {
+			try {
+				$page = $action($page);
+			} catch (KirbyException|ToolError $error) {
+				if ($done === []) {
+					throw $error;
+				}
+
+				$open = array_slice(array_keys($actions), count($done));
+
+				throw new ToolError(
+					"Changing `{$name}` failed: {$error->getMessage()}\n"
+					. 'Already changed: '
+					. implode(', ', $done)
+					. '. Not changed: '
+					. implode(', ', $open)
+					. ".\n"
+					. "The page is now `{$page->id()}`. Read page_rules again before you try the rest.",
+				);
+			}
+
+			$done[] = $name;
+		}
+
+		return $page;
+	}
+
+	private static function ensurePosition(Page $page): void
+	{
+		if ($page->blueprint()->num() !== 'default') {
+			throw new ToolError(
+				'The position of this page comes from its blueprint (`num: '
+				. $page->blueprint()->num()
+				. '`), so it cannot be set.',
+			);
+		}
 	}
 
 	/**
