@@ -45,22 +45,27 @@ class BlocksField extends Field
 		$type = $op['type'] ?? null;
 		$this->ensureType($type);
 
-		$fields = $this->fieldset($type);
-		$content = Fields::input($fields, $content, [], "block {$type}");
+		$content = Fields::input($this->fieldset($type), $content, [], "block {$type}");
 
-		return [
-			['id' => Str::uuid(), 'type' => $type, 'isHidden' => false, 'content' => $content],
-			['kind' => 'block', 'type' => $type, 'fields' => $fields, 'props' => $this->props],
-		];
+		return ['id' => Str::uuid(), 'type' => $type, 'isHidden' => false, 'content' => $content];
 	}
 
-	public function accept(string $kind, array $node): void
+	public function itemDefinition(string $kind, string $type): array
+	{
+		if ($kind !== 'block') {
+			return parent::itemDefinition($kind, $type);
+		}
+
+		return self::tabFields(A::wrap($this->props['fieldsets'][$type] ?? null));
+	}
+
+	public function accept(string $kind, Node $node): void
 	{
 		parent::accept($kind, $node);
 
-		if ($kind === 'block' && !in_array($node['type'], $this->blockTypes(), true)) {
+		if ($kind === 'block' && !in_array($node->type, $this->blockTypes(), true)) {
 			throw new ToolError(
-				"block type `{$node['type']}` is not allowed there. Allowed: " . implode(', ', $this->blockTypes()),
+				"block type `{$node->type}` is not allowed there. Allowed: " . implode(', ', $this->blockTypes()),
 			);
 		}
 	}

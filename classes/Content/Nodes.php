@@ -14,6 +14,11 @@ final class Nodes
 	private array $nodes = [];
 
 	/**
+	 * If the fields that are indexed now are in a read-only field, also through objects without a ref
+	 */
+	private bool $locked = false;
+
+	/**
 	 * @param array<array-key, mixed> $fields
 	 *
 	 * @return array<int, Node>
@@ -35,9 +40,14 @@ final class Nodes
 		foreach ($fields as $name => $props) {
 			$value = $values[$name] ?? null;
 
-			if (is_array($props) && is_array($value)) {
-				Fields::for($props)->nodes($value, $this, [...$path, $name], $parent, (string) $name);
+			if (!is_array($props) || !is_array($value)) {
+				continue;
 			}
+
+			$outer = $this->locked;
+			$this->locked = $outer || ($props['disabled'] ?? false) === true;
+			Fields::for($props)->nodes($value, $this, [...$path, $name], $parent, (string) $name);
+			$this->locked = $outer;
 		}
 	}
 
@@ -58,7 +68,7 @@ final class Nodes
 		$ref = count($this->nodes) + 1;
 		$id = is_array($value) && is_string($value['id'] ?? null) ? $value['id'] : null;
 
-		$this->nodes[$ref] = new Node($ref, $kind, $type, $path, $fields, $id, $parent, $field, $props);
+		$this->nodes[$ref] = new Node($ref, $kind, $type, $path, $fields, $id, $parent, $field, $props, $this->locked);
 
 		return $ref;
 	}

@@ -93,7 +93,7 @@ class ObjectField extends Field
 	/**
 	 * @return array<array-key, mixed>
 	 */
-	private function allFields(): array
+	protected function allFields(): array
 	{
 		return A::wrap($this->props['fields'] ?? null);
 	}

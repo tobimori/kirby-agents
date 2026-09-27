@@ -21,6 +21,7 @@ final class Node
 		public readonly ?int $parent,
 		public readonly string $field,
 		public readonly array $props,
+		public readonly bool $locked,
 	) {}
 
 	public function key(): string

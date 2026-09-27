@@ -56,19 +56,19 @@ class StructureField extends ObjectField
 			return parent::newItem($kind, $op, $content);
 		}
 
-		$content = Fields::input($this->fields(), $content, [], "row {$this->name()}");
-
-		return [
-			$content,
-			['kind' => 'row', 'type' => $this->name(), 'fields' => $this->fields(), 'props' => $this->props],
-		];
+		return Fields::input($this->fields(), $content, [], "row {$this->name()}");
 	}
 
-	public function accept(string $kind, array $node): void
+	public function itemDefinition(string $kind, string $type): array
+	{
+		return $kind === 'row' ? $this->allFields() : parent::itemDefinition($kind, $type);
+	}
+
+	public function accept(string $kind, Node $node): void
 	{
 		parent::accept($kind, $node);
 
-		if (($this->props['name'] ?? null) !== ($node['props']['name'] ?? null)) {
+		if (($this->props['name'] ?? null) !== ($node->props['name'] ?? null)) {
 			throw new ToolError('structure rows can only move within the same structure field');
 		}
 	}

@@ -70,20 +70,31 @@ class LayoutField extends BlocksField
 		$content = Fields::input($this->settings(), $content, [], 'layout row settings');
 
 		return [
-			[
+			'id' => Str::uuid(),
+			'attrs' => $content,
+			'columns' => array_map(static fn(mixed $width): array => [
 				'id' => Str::uuid(),
-				'attrs' => $content,
-				'columns' => array_map(static fn(mixed $width): array => [
-					'id' => Str::uuid(),
-					'width' => $width,
-					'blocks' => [],
-				], $columns),
-			],
-			['kind' => 'layout', 'type' => 'row', 'fields' => $this->settings(), 'props' => $this->props],
+				'width' => $width,
+				'blocks' => [],
+			], $columns),
 		];
 	}
 
-	public function accept(string $kind, array $node): void
+	public function itemDefinition(string $kind, string $type): array
+	{
+		if ($kind === 'block') {
+			return parent::itemDefinition($kind, $type);
+		}
+
+		// rows and columns contain blocks, and rows have columns from the layouts
+		return [
+			'settings' => self::tabFields(A::wrap($this->props['settings'] ?? null)),
+			'fieldsets' => $this->props['fieldsets'] ?? null,
+			'layouts' => $this->layouts(),
+		];
+	}
+
+	public function accept(string $kind, Node $node): void
 	{
 		if ($kind === 'column') {
 			throw new ToolError(self::COLUMN_ERROR);

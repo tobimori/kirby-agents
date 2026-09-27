@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace tobimori\Agents\Fields;
 
+use tobimori\Agents\Content\Node;
 use tobimori\Agents\Content\Nodes;
 use tobimori\Agents\Content\Presenter;
 use tobimori\Agents\Schema\Compiler;
@@ -29,14 +30,19 @@ class EntriesField extends Field
 		return array_map(static fn(mixed $item): mixed => $field->input($item, null), $value);
 	}
 
-	public function accept(string $kind, array $node): void
+	public function itemDefinition(string $kind, string $type): array
+	{
+		return $kind === 'entry' ? $this->field() : parent::itemDefinition($kind, $type);
+	}
+
+	public function accept(string $kind, Node $node): void
 	{
 		parent::accept($kind, $node);
 
 		$type = $this->entryType();
 
-		if ($node['type'] !== $type) {
-			throw new ToolError("an entry of type `{$node['type']}` cannot move into entries of type `{$type}`");
+		if ($node->type !== $type) {
+			throw new ToolError("an entry of type `{$node->type}` cannot move into entries of type `{$type}`");
 		}
 	}
 

@@ -41,7 +41,7 @@ abstract class Field
 	 * @param array<array-key, mixed> $op
 	 * @param array<array-key, mixed> $content
 	 *
-	 * @return array{0: array<array-key, mixed>, 1: array{kind: string, type: string, fields: array<array-key, mixed>, props: array<array-key, mixed>}}
+	 * @return array<array-key, mixed>
 	 */
 	public function newItem(string $kind, array $op, array $content): array
 	{
@@ -49,12 +49,20 @@ abstract class Field
 	}
 
 	/**
-	 * @param array{kind: string, type: string, fields: array<array-key, mixed>, props: array<array-key, mixed>} $node
+	 * The complete definition that the stored content of an item depends on, also hidden fields.
+	 * Items can only move between places with the same definition
+	 *
+	 * @return array<array-key, mixed>
 	 */
-	public function accept(string $kind, array $node): void
+	public function itemDefinition(string $kind, string $type): array
 	{
-		if ($kind !== $node['kind']) {
-			throw new ToolError("a {$node['kind']} cannot be moved into a {$this->type()} field");
+		return [];
+	}
+
+	public function accept(string $kind, Node $node): void
+	{
+		if ($kind !== $node->kind) {
+			throw new ToolError("a {$node->kind} cannot be moved into a {$this->type()} field");
 		}
 	}
 
