@@ -102,6 +102,11 @@ final class Grant
 		];
 	}
 
+	public function active(): int
+	{
+		return $this->used ?? $this->created;
+	}
+
 	public function rotate(string $refresh): void
 	{
 		$this->previous = $this->refresh;

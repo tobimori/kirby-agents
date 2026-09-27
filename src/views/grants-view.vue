@@ -22,62 +22,49 @@
 			:columns="columns"
 			:index="false"
 			:options="options"
-			:rows="rows"
+			:rows="grants"
 			@option="onOption"
 		/>
 	</k-panel-inside>
 </template>
 
-<script>
-export default {
-	props: {
-		all: Boolean,
-		grants: Array,
-		url: String
-	},
-	computed: {
-		columns() {
-			return {
-				client: { label: this.$t("agents.grants.agent"), type: "agents-client", mobile: true },
-				...(this.all
-					? { user: { label: this.$t("user"), type: "agents-user", width: "1/5" } }
-					: {}),
-				scopes: { label: this.$t("agents.grants.scopes"), type: "agents-scopes" },
-				active: { label: this.$t("agents.grants.active"), type: "agents-time", width: "1/6" }
-			}
-		},
-		options() {
-			return [
-				{ icon: "key", text: this.$t("agents.grants.scopes.change"), click: "scopes" },
-				"-",
-				{
-					icon: "cancel",
-					text: this.$t("agents.grants.revoke"),
-					click: "revoke",
-					theme: "negative"
-				}
-			]
-		},
-		rows() {
-			return this.grants.map((grant) => ({
-				id: grant.id,
-				client: grant.client,
-				user: grant.user,
-				scopes: grant.scopes,
-				active: grant.used ?? grant.created,
-				dialogs: grant.dialogs
-			}))
-		}
-	},
-	methods: {
-		async copy() {
-			await navigator.clipboard.writeText(this.url)
-			this.$panel.notification.success(this.$t("copy.success"))
-		},
-		onOption(option, row) {
-			this.$panel.dialog.open(row.dialogs[option])
-		}
+<script setup>
+import { computed, useHelpers, usePanel } from "kirbyuse"
+
+const props = defineProps({
+	all: Boolean,
+	grants: Array,
+	url: String
+})
+
+const panel = usePanel()
+const helpers = useHelpers()
+
+const columns = computed(() => ({
+	client: { label: panel.t("agents.grants.agent"), type: "agents-client", mobile: true },
+	...(props.all ? { user: { label: panel.t("user"), type: "agents-user", width: "1/5" } } : {}),
+	scopes: { label: panel.t("agents.grants.scopes"), type: "agents-scopes" },
+	active: { label: panel.t("agents.grants.active"), type: "agents-time", width: "1/6" }
+}))
+
+const options = computed(() => [
+	{ icon: "key", text: panel.t("agents.grants.scopes.change"), click: "scopes" },
+	"-",
+	{
+		icon: "cancel",
+		text: panel.t("agents.grants.revoke"),
+		click: "revoke",
+		theme: "negative"
 	}
+])
+
+function copy() {
+	helpers.clipboard.write(props.url)
+	panel.notification.success(panel.t("copy.success"))
+}
+
+function onOption(option, row) {
+	panel.dialog.open(row.dialogs[option])
 }
 </script>
 

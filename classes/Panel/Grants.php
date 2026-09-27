@@ -27,7 +27,7 @@ final class Grants
 		foreach ($users as $user) {
 			foreach ((new GrantStore($user))->connected() as $grant) {
 				$grants[] = [
-					'active' => $grant->used ?? $grant->created,
+					'active' => $grant->active(),
 					'item' => self::item($user, $grant),
 				];
 			}
@@ -167,8 +167,7 @@ final class Grants
 				],
 				Scope::allowedFor($user, $grant->scopes),
 			),
-			'created' => date('c', $grant->created),
-			'used' => $grant->used !== null ? date('c', $grant->used) : null,
+			'active' => date('c', $grant->active()),
 			'dialogs' => ['scopes' => $dialogs . '/scopes', 'revoke' => $dialogs . '/revoke'],
 		];
 	}

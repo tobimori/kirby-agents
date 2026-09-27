@@ -2,7 +2,9 @@
 	<p class="k-agents-time-cell" :title="absolute">{{ relative }}</p>
 </template>
 
-<script>
+<script setup>
+import { computed, usePanel } from "kirbyuse"
+
 const UNITS = [
 	["year", 31536000],
 	["month", 2592000],
@@ -13,26 +15,26 @@ const UNITS = [
 	["second", 1]
 ]
 
-export default {
-	props: {
-		value: String
-	},
-	computed: {
-		absolute() {
-			return new Date(this.value).toLocaleString(this.$panel.translation.code, {
-				dateStyle: "medium",
-				timeStyle: "short"
-			})
-		},
-		relative() {
-			const seconds = (new Date(this.value).getTime() - Date.now()) / 1000
-			const [unit, size] = UNITS.find(([, size]) => Math.abs(seconds) >= size) ?? UNITS.at(-1)
-			const format = new Intl.RelativeTimeFormat(this.$panel.translation.code, { numeric: "auto" })
+const props = defineProps({
+	value: String
+})
 
-			return format.format(Math.round(seconds / size), unit)
-		}
-	}
-}
+const panel = usePanel()
+
+const absolute = computed(() =>
+	new Date(props.value).toLocaleString(panel.translation.code, {
+		dateStyle: "medium",
+		timeStyle: "short"
+	})
+)
+
+const relative = computed(() => {
+	const seconds = (new Date(props.value).getTime() - Date.now()) / 1000
+	const [unit, size] = UNITS.find(([, size]) => Math.abs(seconds) >= size) ?? UNITS.at(-1)
+	const format = new Intl.RelativeTimeFormat(panel.translation.code, { numeric: "auto" })
+
+	return format.format(Math.round(seconds / size), unit)
+})
 </script>
 
 <style>

@@ -181,6 +181,9 @@ importers:
       kirbyup:
         specifier: ^3.5.0
         version: 3.5.0(jiti@2.7.0)(rollup@4.63.5)
+      kirbyuse:
+        specifier: ^1.4.1
+        version: 1.4.1
       oxfmt:
         specifier: ^0.70.0
         version: 0.70.0
@@ -1310,10 +1313,65 @@ packages:
   keyv@5.6.0:
     resolution: {integrity: sha512-CYDD3SOtsHtyXeEORYRx2qBtpDJFjRTGXUtmNEMGyzYOKj1TE3tycdlho7kA1Ufx9OYWZzg52QFBGALTirzDSw==}
 
+  kirby-types@1.6.2:
+    resolution: {integrity: sha512-wbZ/dl/be6ucDRPZybo+HJd45HZILL1lbwTAqRR1dv2B+amEqH7QOIsTKhX3Bu88oIxCRhyHhLd1nE2FqYzKBw==}
+    peerDependencies:
+      dayjs: ^1.11.13
+      prosemirror-commands: ^1.7.1
+      prosemirror-inputrules: ^1.5.1
+      prosemirror-model: ^1.25.4
+      prosemirror-schema-list: ^1.5.1
+      prosemirror-state: ^1.4.4
+      prosemirror-view: ^1.41.4
+      vue: ^2.7.16
+    peerDependenciesMeta:
+      dayjs:
+        optional: true
+      prosemirror-commands:
+        optional: true
+      prosemirror-inputrules:
+        optional: true
+      prosemirror-model:
+        optional: true
+      prosemirror-schema-list:
+        optional: true
+      prosemirror-state:
+        optional: true
+      prosemirror-view:
+        optional: true
+      vue:
+        optional: true
+
   kirbyup@3.5.0:
     resolution: {integrity: sha512-sONYkK8F3IdfUYSn/c11uFz0+5q7ukk5UEFNvbInsHGSsKhMACfOY9a6V21IpL0MJjyGCBqU4akfB3l2unLJ4Q==}
     engines: {node: '>=22'}
     hasBin: true
+
+  kirbyuse@1.4.1:
+    resolution: {integrity: sha512-ua4u0Svc6gzSmYifg0VlUZX9aoWQecJKcc4W3SU2Wv4zSVkOqCB/H7V3VfTsLn7y9ty++BxOsfe4EkQhEamznA==}
+    peerDependencies:
+      dayjs: ^1.0.0
+      prosemirror-commands: ^1.7.1
+      prosemirror-inputrules: ^1.5.1
+      prosemirror-model: ^1.25.4
+      prosemirror-schema-list: ^1.5.1
+      prosemirror-state: ^1.4.4
+      prosemirror-view: ^1.41.4
+    peerDependenciesMeta:
+      dayjs:
+        optional: true
+      prosemirror-commands:
+        optional: true
+      prosemirror-inputrules:
+        optional: true
+      prosemirror-model:
+        optional: true
+      prosemirror-schema-list:
+        optional: true
+      prosemirror-state:
+        optional: true
+      prosemirror-view:
+        optional: true
 
   levn@0.4.1:
     resolution: {integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==}
@@ -2578,6 +2636,10 @@ snapshots:
     dependencies:
       '@keyv/serialize': 1.1.1
 
+  kirby-types@1.6.2(vue@2.7.16):
+    optionalDependencies:
+      vue: 2.7.16
+
   kirbyup@3.5.0(jiti@2.7.0)(rollup@4.63.5):
     dependencies:
       '@vitejs/plugin-vue2': 2.3.4(vite@6.4.3(jiti@2.7.0)(sass@1.105.0))(vue@2.7.16)
@@ -2613,6 +2675,11 @@ snapshots:
       - terser
       - tsx
       - yaml
+
+  kirbyuse@1.4.1:
+    dependencies:
+      kirby-types: 1.6.2(vue@2.7.16)
+      vue: 2.7.16
 
   levn@0.4.1:
     dependencies:

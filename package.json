@@ -17,6 +17,7 @@
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-vue": "^10.11.1",
 		"kirbyup": "^3.5.0",
+		"kirbyuse": "^1.4.1",
 		"oxfmt": "^0.70.0",
 		"vue-eslint-parser": "^10.4.1"
 	},

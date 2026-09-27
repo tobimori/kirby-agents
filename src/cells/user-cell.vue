@@ -6,10 +6,8 @@
 	</ul>
 </template>
 
-<script>
-export default {
-	props: {
-		value: Object
-	}
-}
+<script setup>
+defineProps({
+	value: Object
+})
 </script>

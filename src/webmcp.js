@@ -1,4 +1,7 @@
-export default function webmcp(app) {
+import { usePanel, watch } from "kirbyuse"
+
+export default function webmcp() {
+	const panel = usePanel()
 	const modelContext = document.modelContext ?? navigator.modelContext
 
 	if (typeof modelContext?.registerTool !== "function") {
@@ -20,7 +23,7 @@ export default function webmcp(app) {
 		let definitions
 
 		try {
-			definitions = await app.$panel.api.get("agents/tools", {}, { silent: true })
+			definitions = await panel.api.get("agents/tools", {}, { silent: true })
 		} catch {
 			return
 		}
@@ -29,7 +32,7 @@ export default function webmcp(app) {
 			return
 		}
 
-		const tools = [...definitions.tools.map((tool) => serverTool(app, tool)), viewTool(app)]
+		const tools = [...definitions.tools.map((tool) => serverTool(panel, tool)), viewTool(panel)]
 
 		for (const tool of tools) {
 			try {
@@ -40,21 +43,21 @@ export default function webmcp(app) {
 		}
 	}
 
-	app.$watch(
-		() => app.$panel.user.id,
+	watch(
+		() => panel.user.id,
 		(id) => (id ? register() : unregister()),
 		{ immediate: true }
 	)
 }
 
-function serverTool(app, tool) {
+function serverTool(panel, tool) {
 	return {
 		...tool,
 		async execute(input, options = {}) {
 			let result
 
 			try {
-				result = await app.$panel.api.post(`agents/tools/${tool.name}`, input ?? {}, {
+				result = await panel.api.post(`agents/tools/${tool.name}`, input ?? {}, {
 					signal: options.signal,
 					silent: true
 				})
@@ -64,7 +67,7 @@ function serverTool(app, tool) {
 			}
 
 			if (result.isError !== true && tool.annotations.readOnlyHint !== true) {
-				app.$panel.view.reload()
+				panel.view.reload()
 			}
 
 			return result
@@ -72,7 +75,7 @@ function serverTool(app, tool) {
 	}
 }
 
-function viewTool(app) {
+function viewTool(panel) {
 	return {
 		name: "panel_view",
 		title: "Current Panel view",
@@ -82,9 +85,9 @@ function viewTool(app) {
 		annotations: { readOnlyHint: true },
 		async execute() {
 			return {
-				...parseViewPath(app.$panel.view.path ?? ""),
-				title: app.$panel.view.title ?? null,
-				language: app.$panel.language?.code ?? null
+				...parseViewPath(panel.view.path ?? ""),
+				title: panel.view.title ?? null,
+				language: panel.language?.code ?? null
 			}
 		}
 	}

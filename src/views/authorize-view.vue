@@ -19,7 +19,7 @@
 
 					<k-text class="k-agents-authorize-text">
 						<p>{{ $t("agents.authorize.user", { user }) }}</p>
-						<p>{{ clientText }}</p>
+						<p>{{ clientTitle(client) }}</p>
 					</k-text>
 
 					<p class="k-agents-authorize-label">{{ $t("agents.authorize.scopes") }}</p>
@@ -61,40 +61,32 @@
 	</k-panel-outside>
 </template>
 
-<script>
-export default {
-	props: {
-		action: String,
-		client: Object,
-		csrf: String,
-		error: String,
-		redirect: Object,
-		scopes: Array,
-		site: String,
-		user: String
-	},
-	data() {
-		return {
-			decision: "deny",
-			submitting: false
-		}
-	},
-	computed: {
-		clientText() {
-			if (this.client.host) {
-				return this.$t("agents.authorize.client.verified", { host: this.client.host })
-			}
+<script setup>
+import { nextTick, ref } from "kirbyuse"
 
-			return this.$t("agents.authorize.client.unverified")
-		}
-	},
-	methods: {
-		submit(decision) {
-			this.decision = decision
-			this.submitting = true
-			this.$nextTick(() => this.$refs.form.submit())
-		}
-	}
+import { clientTitle } from "../client.js"
+
+defineProps({
+	action: String,
+	client: Object,
+	csrf: String,
+	error: String,
+	redirect: Object,
+	scopes: Array,
+	site: String,
+	user: String
+})
+
+const form = ref(null)
+const decision = ref("deny")
+const submitting = ref(false)
+
+async function submit(value) {
+	decision.value = value
+	submitting.value = true
+	// the hidden input must have the decision before the post
+	await nextTick()
+	form.value.submit()
 }
 </script>
 

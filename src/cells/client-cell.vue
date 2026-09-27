@@ -4,32 +4,25 @@
 		<k-button
 			v-if="value.host"
 			:text="value.host"
-			:title="title"
+			:title="clientTitle(value)"
 			element="span"
 			icon="check"
 			size="xs"
 			theme="positive"
 			variant="filled"
 		/>
-		<span v-else :title="title" class="k-agents-client-unverified">
+		<span v-else :title="clientTitle(value)" class="k-agents-client-unverified">
 			{{ $t("agents.grants.unverified") }}
 		</span>
 	</div>
 </template>
 
-<script>
-export default {
-	props: {
-		value: Object
-	},
-	computed: {
-		title() {
-			return this.value.host
-				? this.$t("agents.authorize.client.verified", { host: this.value.host })
-				: this.$t("agents.authorize.client.unverified")
-		}
-	}
-}
+<script setup>
+import { clientTitle } from "../client.js"
+
+defineProps({
+	value: Object
+})
 </script>
 
 <style>
