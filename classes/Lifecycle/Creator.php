@@ -147,7 +147,7 @@ final class Creator
 			}
 		}
 
-		return $fields;
+		return Fields::visible($fields);
 	}
 
 	private function option(string $key): mixed

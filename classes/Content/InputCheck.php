@@ -22,6 +22,8 @@ final class InputCheck
 	private array $old = [];
 
 	/**
+	 * Names and definitions of the fields that are checked now
+	 *
 	 * @var list<string>
 	 */
 	private array $path = [];
@@ -63,14 +65,16 @@ final class InputCheck
 				continue;
 			}
 
-			$this->path[] = (string) $name;
+			// the definition too: fields with the same name can have other rules, like in two block types
+			$this->path[] = $name . '#' . hash('xxh3', (string) json_encode($props));
 			Fields::for($props)->check($values[$name] ?? null, $this, $where . $name);
 			array_pop($this->path);
 		}
 	}
 
 	/**
-	 * If the value is not stored already in the same field. Field paths skip the item numbers, because items can move
+	 * If the value is not stored already in the same field with the same rules. Field paths skip the item numbers,
+	 * because items can move
 	 */
 	public function isNew(mixed $value): bool
 	{

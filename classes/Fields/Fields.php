@@ -96,10 +96,11 @@ final class Fields
 
 	/**
 	 * @template K of array-key
+	 * @template V
 	 *
-	 * @param array<K, mixed> $fields
+	 * @param array<K, V> $fields
 	 *
-	 * @return array<K, mixed>
+	 * @return array<K, V>
 	 */
 	public static function visible(array $fields): array
 	{
@@ -197,9 +198,10 @@ final class Fields
 	}
 
 	/**
-	 * Converts the input of an agent for a set of fields, like the content of a new block
+	 * Converts the input of an agent for a set of fields, like the content of a new block.
+	 * Hidden fields count as unknown, also when the caller did not filter them
 	 *
-	 * @param array<array-key, mixed> $fields the fields that agents see
+	 * @param array<array-key, mixed> $fields
 	 * @param array<array-key, mixed> $content
 	 * @param array<array-key, mixed> $current
 	 *
@@ -210,8 +212,8 @@ final class Fields
 		foreach ($content as $name => $value) {
 			$props = $fields[$name] ?? null;
 
-			if (!is_array($props)) {
-				throw new ToolError(Field::unknownField((string) $name, $fields, $where));
+			if (!is_array($props) || self::hint($props, 'ignore') === true) {
+				throw new ToolError(Field::unknownField((string) $name, self::visible($fields), $where));
 			}
 
 			$old = $current[$name] ?? null;

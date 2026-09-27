@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace tobimori\Agents\Fields;
 
+use Kirby\Toolkit\A;
+use tobimori\Agents\Content\InputCheck;
 use tobimori\Agents\Content\Node;
 use tobimori\Agents\Content\Nodes;
 use tobimori\Agents\Content\Presenter;
@@ -43,6 +45,15 @@ class EntriesField extends Field
 
 		if ($node->type !== $type) {
 			throw new ToolError("an entry of type `{$node->type}` cannot move into entries of type `{$type}`");
+		}
+	}
+
+	public function check(mixed $value, InputCheck $check, string $where): void
+	{
+		$field = Fields::for($this->field());
+
+		foreach (array_values(A::wrap($value)) as $index => $item) {
+			$field->check($item, $check, "{$where} > entry " . ($index + 1));
 		}
 	}
 
