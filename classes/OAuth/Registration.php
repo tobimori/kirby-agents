@@ -75,7 +75,13 @@ final class Registration
 		$name = is_string($data['client_name'] ?? null) ? Str::short(trim($data['client_name']), 100) : '';
 		$name = $name !== '' ? $name : 'Unnamed client';
 
-		$payload = Token::encode((string) json_encode(['n' => $name, 'r' => $uris, 'm' => $method]));
+		// random part: the client secret comes from the id, so the same metadata must not give the same id
+		$payload = Token::encode((string) json_encode([
+			'n' => $name,
+			'r' => $uris,
+			'm' => $method,
+			'i' => Token::encode(random_bytes(16)),
+		]));
 		$id = self::PREFIX . '.' . $payload . '.' . Secret::sign(self::PREFIX . '.' . $payload);
 
 		$client = [
