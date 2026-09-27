@@ -7,7 +7,10 @@ namespace tobimori\Agents\Lifecycle;
 use Kirby\Cms\File;
 use Kirby\Cms\Page;
 use Kirby\Cms\Site;
+use Kirby\Content\MemoryStorage;
+use Kirby\Filesystem\F;
 use Kirby\Form\Form;
+use Kirby\Toolkit\Str;
 use tobimori\Agents\Content\InputCheck;
 use tobimori\Agents\Content\Reader;
 use tobimori\Agents\Content\Writer;
@@ -110,13 +113,20 @@ final class Uploads
 		return $stored;
 	}
 
+	/**
+	 * A placeholder file that has no content, also when a real file has the same name
+	 */
 	public static function draft(Site|Page $parent, string $template, string $filename = 'upload.tmp'): File
 	{
-		return new File([
-			'filename' => $filename,
+		$file = new File([
+			// the storage reads the content next to the file: a random name, with the extension of the real one
+			'filename' => 'kirby-agents-' . (string) Str::random(16, 'alphaNum') . '.' . F::extension($filename),
 			'parent' => $parent,
 			'template' => $template === self::DEFAULT ? null : $template,
 		]);
+
+		// in memory, so that nothing is written
+		return $file->changeStorage(MemoryStorage::class, copy: true);
 	}
 
 	private static function count(Site|Page $parent, ?string $template): int

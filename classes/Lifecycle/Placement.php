@@ -12,6 +12,7 @@ use Kirby\Cms\Site;
 use Kirby\Content\MemoryStorage;
 use Kirby\Toolkit\A;
 use Kirby\Toolkit\I18n;
+use Kirby\Toolkit\Str;
 use Throwable;
 use tobimori\Agents\Content\Models;
 
@@ -65,6 +66,9 @@ final class Placement
 		);
 	}
 
+	/**
+	 * A placeholder page that has no content, also when a real page has the same slug
+	 */
 	public static function draft(Site|Page $parent, string $template, string $slug = '__new__'): Page
 	{
 		$page = Page::factory([
@@ -73,9 +77,11 @@ final class Placement
 			'model' => $template,
 			'parent' => $parent instanceof Page ? $parent : null,
 			'isDraft' => true,
+			// a folder that does not exist: the storage reads the content from the root
+			'root' => sys_get_temp_dir() . '/kirby-agents-' . (string) Str::random(16, 'alphaNum'),
 		]);
 
-		// never move: with the slug of an existing draft, that deletes the draft from the disk
+		// in memory, so that nothing is written
 		$page->changeStorage(MemoryStorage::class, copy: true);
 
 		return $page;
