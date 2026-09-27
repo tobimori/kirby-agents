@@ -4,10 +4,16 @@ declare(strict_types=1);
 
 namespace tobimori\Agents\Tools;
 
+use Kirby\Cms\App;
+use Kirby\Cms\File;
 use Kirby\Cms\Page;
 use Kirby\Cms\PageRules;
+use Kirby\Content\VersionCache;
+use Kirby\Filesystem\Dir;
+use Kirby\Filesystem\F;
 use tobimori\Agents\Content\Models;
 use tobimori\Agents\Content\PageInfo;
+use tobimori\Agents\Content\Writer;
 use tobimori\Agents\OAuth\Access;
 use tobimori\Agents\OAuth\Scope;
 use tobimori\Agents\OAuth\Secret;
@@ -77,9 +83,11 @@ final class PageDelete implements Tool
 
 		if (self::valid($confirm, $page, $access) === false) {
 			throw new ToolError(
-				'The `confirm` code is not valid: it expired, is for another page, or the page changed. Call page_delete without `confirm` and ask the user again.',
+				'The `confirm` code is not valid: it expired, is for another page, or the page, a subpage, or a file changed since. Call page_delete without `confirm` and ask the user again.',
 			);
 		}
+
+		self::ensureNotEdited($page);
 
 		$id = $page->id();
 		$page->delete(force: true);
@@ -124,10 +132,69 @@ final class PageDelete implements Tool
 			$access->user->id(),
 			$access->grant,
 			$page->id(),
-			(string) $page->modified(),
-			json_encode(self::deletes($page)),
+			self::fingerprint($page),
 			$expires,
 		]);
+	}
+
+	/**
+	 * What the deletion removes: the folder of the page, as it is on disk now, and not as loaded models
+	 * show it. The text of content files, because times have only seconds
+	 */
+	private static function fingerprint(Page $page): string
+	{
+		$root = (string) $page->root();
+		$extension = '.' . App::instance()->contentExtension();
+		$parts = [];
+
+		foreach (is_dir($root) ? Dir::index($root, recursive: true) : [] as $path) {
+			$file = $root . '/' . (string) $path;
+
+			if (is_file($file) === false) {
+				continue;
+			}
+
+			// hashing the files themselves would be slow: a replaced file changes its size, time, or inode
+			$parts[$path] = str_ends_with($file, $extension)
+				? hash_file('xxh128', $file)
+				: [F::size($file), F::modified($file), fileinode($file)];
+		}
+
+		return hash('sha256', (string) json_encode($parts));
+	}
+
+	private static function ensureNotEdited(Page $page): void
+	{
+		// content that Kirby read before can be old
+		VersionCache::reset();
+
+		foreach (self::models($page) as $model) {
+			$lock = $model->version('changes')->lock('*');
+
+			if ($lock->isLocked()) {
+				throw new ToolError(
+					'Nothing was deleted. `' . $model->id() . '`: ' . Writer::locked($lock->toArray())->getMessage(),
+				);
+			}
+		}
+	}
+
+	/**
+	 * @return list<Page|File>
+	 */
+	private static function models(Page $page): array
+	{
+		$models = [];
+
+		foreach ([$page, ...$page->index(drafts: true)] as $item) {
+			$models[] = $item;
+
+			foreach ($item->files() as $file) {
+				$models[] = $file;
+			}
+		}
+
+		return $models;
 	}
 
 	/**
