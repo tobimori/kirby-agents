@@ -6,6 +6,7 @@ namespace tobimori\Agents\Content;
 
 use Kirby\Cms\File;
 use Kirby\Cms\Page;
+use Kirby\Toolkit\Str;
 use tobimori\Agents\Fields\Fields;
 use tobimori\Agents\Tools\ToolError;
 
@@ -163,9 +164,11 @@ final class Presenter
 			return (string) json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 		}
 
-		$text = trim((string) preg_replace('/\s+/', ' ', strip_tags($value)));
+		// words stay apart across block tags, like `<p>a</p><p>b</p>`, and together across inline tags
+		$text = strip_tags((string) preg_replace('~</(p|h[1-6]|li|blockquote|div)>|<br\s*/?>~i', '$0 ', $value));
+		$text = trim((string) preg_replace('/\s+/', ' ', $text));
 
-		return '"' . (mb_strlen($text) > self::PREVIEW ? mb_substr($text, 0, self::PREVIEW - 1) . '…' : $text) . '"';
+		return '"' . Str::excerpt($text, self::PREVIEW, strip: false, rep: '…') . '"';
 	}
 
 	private function header(): string
