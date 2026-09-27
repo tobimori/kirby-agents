@@ -18,6 +18,9 @@ final class WebMcp
 {
 	private const GRANT = 'panel';
 
+	// upload links need an OAuth grant, and the Panel has its own upload
+	private const UPLOAD = 'file_upload';
+
 	/**
 	 * @return array{enabled: bool, tools: list<array<string, mixed>>}
 	 */
@@ -32,6 +35,10 @@ final class WebMcp
 		$tools = [];
 
 		foreach (Tools::definitions($access) as $definition) {
+			if ($definition['name'] === self::UPLOAD) {
+				continue;
+			}
+
 			$annotations = is_array($definition['annotations'] ?? null) ? $definition['annotations'] : [];
 			$readOnly = ($annotations['readOnlyHint'] ?? false) === true;
 
@@ -63,6 +70,10 @@ final class WebMcp
 
 		if ($limited !== null) {
 			return $limited;
+		}
+
+		if ($name === self::UPLOAD) {
+			return self::error('Uploads are not available here. Ask the user to upload the file in the Panel.');
 		}
 
 		$tool = Tools::find($name);
