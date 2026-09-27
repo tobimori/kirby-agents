@@ -12,6 +12,7 @@ use Kirby\Exception\PermissionException;
 use Kirby\Toolkit\Escape;
 use Kirby\Toolkit\I18n;
 use tobimori\Agents\Agents;
+use tobimori\Agents\OAuth\Client;
 use tobimori\Agents\OAuth\Grant;
 use tobimori\Agents\OAuth\GrantStore;
 use tobimori\Agents\OAuth\Scope;
@@ -148,12 +149,11 @@ final class Grants
 	 */
 	private static function item(User $user, Grant $grant): array
 	{
-		$host = str_starts_with($grant->client, 'https://') ? parse_url($grant->client, PHP_URL_HOST) : null;
 		$dialogs = 'agents/grants/' . $user->id() . '/' . $grant->id;
 
 		return [
 			'id' => $grant->id,
-			'client' => ['name' => $grant->name, 'host' => is_string($host) ? $host : null],
+			'client' => ['name' => $grant->name, 'host' => Client::hostOf($grant->client)],
 			'user' => [
 				'text' => $user->username() ?? $user->id(),
 				'link' => $user->panel()->url(true),

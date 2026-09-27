@@ -16,7 +16,6 @@ final class Client
 		public readonly string $name,
 		public readonly array $redirectUris,
 		public readonly string $authMethod,
-		public readonly bool $metadataDocument,
 	) {}
 
 	public static function find(string $id): ?self
@@ -51,7 +50,15 @@ final class Client
 
 	public function host(): ?string
 	{
-		$host = $this->metadataDocument ? parse_url($this->id, PHP_URL_HOST) : null;
+		return self::hostOf($this->id);
+	}
+
+	/**
+	 * The host of a client with a metadata document, which has its URL as id. Registered clients have none
+	 */
+	public static function hostOf(string $id): ?string
+	{
+		$host = str_starts_with($id, 'https://') ? parse_url($id, PHP_URL_HOST) : null;
 
 		return is_string($host) ? $host : null;
 	}

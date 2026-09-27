@@ -13,6 +13,7 @@ use Kirby\Content\MemoryStorage;
 use Kirby\Toolkit\A;
 use Kirby\Toolkit\I18n;
 use Throwable;
+use tobimori\Agents\Content\Models;
 
 /**
  * Reads the section props: a `Section` object is slow and writes missing UUIDs into content files
@@ -86,7 +87,7 @@ final class Placement
 	public static function moveTargets(Page $page, int $limit): array
 	{
 		$site = App::instance()->site();
-		$current = $page->parent()?->id() ?? 'site';
+		$current = Models::id($page->parentModel());
 		$template = $page->intendedTemplate()->name();
 		$targets = [];
 		$checked = 0;
@@ -96,7 +97,7 @@ final class Placement
 				return ['targets' => $targets, 'complete' => false];
 			}
 
-			$id = $target instanceof Page ? $target->id() : 'site';
+			$id = Models::id($target);
 
 			if ($id === $current || $target instanceof Page && ($target->is($page) || $page->isAncestorOf($target))) {
 				continue;
@@ -269,7 +270,10 @@ final class Placement
 			->count();
 	}
 
-	private static function title(string $name): string
+	/**
+	 * The title of a page blueprint, translated
+	 */
+	public static function title(string $name): string
 	{
 		try {
 			$title = Blueprint::load('pages/' . $name)['title'] ?? $name;

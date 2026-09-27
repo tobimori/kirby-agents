@@ -72,7 +72,7 @@ final class Cimd
 
 		$name = is_string($data['client_name'] ?? null) ? $data['client_name'] : (string) parse_url($url, PHP_URL_HOST);
 
-		return new Client(id: $url, name: $name, redirectUris: $uris, authMethod: 'none', metadataDocument: true);
+		return new Client(id: $url, name: $name, redirectUris: $uris, authMethod: 'none');
 	}
 
 	/**

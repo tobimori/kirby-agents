@@ -55,15 +55,13 @@ final class Token
 	 */
 	public static function access(string $user, string $grant, array $scopes, string $audience): string
 	{
-		$payload = self::encode((string) json_encode([
+		return self::sign(self::ACCESS, [
 			'u' => $user,
 			'g' => $grant,
 			's' => $scopes,
 			'a' => $audience,
 			'e' => time() + self::ACCESS_TTL,
-		]));
-
-		return self::ACCESS . '.' . $payload . '.' . Secret::sign(self::ACCESS . '.' . $payload);
+		]);
 	}
 
 	/**
@@ -71,20 +69,10 @@ final class Token
 	 */
 	public static function parseAccess(#[SensitiveParameter] string $token): ?array
 	{
-		$parts = explode('.', $token);
-
-		if (count($parts) !== 3 || $parts[0] !== self::ACCESS) {
-			return null;
-		}
-
-		if (hash_equals(Secret::sign(self::ACCESS . '.' . $parts[1]), $parts[2]) === false) {
-			return null;
-		}
-
-		$data = json_decode(self::decode($parts[1]), true);
+		$data = self::verify(self::ACCESS, $token);
 
 		if (
-			!is_array($data)
+			$data === null
 			|| !is_string($data['u'] ?? null)
 			|| !is_string($data['g'] ?? null)
 			|| !is_array($data['s'] ?? null)
@@ -101,6 +89,40 @@ final class Token
 			'scopes' => array_values(array_filter($data['s'], is_string(...))),
 			'audience' => $data['a'],
 		];
+	}
+
+	/**
+	 * A token that the server can trust: `prefix.payload.signature`. Anyone can read the payload
+	 *
+	 * @param array<array-key, mixed> $data
+	 */
+	public static function sign(string $prefix, array $data): string
+	{
+		$payload = self::encode((string) json_encode($data));
+
+		return $prefix . '.' . $payload . '.' . Secret::sign($prefix . '.' . $payload);
+	}
+
+	/**
+	 * The payload of a token from sign(), if its prefix and signature are right
+	 *
+	 * @return array<array-key, mixed>|null
+	 */
+	public static function verify(string $prefix, #[SensitiveParameter] string $token): ?array
+	{
+		$parts = explode('.', $token);
+
+		if (
+			count($parts) !== 3
+			|| $parts[0] !== $prefix
+			|| hash_equals(Secret::sign($prefix . '.' . $parts[1]), $parts[2]) === false
+		) {
+			return null;
+		}
+
+		$data = json_decode(self::decode($parts[1]), true);
+
+		return is_array($data) ? $data : null;
 	}
 
 	public static function encode(string $data): string

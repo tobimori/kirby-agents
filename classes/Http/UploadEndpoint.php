@@ -18,7 +18,6 @@ use tobimori\Agents\Lifecycle\Uploads;
 use tobimori\Agents\OAuth\Access;
 use tobimori\Agents\OAuth\GrantStore;
 use tobimori\Agents\OAuth\Scope;
-use tobimori\Agents\OAuth\Secret;
 use tobimori\Agents\OAuth\Token;
 use tobimori\Agents\Tools\ToolError;
 
@@ -45,16 +44,15 @@ final class UploadEndpoint
 		array $content,
 	): array {
 		$expires = time() + self::TTL;
-		$payload = Token::encode((string) json_encode([
+		$token = Token::sign(self::PREFIX, [
 			'u' => $access->user->id(),
 			'g' => $access->grant,
-			'p' => $parent instanceof Page ? $parent->id() : 'site',
+			'p' => Models::id($parent),
 			't' => $template,
 			'f' => $filename,
 			'c' => $content,
 			'e' => $expires,
-		]));
-		$token = self::PREFIX . '.' . $payload . '.' . Secret::sign(self::PREFIX . '.' . $payload);
+		]);
 
 		return ['url' => Agents::resource() . '/upload/' . $token, 'expires' => $expires];
 	}
@@ -126,20 +124,10 @@ final class UploadEndpoint
 	 */
 	private static function parse(#[SensitiveParameter] string $token): ?array
 	{
-		$parts = explode('.', $token);
+		$data = Token::verify(self::PREFIX, $token);
 
 		if (
-			count($parts) !== 3
-			|| $parts[0] !== self::PREFIX
-			|| !hash_equals(Secret::sign(self::PREFIX . '.' . $parts[1]), $parts[2])
-		) {
-			return null;
-		}
-
-		$data = json_decode(Token::decode($parts[1]), true);
-
-		if (
-			!is_array($data)
+			$data === null
 			|| !is_int($data['e'] ?? null)
 			|| $data['e'] < time()
 			|| !is_string($data['u'] ?? null)

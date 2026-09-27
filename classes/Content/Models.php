@@ -31,6 +31,14 @@ final class Models
 		return $model;
 	}
 
+	/**
+	 * The id that agents use for a page or the site, the reverse of find()
+	 */
+	public static function id(Site|Page $model): string
+	{
+		return $model instanceof Page ? $model->id() : 'site';
+	}
+
 	public static function find(string $id): Site|Page
 	{
 		$kirby = App::instance();

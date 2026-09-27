@@ -5,14 +5,12 @@ declare(strict_types=1);
 namespace tobimori\Agents\Tools;
 
 use Kirby\Cms\App;
-use Kirby\Cms\Blueprint;
 use Kirby\Cms\Page;
 use Kirby\Cms\Pages;
 use Kirby\Content\Changes;
-use Kirby\Toolkit\I18n;
-use Throwable;
 use tobimori\Agents\Agents;
 use tobimori\Agents\Content\PageInfo;
+use tobimori\Agents\Lifecycle\Placement;
 use tobimori\Agents\OAuth\Access;
 use tobimori\Agents\OAuth\Scope;
 
@@ -108,19 +106,9 @@ final class SiteOverview implements Tool
 		$blueprints = [];
 
 		foreach (App::instance()->blueprints('pages') as $name) {
-			if (!is_string($name)) {
-				continue;
+			if (is_string($name)) {
+				$blueprints[] = ['name' => $name, 'title' => Placement::title($name)];
 			}
-
-			try {
-				$title = Blueprint::load('pages/' . $name)['title'] ?? null;
-			} catch (Throwable) {
-				$title = null;
-			}
-
-			$title = is_array($title) ? I18n::translate($title) : $title;
-
-			$blueprints[] = ['name' => $name, 'title' => is_string($title) ? $title : $name];
 		}
 
 		return $blueprints;

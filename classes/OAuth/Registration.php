@@ -76,13 +76,12 @@ final class Registration
 		$name = $name !== '' ? $name : 'Unnamed client';
 
 		// random part: the client secret comes from the id, so the same metadata must not give the same id
-		$payload = Token::encode((string) json_encode([
+		$id = Token::sign(self::PREFIX, [
 			'n' => $name,
 			'r' => $uris,
 			'm' => $method,
 			'i' => Token::encode(random_bytes(16)),
-		]));
-		$id = self::PREFIX . '.' . $payload . '.' . Secret::sign(self::PREFIX . '.' . $payload);
+		]);
 
 		$client = [
 			'client_id' => $id,
@@ -104,20 +103,10 @@ final class Registration
 
 	public static function client(string $id): ?Client
 	{
-		$parts = explode('.', $id);
-
-		if (count($parts) !== 3 || $parts[0] !== self::PREFIX) {
-			return null;
-		}
-
-		if (hash_equals(Secret::sign(self::PREFIX . '.' . $parts[1]), $parts[2]) === false) {
-			return null;
-		}
-
-		$data = json_decode(Token::decode($parts[1]), true);
+		$data = Token::verify(self::PREFIX, $id);
 
 		if (
-			!is_array($data)
+			$data === null
 			|| !is_string($data['n'] ?? null)
 			|| !is_array($data['r'] ?? null)
 			|| !is_string($data['m'] ?? null)
@@ -130,7 +119,6 @@ final class Registration
 			name: $data['n'],
 			redirectUris: array_values(array_filter($data['r'], is_string(...))),
 			authMethod: $data['m'],
-			metadataDocument: false,
 		);
 	}
 

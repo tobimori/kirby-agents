@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace tobimori\Agents\Tools;
 
 use Kirby\Cms\App;
-use Kirby\Cms\File;
 use Kirby\Cms\ModelWithContent;
-use Kirby\Cms\Page;
 use Kirby\Toolkit\Str;
 use tobimori\Agents\Content\Models;
+use tobimori\Agents\Lifecycle\Placement;
+use tobimori\Agents\Lifecycle\Uploads;
 use tobimori\Agents\OAuth\Access;
 use tobimori\Agents\OAuth\Scope;
 use tobimori\Agents\Schema\Compiler;
@@ -90,11 +90,7 @@ final class SchemaGet implements Tool
 		}
 
 		if ($blueprint !== null && str_starts_with($blueprint, 'files/')) {
-			return new File([
-				'filename' => 'new-file.tmp',
-				'parent' => $kirby->site(),
-				'template' => Str::after($blueprint, 'files/'),
-			]);
+			return Uploads::draft($kirby->site(), Str::after($blueprint, 'files/'), 'new-file.tmp');
 		}
 
 		if ($blueprint !== null) {
@@ -104,7 +100,8 @@ final class SchemaGet implements Tool
 				throw new ToolError("No page blueprint `{$blueprint}`. Blueprints: " . implode(', ', $names));
 			}
 
-			return new Page(['slug' => 'new-page', 'template' => $blueprint]);
+			// in memory: a real page with this slug must not give its content
+			return Placement::draft($kirby->site(), $blueprint, 'new-page');
 		}
 
 		throw new ToolError('Send `page` or `blueprint`');
