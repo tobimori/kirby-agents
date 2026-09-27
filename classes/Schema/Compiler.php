@@ -8,6 +8,7 @@ use Kirby\Cms\File;
 use Kirby\Cms\ModelWithContent;
 use Kirby\Cms\Page;
 use Kirby\Form\Form;
+use Kirby\Toolkit\Str;
 use tobimori\Agents\Fields\Field;
 use tobimori\Agents\Fields\Fields;
 
@@ -110,18 +111,18 @@ final class Compiler
 			$parts[] = 'only if ' . implode(' and ', $conditions);
 		}
 
-		if ($label !== '' && strtolower($label) !== strtolower(str_replace(['_', '-'], ' ', $name))) {
+		if ($label !== '' && Str::lower($label) !== Str::lower(str_replace(['_', '-'], ' ', $name))) {
 			$parts[] = 'label "' . $label . '"';
 		}
 
 		if (is_string($props['help'] ?? null) && $props['help'] !== '') {
-			$parts[] = 'help: ' . self::shorten(strip_tags($props['help']), 100);
+			$parts[] = 'help: ' . Str::excerpt($props['help'], 100, rep: '…');
 		}
 
 		$description = Fields::hint($props, 'description');
 
 		if (is_string($description) && $description !== '') {
-			$parts[] = 'note: ' . self::shorten($description, 500);
+			$parts[] = 'note: ' . Str::excerpt($description, 500, rep: '…');
 		}
 
 		$example = Fields::hint($props, 'example');
@@ -131,12 +132,5 @@ final class Compiler
 		}
 
 		return implode(', ', $parts);
-	}
-
-	private static function shorten(string $text, int $length): string
-	{
-		$text = trim((string) preg_replace('/\s+/', ' ', $text));
-
-		return mb_strlen($text) > $length ? mb_substr($text, 0, $length - 1) . '…' : $text;
 	}
 }

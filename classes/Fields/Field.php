@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace tobimori\Agents\Fields;
 
 use Kirby\Toolkit\A;
+use Kirby\Toolkit\Str;
 use Kirby\Toolkit\V;
 use tobimori\Agents\Content\InputCheck;
 use tobimori\Agents\Content\Node;
@@ -196,7 +197,7 @@ abstract class Field
 		foreach (array_slice($options, 0, 30) as $option) {
 			$value = is_array($option) ? $option['value'] ?? null : $option;
 			$text = is_array($option) && is_string($option['text'] ?? null) ? $option['text'] : null;
-			$differs = $text !== null && is_string($value) && strtolower($text) !== strtolower($value);
+			$differs = $text !== null && is_string($value) && Str::lower($text) !== Str::lower($value);
 			$values[] = self::quote($value) . ($differs ? ' (' . $text . ')' : '');
 		}
 
