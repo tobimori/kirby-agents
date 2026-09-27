@@ -84,10 +84,11 @@ final class Editor
 			try {
 				match ($op['op'] ?? null) {
 					'set' => $this->set($op),
+					'replace' => $this->replace($op),
 					'insert' => $this->insert($op),
 					'move' => $this->move($op),
 					'remove' => $this->remove($op),
-					default => throw new ToolError('`op` must be set, insert, move, or remove'),
+					default => throw new ToolError('`op` must be set, replace, insert, move, or remove'),
 				};
 			} catch (ToolError $error) {
 				throw new ToolError("op {$number}: " . $error->getMessage());
@@ -130,7 +131,44 @@ final class Editor
 	}
 
 	/**
-	 * The field that `set` changes, from `field` and an optional `ref`
+	 * Replaces one exact piece of text in a field, so that long texts do not need to be sent again
+	 */
+	private function replace(array $op): void
+	{
+		$old = $op['old'] ?? null;
+		$new = $op['new'] ?? null;
+
+		if (!is_string($old) || $old === '' || !is_string($new)) {
+			throw new ToolError('`old` and `new` are required, and `old` must not be empty');
+		}
+
+		[$props, $path] = $this->slot($op);
+		$current = self::getAt($this->values, $path);
+		$field = (string) end($path);
+
+		if (!is_string($current)) {
+			throw new ToolError("`{$field}` has no text to replace in. Change it with `set`");
+		}
+
+		$count = substr_count($current, $old);
+
+		if ($count === 0) {
+			throw new ToolError(
+				"`old` is not in `{$field}`. Copy it exactly from content_get, with its HTML tags, or read the field again",
+			);
+		}
+
+		if ($count > 1) {
+			throw new ToolError(
+				"`old` is {$count} times in `{$field}`. Add more of the text around it, so that it is there only once",
+			);
+		}
+
+		$this->write($props, $path, substr_replace($current, $new, (int) strpos($current, $old), strlen($old)));
+	}
+
+	/**
+	 * The field that `set` and `replace` change, from `field` and an optional `ref`
 	 *
 	 * @return array{0: array<array-key, mixed>, 1: list<string|int>}
 	 */

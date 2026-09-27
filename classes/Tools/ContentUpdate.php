@@ -32,6 +32,7 @@ final class ContentUpdate implements Tool
 				'Operations:',
 				'- `{"op": "set", "field": "subtitle", "value": "New"}` sets a top-level field',
 				'- `{"op": "set", "ref": 5, "field": "text", "value": "<p>New</p>"}` sets a field of a block, a structure row, or the settings of a layout row',
+				'- `{"op": "replace", "ref": 5, "field": "text", "old": "<p>Old sentence.</p>", "new": "<p>New sentence.</p>"}` replaces text in a field, so that you do not need to send a long text again. Without `ref`, in a top-level field. `old` must be in the field exactly once, as content_get shows it, with its HTML tags. Operations run in order, so a later replace sees the earlier ones',
 				'- `{"op": "insert", "into": "text", "type": "heading", "content": {"text": "Hi"}, "as": "a"}` adds a block at the end of a top-level field',
 				'- `{"op": "insert", "after": 5, "type": "text", "content": {…}}` adds a block after item 5. `before` works the same way',
 				'- `{"op": "insert", "into": 3, "slot": "left", "type": "text", "content": {…}}` adds a block to the nested field `left` of block 3',
@@ -61,12 +62,14 @@ final class ContentUpdate implements Tool
 						'items' => [
 							'type' => 'object',
 							'properties' => [
-								'op' => ['type' => 'string', 'enum' => ['set', 'insert', 'move', 'remove']],
+								'op' => ['type' => 'string', 'enum' => ['set', 'replace', 'insert', 'move', 'remove']],
 								// string first: some clients use only the first type
 								'ref' => ['type' => ['string', 'integer']],
 								'field' => ['type' => 'string'],
 								// no type: strict clients drop tools with an empty schema
 								'value' => ['description' => 'New value in the format of the field in schema_get'],
+								'old' => ['type' => 'string'],
+								'new' => ['type' => 'string'],
 								'type' => ['type' => 'string'],
 								'content' => ['type' => 'object'],
 								'as' => ['type' => 'string'],
