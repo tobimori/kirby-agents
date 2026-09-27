@@ -147,12 +147,11 @@ final class ContentUpdate implements Tool
 
 		$lines = [];
 
+		$after = $outcome['after'] ?? $base;
+
 		if ($dryRun) {
 			$lines[] = 'Dry run: the operations are valid. Nothing was saved. The content would be:';
-			$after = $base->withValues($outcome['values']);
 		} else {
-			// the old model object keeps the old state
-			$after = Reader::read(Models::content((string) $arguments->string('page')), null, $language);
 			$lines[] = match (true) {
 				$publishes => 'Saved and published.',
 				$version === 'latest' => 'Saved. The page is still a draft.',

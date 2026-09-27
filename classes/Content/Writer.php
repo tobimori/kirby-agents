@@ -9,6 +9,7 @@ use Kirby\Cms\App;
 use Kirby\Cms\Language;
 use Kirby\Cms\ModelWithContent;
 use Kirby\Content\LockedContentException;
+use Kirby\Content\VersionCache;
 use Kirby\Filesystem\Dir;
 use Kirby\Form\Fields;
 use RuntimeException;
@@ -24,12 +25,12 @@ final class Writer
 	private static array $held = [];
 
 	/**
-	 * Changes content in one step: reads it, checks the etag, applies the operations, checks the result, and saves it.
-	 * Only one agent request at a time writes the same content
+	 * Changes content in one step: reads it, checks the etag, applies the operations, checks the result, saves it,
+	 * and reads it again. Only one agent request at a time writes the same content
 	 *
 	 * @param list<mixed> $ops
 	 *
-	 * @return array{base: Reader, edit: array{values: array<array-key, mixed>, created: list<array{name: string|null, path: list<string|int>}>, changed: list<string>}, others: array{editor: string, fields: list<string>}|null, errors: list<string>, warnings: list<string>, values: array<array-key, mixed>}
+	 * @return array{base: Reader, edit: array{values: array<array-key, mixed>, created: list<array{name: string|null, path: list<string|int>}>, changed: list<string>}, others: array{editor: string, fields: list<string>}|null, after: Reader|null, errors: list<string>, warnings: list<string>, values: array<array-key, mixed>, model: ModelWithContent}
 	 */
 	public static function write(
 		ModelWithContent $model,
@@ -54,13 +55,15 @@ final class Writer
 
 			// before the save, which can publish
 			$others = self::others($base, $edit['changed']);
+			$saved = self::save($base, $edit['values'], $edit['changed'], $publish, $dryRun);
 
-			return [
-				'base' => $base,
-				'edit' => $edit,
-				'others' => $others,
-				...self::save($base, $edit['values'], $edit['changed'], $publish, $dryRun),
-			];
+			$after = match (true) {
+				$saved['errors'] !== [] => null,
+				$dryRun => $base->withValues($saved['values']),
+				default => self::fresh($saved['model'], $language),
+			};
+
+			return ['base' => $base, 'edit' => $edit, 'others' => $others, 'after' => $after, ...$saved];
 		});
 	}
 
@@ -73,7 +76,7 @@ final class Writer
 			throw new ToolError('your role may not change this content');
 		}
 
-		$base = Reader::read($model, null, $language);
+		$base = self::fresh($model, $language);
 
 		if ($etag !== $base->etag) {
 			throw new ToolError(
@@ -106,6 +109,16 @@ final class Writer
 		}
 
 		return ['editor' => $editor, 'fields' => $fields];
+	}
+
+	/**
+	 * Kirby keeps content that it read once. Another request can have changed it since
+	 */
+	private static function fresh(ModelWithContent $model, ?string $language): Reader
+	{
+		VersionCache::reset();
+
+		return Reader::read($model, null, $language);
 	}
 
 	/**
@@ -151,7 +164,7 @@ final class Writer
 	 * @param array<array-key, mixed> $values
 	 * @param list<string> $changed
 	 *
-	 * @return array{errors: list<string>, warnings: list<string>, values: array<array-key, mixed>}
+	 * @return array{errors: list<string>, warnings: list<string>, values: array<array-key, mixed>, model: ModelWithContent}
 	 */
 	private static function save(Reader $base, array $values, array $changed, bool $publish, bool $dryRun): array
 	{
@@ -209,7 +222,7 @@ final class Writer
 		}
 
 		if ($errors !== [] || $dryRun) {
-			return ['errors' => $errors, 'warnings' => $warnings, 'values' => $result];
+			return ['errors' => $errors, 'warnings' => $warnings, 'values' => $result, 'model' => $model];
 		}
 
 		try {
@@ -224,7 +237,8 @@ final class Writer
 			throw self::locked($exception->getDetails());
 		}
 
-		return ['errors' => [], 'warnings' => $warnings, 'values' => $result];
+		// a publish replaces the model: the old one keeps the old content in memory
+		return ['errors' => [], 'warnings' => $warnings, 'values' => $result, 'model' => $changes->model()];
 	}
 
 	/**
