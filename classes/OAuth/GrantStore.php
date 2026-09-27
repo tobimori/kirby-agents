@@ -42,6 +42,26 @@ final class GrantStore
 
 	/**
 	 * Returns false if the grant does not exist
+	 *
+	 * @param list<string> $scopes
+	 */
+	public function changeScopes(string $id, array $scopes): bool
+	{
+		return $this->change(static function (array &$grants) use ($id, $scopes): bool {
+			$grant = $grants[$id] ?? null;
+
+			if ($grant === null) {
+				return false;
+			}
+
+			$grant->scopes = $scopes;
+
+			return true;
+		});
+	}
+
+	/**
+	 * Returns false if the grant does not exist
 	 */
 	public function revoke(string $id): bool
 	{

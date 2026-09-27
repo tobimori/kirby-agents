@@ -25,7 +25,8 @@ final class Access
 
 	/**
 	 * Valid signature and expiry, issued for this server,
-	 * and the user and grant still exist. Scopes the role may no longer grant are removed
+	 * and the user and grant still exist. The scopes come from the grant, not from the token,
+	 * so changes in the Panel apply at once. Scopes the role may no longer grant are removed
 	 */
 	public static function fromToken(#[SensitiveParameter] string $token): ?self
 	{
@@ -37,12 +38,14 @@ final class Access
 
 		$user = App::instance()->users()->find($data['user']);
 
-		if (!$user instanceof User || (new GrantStore($user))->find($data['grant']) === null) {
+		$grant = $user instanceof User ? (new GrantStore($user))->find($data['grant']) : null;
+
+		if (!$user instanceof User || $grant === null) {
 			return null;
 		}
 
 		// role permissions can change after the grant, so they apply to each request
-		return new self($user, $data['grant'], Scope::allowedFor($user, $data['scopes']));
+		return new self($user, $data['grant'], Scope::allowedFor($user, $grant->scopes));
 	}
 
 	public function allows(Scope $scope): bool

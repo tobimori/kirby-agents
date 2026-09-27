@@ -10,13 +10,13 @@ namespace tobimori\Agents\OAuth;
 final class Grant
 {
 	/**
-	 * @param list<string> $scopes
+	 * @param list<string> $scopes the user can change them in the Panel
 	 */
 	public function __construct(
 		public readonly string $id,
 		public readonly string $client,
 		public readonly string $name,
-		public readonly array $scopes,
+		public array $scopes,
 		public readonly string $redirect,
 		public readonly string $resource,
 		public readonly int $created,
