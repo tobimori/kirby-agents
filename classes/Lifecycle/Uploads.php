@@ -121,9 +121,7 @@ final class Uploads
 
 	private static function count(Site|Page $parent, ?string $template): int
 	{
-		$files = $parent->files();
-
-		return $template === null ? $files->count() : $files->filter('template', $template)->count();
+		return $parent->files()->template($template)->count();
 	}
 
 	/**

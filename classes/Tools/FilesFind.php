@@ -7,6 +7,7 @@ namespace tobimori\Agents\Tools;
 use Kirby\Cms\File;
 use tobimori\Agents\Content\FileInfo;
 use tobimori\Agents\Content\Models;
+use tobimori\Agents\Lifecycle\Uploads;
 use tobimori\Agents\OAuth\Access;
 use tobimori\Agents\OAuth\Scope;
 
@@ -66,9 +67,12 @@ final class FilesFind implements Tool
 		$type = $arguments->string('type');
 		$query = $arguments->string('query');
 
-		if ($templates !== []) {
-			$files = $files->filter(static fn(File $file): bool => in_array($file->template(), $templates, true));
+		// files without a template have an empty one, which Kirby maps to `default` only for a single string
+		if (in_array(Uploads::DEFAULT, $templates, true)) {
+			$templates[] = '';
 		}
+
+		$files = $files->template($templates);
 
 		if ($type !== null) {
 			$files = $files->filter(static fn(File $file): bool => $file->type() === $type);
