@@ -94,10 +94,10 @@ async function submit(value) {
 .k-agents-authorize {
 	--dialog-width: 30rem;
 	line-height: 1.5;
-}
 
-.k-agents-authorize .k-dialog-body {
-	padding-bottom: var(--dialog-padding);
+	.k-dialog-body {
+		padding-bottom: var(--dialog-padding);
+	}
 }
 
 .k-agents-authorize-title {
@@ -121,25 +121,25 @@ async function submit(value) {
 	display: grid;
 	gap: var(--spacing-2);
 	margin-bottom: var(--spacing-6);
-}
 
-.k-agents-authorize-scopes li {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: var(--spacing-2);
-}
+	li {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--spacing-2);
 
-.k-agents-authorize-scopes li[data-allowed="true"] .k-icon {
-	color: var(--color-positive);
-}
+		&[data-allowed="true"] .k-icon {
+			color: var(--color-positive);
+		}
 
-.k-agents-authorize-scopes li[data-allowed="false"] {
-	color: var(--color-text-dimmed);
-}
+		&[data-allowed="false"] {
+			color: var(--color-text-dimmed);
+		}
+	}
 
-.k-agents-authorize-scopes small {
-	font-size: var(--text-xs);
+	small {
+		font-size: var(--text-xs);
+	}
 }
 
 .k-agents-authorize-buttons {

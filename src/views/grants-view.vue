@@ -69,22 +69,30 @@ function onOption(option, row) {
 </script>
 
 <style>
-.k-agents-grants-view .k-header-buttons {
-	align-self: center;
+.k-agents-grants-view {
+	.k-header-buttons {
+		align-self: center;
+	}
+
+	.k-table tbody tr:last-child {
+		td:first-child {
+			border-end-start-radius: var(--rounded);
+		}
+
+		td:last-child {
+			border-end-end-radius: var(--rounded);
+		}
+	}
 }
+
 .k-agents-grants-url {
 	--input-height: var(--height-sm);
 	--input-font-size: var(--text-sm);
 	width: min(26rem, 60vw);
-}
-.k-agents-grants-url input {
-	width: 100%;
-	padding-block: 0;
-}
-.k-agents-grants-view .k-table tbody tr:last-child td:first-child {
-	border-end-start-radius: var(--rounded);
-}
-.k-agents-grants-view .k-table tbody tr:last-child td:last-child {
-	border-end-end-radius: var(--rounded);
+
+	input {
+		width: 100%;
+		padding-block: 0;
+	}
 }
 </style>

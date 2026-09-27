@@ -106,16 +106,18 @@ onBeforeUnmount(() => observer.disconnect())
 	gap: var(--spacing-2);
 	padding: var(--spacing-2) var(--spacing-3);
 	max-width: 22rem;
-}
-.k-agents-scopes-list li {
-	display: flex;
-	align-items: flex-start;
-	gap: var(--spacing-2);
-	line-height: var(--leading-normal);
-	white-space: normal;
-}
-.k-agents-scopes-list .k-icon {
-	flex-shrink: 0;
-	color: var(--color-positive);
+
+	li {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--spacing-2);
+		line-height: var(--leading-normal);
+		white-space: normal;
+	}
+
+	.k-icon {
+		flex-shrink: 0;
+		color: var(--color-positive);
+	}
 }
 </style>
