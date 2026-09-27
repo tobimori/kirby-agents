@@ -55,14 +55,27 @@ final class TokenEndpoint
 		}
 
 		$token = (string) ($body['token'] ?? '');
-		$ids = Token::parseOpaque(Token::REFRESH, $token) ?? Token::parseAccess($token);
+		$refresh = Token::parseOpaque(Token::REFRESH, $token);
+		$ids = $refresh ?? Token::parseAccess($token);
 		$user = $ids !== null ? App::instance()->users()->find($ids['user']) : null;
 
 		if ($ids !== null && $user instanceof User) {
-			(new GrantStore($user))->change(static function (array &$grants) use ($ids, $client): void {
-				if (($grants[$ids['grant']] ?? null)?->client === $client->id) {
-					unset($grants[$ids['grant']]);
+			(new GrantStore($user))->change(static function (array &$grants) use ($ids, $refresh, $client): void {
+				$grant = $grants[$ids['grant']] ?? null;
+
+				if (!$grant instanceof Grant || $grant->client !== $client->id) {
+					return;
 				}
+
+				// the ids of a refresh token are not secret: they are also in the access token
+				if (
+					$refresh !== null
+					&& ($grant->refresh === null || !hash_equals($grant->refresh, Token::hash($refresh['secret'])))
+				) {
+					return;
+				}
+
+				unset($grants[$grant->id]);
 			});
 		}
 
