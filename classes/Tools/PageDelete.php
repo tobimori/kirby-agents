@@ -121,6 +121,7 @@ final class PageDelete implements Tool
 	{
 		return implode('|', [
 			'page_delete',
+			$access->user->id(),
 			$access->grant,
 			$page->id(),
 			(string) $page->modified(),
