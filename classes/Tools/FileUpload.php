@@ -23,7 +23,7 @@ final class FileUpload implements Tool
 		return [
 			'title' => 'Upload a file',
 			'description' => implode("\n", [
-				'Returns a link to upload one file to a page or the site. The file does not go through this tool: send it with a shell command, for example `curl -sS -F file=@photo.jpg "<url>"`. The link is valid for 10 minutes, for this filename and template.',
+				'Returns a link to upload one file to a page or the site. The file does not go through this tool: send it with the shell command from the result. The link is valid for 10 minutes, for this filename and template.',
 				'Read `upload` in page_rules first: it lists the file templates you can upload and what they accept. Read the fields of the template with schema_get (`blueprint: "files/<template>"`) and send them in `content`, required fields included: an uploaded file is public at once, there is no review step. Kirby checks the file type, size, and contents when it receives the file.',
 				'The upload answers with JSON: the file with its `id` and `uuid`, or an `error`. Use the `uuid` in files fields. A file has its own content and unsaved changes, separate from its page. To remove a file again, use file_delete.',
 			]),
