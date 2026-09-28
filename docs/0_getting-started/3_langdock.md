@@ -51,12 +51,14 @@ Langdock asks before it uses a tool with confirmation turned on. Click **Confirm
 
 ## When Langdock needs more permissions
 
-By default, Langdock can read your content and prepare changes for review. Other tools, like publishing, creating pages or uploading files, need an extra permission. Langdock can't ask for it during a chat: the tool call fails. Add the permission in the Panel:
+By default, Langdock can read your content and prepare changes for review. Other tools, like publishing, creating pages or uploading files, need an extra permission. Langdock can't ask for a new permission during a chat, so the tool call ends with an error. Langdock then shows a **Reauthorize** button, but it doesn't add the missing permission. Add the permission in the Panel instead.
 
-1. Open the **Agents** view in the Panel.
-2. Open the options of the Langdock connection and choose **Change permissions**.
-3. Select the permissions and save.
+Open the **Agents** view in the Panel. Click the options of the Langdock connection (1) and choose **Change permissions** (2).
 
-Ask Langdock to try again. The new permission applies to the next request.
+![The Agents view in the Panel with the options of the Langdock connection open](./panel-agents.png)
 
-Langdock also shows a **Reauthorize** button when a permission is missing. This connects again with the default permissions, so it doesn't add the missing one.
+Select the permission that Langdock needs (1) and click **Save** (2).
+
+![The dialog to change the permissions of a connection, with Upload files selected](./panel-permissions.png)
+
+Ask Langdock to try again. The new permission applies to the next request, so you don't have to connect again.
