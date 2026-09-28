@@ -3,7 +3,7 @@ title: Tools
 intro: The tools that agents use, and the permissions they need
 ---
 
-Agents see the tools that the role of their user allows. A tool that needs a permission the connection doesn't have is listed too, so the agent can ask for it. See [Permissions](1_features/0_permissions).
+Agents see the tools that the role of their user allows. A tool that needs a permission the connection doesn't have is listed too, so the agent can ask for it. See [Permissions](0_getting-started/4_permissions).
 
 ## Read
 
@@ -46,8 +46,12 @@ Agents read a page before they change it, and each change refers to the version 
 | `file_upload` | Returns a link to upload one file with its metadata | `files:manage` |
 | `file_delete` | Deletes one file                                    | `files:delete` |
 
-The metadata of files, like the alt text, is content. Agents read and change it with `content_get` and `content_update`. See [File uploads](1_features/1_file-uploads).
+The file doesn't go through the chat. `file_upload` returns a link, and the agent sends the file to it with a shell command. The link is valid for 10 minutes, for one file name and one file template. So agents with a shell, like Claude Code, can upload files. Chat apps like claude.ai, ChatGPT and Langdock get the link, but usually can't send a file from the chat.
+
+Agents can upload to the same places as the Panel, and Kirby checks the file with the rules of the file blueprint. An uploaded file is public at once, so the agent sends its metadata, like the alt text, with the upload. Later, agents read and change the metadata with `content_get` and `content_update`.
+
+`file_delete` also checks the option `delete` of the file blueprint. Fields that refer to the deleted file keep the reference, but show nothing.
 
 ## Tools in the browser
 
-Browser agents in the Panel get one more tool: `panel_view` returns the page, file or language that you have open. See [WebMCP](1_features/2_webmcp).
+Browser agents in the Panel get one more tool: `panel_view` returns the page, file or language that you have open. See [WebMCP](1_customization/3_webmcp).

@@ -13,7 +13,7 @@ Kirby Agents requires HTTPS. On your own computer, plain HTTP works for addresse
 
 ## Clients that can't ask for more permissions
 
-Some clients can't ask for a new permission during a session. Tell such a client which permissions to ask for when it connects, if its settings support that. The names of the permissions are in the [options reference](3_reference/0_options#scopes). You can also add them to every connection with the `scopes` option, or add them later in the **Agents** view. See [Permissions](1_features/0_permissions).
+Some clients can't ask for a new permission during a session. Tell such a client which permissions to ask for when it connects, if its settings support that. The names of the permissions are in the [options reference](2_reference/0_options#scopes). You can also add them to every connection with the `scopes` option, or add them later in the **Agents** view. See [Permissions](0_getting-started/4_permissions).
 
 ## Apps that open with their own URL
 

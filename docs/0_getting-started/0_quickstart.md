@@ -71,8 +71,9 @@ Pick the assistant you use:
 - [Claude](0_getting-started/1_claude) (claude.ai, Claude Desktop, Claude Code)
 - [ChatGPT](0_getting-started/2_chatgpt)
 - [Langdock](0_getting-started/3_langdock)
+- [Other MCP clients](0_getting-started/5_other-clients)
 
-Each connection is listed in the **Agents** view. There you can change its permissions or revoke it.
+Each connection is listed in the **Agents** view. There you can [change its permissions](0_getting-started/4_permissions) or revoke it.
 
 ## Review the changes
 

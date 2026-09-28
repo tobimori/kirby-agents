@@ -5,7 +5,7 @@ intro: Teach agents the value format of a field type from your site or plugin
 
 Kirby Agents knows all core field types. For each field, it shows agents a short description of the value, checks their input, and shows the value in a short form when an agent reads a page.
 
-Custom field types often need no code. A field that extends a core field, like `'extends' => 'writer'` or a subclass of Kirby's `BlocksField`, works like that core field. Other custom fields show their options, limits and default value, and a [blueprint hint](2_customization/0_blueprint-hints) can add a description and an example.
+Custom field types often need no code. A field that extends a core field, like `'extends' => 'writer'` or a subclass of Kirby's `BlocksField`, works like that core field. Other custom fields show their options, limits and default value, and a [blueprint hint](1_customization/0_blueprint-hints) can add a description and an example.
 
 Write a field class when agents need a value format that the blueprint can't tell, or when their input needs a check or a conversion.
 

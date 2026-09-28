@@ -30,7 +30,7 @@ An example value. Agents copy the format of examples well, so this helps most fo
 
 ## as
 
-Treat the field like a field of another type, for example `number` for a custom rating field. Use a core type of Kirby, or a type that has a [field class](2_customization/1_field-types).
+Treat the field like a field of another type, for example `number` for a custom rating field. Use a core type of Kirby, or a type that has a [field class](1_customization/1_field-types).
 
 ## ignore
 

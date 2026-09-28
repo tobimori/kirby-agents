@@ -32,7 +32,7 @@ return [
 
 Without it, Kirby Agents answers "HTTPS is required", and the addresses in the OAuth metadata are wrong.
 
-The [rate limits](3_reference/0_options#limits) count per IP address. Behind a proxy, all requests can come from the address of the proxy, so raise the limits for `register`, `authorize` and `token`.
+The [rate limits](2_reference/0_options#limits) count per IP address. Behind a proxy, all requests can come from the address of the proxy, so raise the limits for `register`, `authorize` and `token`.
 
 ## Firewalls and password protection
 

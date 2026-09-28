@@ -17,11 +17,11 @@ return [
 | Option    | Default | Description                                                                                                      |
 | --------- | ------- | ---------------------------------------------------------------------------------------------------------------- |
 | `scopes`  | `[]`    | Permissions to ask for on every new connection, see [below](#scopes)                                             |
-| `path`    | `null`  | Moves the endpoints out of the Panel, see [Hosting](2_customization/2_hosting#firewalls-and-password-protection) |
+| `path`    | `null`  | Moves the endpoints out of the Panel, see [Hosting](1_customization/2_hosting#firewalls-and-password-protection) |
 | `origins` | `[]`    | More origins that may call the endpoints from a browser, like `'https://app.example.com'`                        |
 | `limits`  | `[]`    | Rate limits, see [below](#limits)                                                                                |
-| `fields`  | `[]`    | Field classes for custom field types, see [Custom field types](2_customization/1_field-types)                    |
-| `webmcp`  | `true`  | Registers the tools for browser agents in the Panel, see [WebMCP](1_features/2_webmcp)                           |
+| `fields`  | `[]`    | Field classes for custom field types, see [Custom field types](1_customization/1_field-types)                    |
+| `webmcp`  | `true`  | Registers the tools for browser agents in the Panel, see [WebMCP](1_customization/3_webmcp)                           |
 | `secret`  | `null`  | Key to sign tokens. If not set, Kirby Agents creates one in `site/accounts/.agents-secret`                       |
 
 ## scopes
