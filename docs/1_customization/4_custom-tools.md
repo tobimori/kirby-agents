@@ -162,7 +162,7 @@ Kirby Agents checks the tools and permissions of all plugins before it answers a
 
 ## Classes for plugins
 
-Your plugin can use these classes. They only change in major releases:
+Your plugin can use these classes. From version 1.0, they only change in major releases:
 
 | Class                             | Use                                                                                                                                                                                  |
 | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
