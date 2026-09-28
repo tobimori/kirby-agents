@@ -14,19 +14,31 @@ return [
 ];
 ```
 
-| Option    | Default | Description                                                                                                      |
-| --------- | ------- | ---------------------------------------------------------------------------------------------------------------- |
-| `scopes`  | `[]`    | Permissions to ask for on every new connection, see [below](#scopes)                                             |
-| `path`    | `null`  | Moves the endpoints out of the Panel, see [Hosting](1_customization/2_hosting#firewalls-and-password-protection) |
-| `origins` | `[]`    | More origins that may call the endpoints from a browser, like `'https://app.example.com'`                        |
-| `limits`  | `[]`    | Rate limits, see [below](#limits)                                                                                |
-| `fields`  | `[]`    | Field classes for custom field types, see [Custom field types](1_customization/1_field-types)                    |
-| `webmcp`  | `true`  | Registers the tools for browser agents in the Panel, see [WebMCP](1_customization/3_webmcp)                           |
-| `secret`  | `null`  | Key to sign tokens. If not set, Kirby Agents creates one in `site/accounts/.agents-secret`                       |
+| Option    | Default | Description                                                                                      |
+| --------- | ------- | ------------------------------------------------------------------------------------------------ |
+| `scopes`  | `[]`    | Permissions to ask for on every new connection, see [below](#scopes)                             |
+| `path`    | `null`  | Moves the endpoints out of the Panel, see [Hosting](1_customization/2_hosting#a-protected-panel) |
+| `origins` | `[]`    | More origins that may call the endpoints from a browser, like `'https://app.example.com'`        |
+| `limits`  | `[]`    | Rate limits, see [below](#limits)                                                                |
+| `fields`  | `[]`    | Field classes for custom field types, see [Custom field types](1_customization/1_field-types)    |
+| `webmcp`  | `true`  | Registers the tools for browser agents in the Panel, see [WebMCP](1_customization/3_webmcp)      |
+| `secret`  | `null`  | Key to sign tokens. If not set, Kirby Agents creates one in `site/accounts/.agents-secret`       |
 
 ## scopes
 
-The names of the permissions, for the `scopes` option and for the settings of MCP clients:
+A new connection gets `content:read` and `content:write`. To ask for more permissions on every new connection, list them in the `scopes` option:
+
+```php
+return [
+  'tobimori.agents' => [
+    'scopes' => ['content:publish', 'pages:manage', 'files:manage'],
+  ],
+];
+```
+
+The consent screen then lists these permissions too. The role of the user still applies: a permission that the role doesn't allow shows as "Not available for your role".
+
+The names of all permissions, for this option and for the settings of MCP clients:
 
 | Scope             | Permission                                             | Kirby permissions of the role (one is needed)                                                               |
 | ----------------- | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
