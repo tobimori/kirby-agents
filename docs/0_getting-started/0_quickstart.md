@@ -42,18 +42,18 @@ Open the Panel and go to the new **Agents** view in the menu.
 
 If your site has a [custom Panel menu](https://getkirby.com/docs/reference/system/options/panel#panel-menu), the entry doesn't show up automatically. Add `agents` to your menu in the place you want it:
 
-```php
-// site/config/config.php
-return [
-  'panel' => [
-    'menu' => [
-      'site',
-      'users',
-      'agents', // <--- add this
-      'system',
+```diff
+  // site/config/config.php
+  return [
+    'panel' => [
+      'menu' => [
+        'site',
+        'users',
++       'agents',
+        'system',
+      ],
     ],
-  ],
-];
+  ];
 ```
 
 At the top of the view is the **MCP URL** with a copy button. For most sites, it looks like this:
