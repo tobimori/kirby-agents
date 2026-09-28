@@ -59,16 +59,6 @@ The consent screen lists the new permission. Click **Allow** (1).
 
 If the answer in ChatGPT ends with an error, click **Try again**. ChatGPT then runs the tool with the new permission.
 
-### If ChatGPT doesn't ask
-
-Not every ChatGPT model shows the reconnect card. In our tests, **Instant** showed it and **Pro** didn't. If the answer ends without the card, add the permission in the Panel:
-
-1. Open the **Agents** view in the Panel.
-2. Open the options of the ChatGPT connection and choose **Change permissions**.
-3. Select the permissions and save.
-
-Ask ChatGPT to try again. The new permission applies to the next request, so you don't have to connect again.
-
 ## Good to know
 
 - Custom MCP apps need a paid ChatGPT plan.
