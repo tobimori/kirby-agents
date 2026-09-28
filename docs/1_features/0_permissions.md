@@ -5,7 +5,17 @@ intro: Control what each agent can do on your site
 
 An agent acts as the Kirby user who connected it. It can only do what you allowed, and never more than the role of the user allows in the Panel.
 
-A new connection can read your site and prepare changes for review. These changes wait as unsaved changes until you publish them in the Panel. To publish, manage pages, upload or delete, the agent needs an extra permission.
+A connection can have these permissions:
+
+- Read pages, files, content, and blueprints
+- Prepare content changes for review
+- Publish content changes and change the status of pages
+- Create, rename, move, and sort pages
+- Delete pages
+- Upload files
+- Delete files
+
+A new connection gets the first two. The agent can then read your site, and its changes wait as unsaved changes until you publish them in the Panel.
 
 ## Change the permissions
 
