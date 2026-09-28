@@ -241,7 +241,10 @@ final class Authorization
 		$params['iss'] = Agents::issuer();
 		$query = http_build_query(array_filter($params, static fn(mixed $value): bool => $value !== null));
 
-		return Response::redirect($uri . (str_contains($uri, '?') ? '&' : '?') . $query);
+		// not Response::redirect(): Kirby's Uri drops custom schemes like `com.raycast:/oauth`
+		return new Response('', null, 302, [
+			'Location' => $uri . (str_contains($uri, '?') ? '&' : '?') . $query,
+		]);
 	}
 
 	private static function page(string $message, int $code = 400): Response
