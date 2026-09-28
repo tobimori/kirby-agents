@@ -65,20 +65,26 @@ final class Tools
 	 */
 	public static function definitions(Access $access): array
 	{
-		return array_map(static function (Tool $tool) use ($access): array {
-			$definition = $tool->definition();
-			$schema = is_array($definition['inputSchema'] ?? null) ? $definition['inputSchema'] : [];
-			$summary = is_string($definition['description'] ?? null) ? $definition['description'] : '';
-			$definition['description'] = $summary . "\n\n" . Guide::parameters($schema);
+		return array_map(
+			static function (Tool $tool) use ($access): array {
+				$definition = $tool->definition();
+				$schema = is_array($definition['inputSchema'] ?? null) ? $definition['inputSchema'] : [];
+				$summary = is_string($definition['description'] ?? null) ? $definition['description'] : '';
+				$definition['description'] = $summary . "\n\n" . Guide::parameters($schema);
 
-			if ($access->allows($tool->scope()) === false) {
-				$definition['description'] =
-					"Needs the `{$tool->scope()->value}` scope, which this connection does not have yet. A call asks the user to allow it in the browser, so ask the user first.\n\n"
-					. $definition['description'];
-			}
+				if ($access->allows($tool->scope()) === false) {
+					$definition['description'] =
+						"Needs the `{$tool->scope()->value}` scope, which this connection does not have yet. A call asks the user to allow it in the browser, so ask the user first.\n\n"
+						. $definition['description'];
+				}
 
-			return ['name' => $tool->name(), ...$definition];
-		}, self::for($access));
+				// ChatGPT starts the authorization for a missing scope only for tools that name it here
+				$definition['securitySchemes'] = [['type' => 'oauth2', 'scopes' => [$tool->scope()->value]]];
+
+				return ['name' => $tool->name(), ...$definition];
+			},
+			self::for($access),
+		);
 	}
 
 	/**

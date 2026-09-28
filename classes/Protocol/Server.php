@@ -12,6 +12,7 @@ use Throwable;
 use tobimori\Agents\Agents;
 use tobimori\Agents\Http\McpEndpoint;
 use tobimori\Agents\OAuth\Access;
+use tobimori\Agents\OAuth\Client;
 use tobimori\Agents\Tools\ScopeRequired;
 use tobimori\Agents\Tools\Tools;
 
@@ -186,6 +187,19 @@ final class Server
 		try {
 			$result = Tools::run($tool, is_array($params['arguments'] ?? null) ? $params['arguments'] : [], $access);
 		} catch (ScopeRequired $error) {
+			// ChatGPT ignores the 403 that the MCP spec requires. It only asks the user for the permission
+			// if the tool result contains the error. Remove this when ChatGPT supports the 403
+			// https://developers.openai.com/plugins/build/auth
+			// https://community.openai.com/t/chatgpt-does-not-re-trigger-oauth-on-401-www-authenticate-for-mcp-tool-calls/1374168
+			// https://github.com/modelcontextprotocol/modelcontextprotocol/issues/1489
+			if (Client::hostOf($access->client ?? '') === 'chatgpt.com') {
+				return self::result($id, [
+					'content' => [['type' => 'text', 'text' => $error->getMessage()]],
+					'isError' => true,
+					'_meta' => ['mcp/www_authenticate' => [McpEndpoint::scopeChallenge($error->scope, $access)]],
+				]);
+			}
+
 			return McpEndpoint::insufficientScope($error->scope, $access);
 		}
 

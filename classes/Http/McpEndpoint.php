@@ -54,9 +54,19 @@ final class McpEndpoint
 
 	public static function insufficientScope(Scope $scope, Access $access): Response
 	{
+		return ChallengeResponse::json(['error' => 'insufficient_scope'], 403, headers: [
+			'WWW-Authenticate' => self::scopeChallenge($scope, $access),
+		]);
+	}
+
+	/**
+	 * The scopes of the token and the missing one, because clients often request exactly these
+	 */
+	public static function scopeChallenge(Scope $scope, Access $access): string
+	{
 		$scopes = array_values(array_unique([...$access->scopes, $scope->value]));
 
-		return self::authenticate(403, 'insufficient_scope', $scopes, true);
+		return self::header($scopes, 'insufficient_scope', "This call needs the permission `{$scope->value}`");
 	}
 
 	/**
@@ -64,17 +74,29 @@ final class McpEndpoint
 	 */
 	private static function authenticate(int $status, string $error, array $scopes, bool $withError): Response
 	{
+		return ChallengeResponse::json(['error' => $error], $status, headers: [
+			'WWW-Authenticate' => self::header($scopes, $withError ? $error : null),
+		]);
+	}
+
+	/**
+	 * @param list<string> $scopes
+	 */
+	private static function header(array $scopes, ?string $error = null, ?string $description = null): string
+	{
 		$params = [
 			'resource_metadata="' . Metadata::protectedResourceUrl() . '"',
 			'scope="' . implode(' ', $scopes) . '"',
 		];
 
-		if ($withError) {
+		if ($error !== null) {
 			$params[] = 'error="' . $error . '"';
 		}
 
-		return ChallengeResponse::json(['error' => $error], $status, headers: [
-			'WWW-Authenticate' => 'Bearer ' . implode(', ', $params),
-		]);
+		if ($description !== null) {
+			$params[] = 'error_description="' . $description . '"';
+		}
+
+		return 'Bearer ' . implode(', ', $params);
 	}
 }

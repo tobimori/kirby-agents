@@ -18,6 +18,7 @@ final class Access
 		public readonly User $user,
 		public readonly string $grant,
 		public readonly array $scopes,
+		public readonly ?string $client = null,
 	) {}
 
 	public static function fromToken(#[SensitiveParameter] string $token): ?self
@@ -36,7 +37,7 @@ final class Access
 			return null;
 		}
 
-		return new self($user, $data['grant'], Scope::allowedFor($user, $grant->scopes));
+		return new self($user, $data['grant'], Scope::allowedFor($user, $grant->scopes), $grant->client);
 	}
 
 	public function allows(Scope $scope): bool
