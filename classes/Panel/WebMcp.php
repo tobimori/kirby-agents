@@ -85,7 +85,7 @@ final class WebMcp
 		try {
 			return Tools::run($tool, $arguments, $access);
 		} catch (ScopeRequired $error) {
-			return self::error("Your role may not do this (it needs `{$error->scope->value}`).");
+			return self::error("Your role may not do this (it needs `{$error->scope}`).");
 		}
 	}
 

@@ -53,9 +53,9 @@ final class ChangesPublish implements Tool
 		];
 	}
 
-	public function scope(): Scope
+	public function scope(): string
 	{
-		return Scope::ContentPublish;
+		return Scope::CONTENT_PUBLISH;
 	}
 
 	public function call(Arguments $arguments, Access $access): string

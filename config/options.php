@@ -9,6 +9,7 @@ return [
 	'cache.limits' => true,
 	'limits' => [],
 	'fields' => [],
+	'tools' => [],
 	'origins' => [],
 	'scopes' => [],
 	'secret' => null,

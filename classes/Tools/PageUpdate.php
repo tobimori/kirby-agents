@@ -66,9 +66,9 @@ final class PageUpdate implements Tool
 		];
 	}
 
-	public function scope(): Scope
+	public function scope(): string
 	{
-		return Scope::PagesManage;
+		return Scope::PAGES_MANAGE;
 	}
 
 	public function call(Arguments $arguments, Access $access): array
@@ -91,9 +91,9 @@ final class PageUpdate implements Tool
 
 		if (
 			($status !== null || $position !== null && !$page->isListed())
-			&& $access->allows(Scope::ContentPublish) === false
+			&& $access->allows(Scope::CONTENT_PUBLISH) === false
 		) {
-			throw new ScopeRequired(Scope::ContentPublish);
+			throw new ScopeRequired(Scope::CONTENT_PUBLISH);
 		}
 
 		if ($slug !== null) {

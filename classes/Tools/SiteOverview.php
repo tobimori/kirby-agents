@@ -52,9 +52,9 @@ final class SiteOverview implements Tool
 		];
 	}
 
-	public function scope(): Scope
+	public function scope(): string
 	{
-		return Scope::ContentRead;
+		return Scope::CONTENT_READ;
 	}
 
 	public function call(Arguments $arguments, Access $access): array

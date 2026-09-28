@@ -44,9 +44,9 @@ final class FileDelete implements Tool
 		];
 	}
 
-	public function scope(): Scope
+	public function scope(): string
 	{
-		return Scope::FilesDelete;
+		return Scope::FILES_DELETE;
 	}
 
 	public function call(Arguments $arguments, Access $access): string

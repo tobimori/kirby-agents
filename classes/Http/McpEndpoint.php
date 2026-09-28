@@ -52,7 +52,7 @@ final class McpEndpoint
 		return self::authenticate(401, $error ?? 'unauthorized', Scope::minimal(), $error !== null);
 	}
 
-	public static function insufficientScope(Scope $scope, Access $access): Response
+	public static function insufficientScope(string $scope, Access $access): Response
 	{
 		return ChallengeResponse::json(['error' => 'insufficient_scope'], 403, headers: [
 			'WWW-Authenticate' => self::scopeChallenge($scope, $access),
@@ -62,11 +62,11 @@ final class McpEndpoint
 	/**
 	 * The scopes of the token and the missing one, because clients often request exactly these
 	 */
-	public static function scopeChallenge(Scope $scope, Access $access): string
+	public static function scopeChallenge(string $scope, Access $access): string
 	{
-		$scopes = array_values(array_unique([...$access->scopes, $scope->value]));
+		$scopes = array_values(array_unique([...$access->scopes, $scope]));
 
-		return self::header($scopes, 'insufficient_scope', "This call needs the permission `{$scope->value}`");
+		return self::header($scopes, 'insufficient_scope', "This call needs the permission `{$scope}`");
 	}
 
 	/**

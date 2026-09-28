@@ -112,9 +112,9 @@ final class ContentUpdate implements Tool
 		];
 	}
 
-	public function scope(): Scope
+	public function scope(): string
 	{
-		return Scope::ContentWrite;
+		return Scope::CONTENT_WRITE;
 	}
 
 	public function call(Arguments $arguments, Access $access): string
@@ -125,8 +125,8 @@ final class ContentUpdate implements Tool
 		// drafts are not public
 		$publishes = $version === 'latest' && !($model instanceof Page && $model->isDraft());
 
-		if ($publishes && $access->allows(Scope::ContentPublish) === false) {
-			throw new ScopeRequired(Scope::ContentPublish);
+		if ($publishes && $access->allows(Scope::CONTENT_PUBLISH) === false) {
+			throw new ScopeRequired(Scope::CONTENT_PUBLISH);
 		}
 		$language = $arguments->string('language');
 		$dryRun = $arguments->bool('dryRun', false);

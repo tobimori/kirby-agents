@@ -123,6 +123,7 @@ final class Authorization
 				],
 				'scopes' => array_map(static fn(string $scope): array => [
 					'id' => $scope,
+					'text' => Scope::find($scope)?->label() ?? $scope,
 					'allowed' => in_array($scope, $allowed, true),
 				], $pending['scopes']),
 				'site' => Agents::siteTitle(),

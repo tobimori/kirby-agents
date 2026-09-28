@@ -52,9 +52,9 @@ final class ChangesDiscard implements Tool
 		];
 	}
 
-	public function scope(): Scope
+	public function scope(): string
 	{
-		return Scope::ContentWrite;
+		return Scope::CONTENT_WRITE;
 	}
 
 	public function call(Arguments $arguments, Access $access): string

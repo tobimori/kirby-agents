@@ -40,10 +40,10 @@ final class Access
 		return new self($user, $data['grant'], Scope::allowedFor($user, $grant->scopes), $grant->client);
 	}
 
-	public function allows(Scope $scope): bool
+	public function allows(string $scope): bool
 	{
 		foreach ($this->scopes as $granted) {
-			if (Scope::tryFrom($granted)?->includes($scope) === true) {
+			if (Scope::find($granted)?->includes($scope) === true) {
 				return true;
 			}
 		}

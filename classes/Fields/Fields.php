@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace tobimori\Agents\Fields;
 
-use Kirby\Cms\App;
 use Kirby\Exception\InvalidArgumentException;
 use Kirby\Form\Field as FormField;
 use Kirby\Form\FieldClass;
-use Kirby\Plugin\Plugin;
 use Kirby\Toolkit\V;
 use tobimori\Agents\Agents;
 use tobimori\Agents\Tools\ToolError;
@@ -121,8 +119,7 @@ final class Fields
 
 		$classes = [];
 
-		foreach (App::instance()->plugins() as $plugin) {
-			$declared = $plugin instanceof Plugin ? $plugin->extends()[self::EXTENSION] ?? null : null;
+		foreach (Agents::extensions(self::EXTENSION) as $declared) {
 			$classes = [...$classes, ...(is_array($declared) ? $declared : [])];
 		}
 

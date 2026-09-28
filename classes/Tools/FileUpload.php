@@ -59,9 +59,9 @@ final class FileUpload implements Tool
 		];
 	}
 
-	public function scope(): Scope
+	public function scope(): string
 	{
-		return Scope::FilesManage;
+		return Scope::FILES_MANAGE;
 	}
 
 	public function call(Arguments $arguments, Access $access): array

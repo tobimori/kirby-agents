@@ -149,7 +149,7 @@ final class UploadEndpoint
 
 		$access = new Access($user, $grant->id, Scope::allowedFor($user, $grant->scopes));
 
-		if ($access->allows(Scope::FilesManage) === false) {
+		if ($access->allows(Scope::FILES_MANAGE) === false) {
 			return null;
 		}
 

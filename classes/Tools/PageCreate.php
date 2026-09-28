@@ -71,9 +71,9 @@ final class PageCreate implements Tool
 		];
 	}
 
-	public function scope(): Scope
+	public function scope(): string
 	{
-		return Scope::PagesManage;
+		return Scope::PAGES_MANAGE;
 	}
 
 	public function call(Arguments $arguments, Access $access): string
@@ -95,8 +95,8 @@ final class PageCreate implements Tool
 
 		$creator = new Creator($parent, $template, $arguments->string('title'), $arguments->string('slug'));
 
-		if ($creator->status() !== 'draft' && $access->allows(Scope::ContentPublish) === false) {
-			throw new ScopeRequired(Scope::ContentPublish);
+		if ($creator->status() !== 'draft' && $access->allows(Scope::CONTENT_PUBLISH) === false) {
+			throw new ScopeRequired(Scope::CONTENT_PUBLISH);
 		}
 
 		$content = $arguments->object('content');

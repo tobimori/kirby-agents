@@ -58,9 +58,9 @@ final class PageDelete implements Tool
 		];
 	}
 
-	public function scope(): Scope
+	public function scope(): string
 	{
-		return Scope::PagesDelete;
+		return Scope::PAGES_DELETE;
 	}
 
 	public function call(Arguments $arguments, Access $access): array|string

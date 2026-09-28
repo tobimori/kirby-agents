@@ -26,7 +26,7 @@
 					<ul class="k-agents-authorize-scopes">
 						<li v-for="scope in scopes" :key="scope.id" :data-allowed="scope.allowed">
 							<k-icon :type="scope.allowed ? 'check' : 'cancel'" />
-							<span>{{ $t(`agents.scope.${scope.id}`) }}</span>
+							<span>{{ scope.text }}</span>
 							<small v-if="!scope.allowed">
 								{{ $t("agents.authorize.scope.unavailable") }}
 							</small>

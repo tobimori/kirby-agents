@@ -81,7 +81,7 @@ final class Grants
 						'min' => 1,
 						'options' => array_map(static fn(string $scope): array => [
 							'value' => $scope,
-							'text' => self::label($scope),
+							'text' => Scope::find($scope)?->label() ?? $scope,
 						], $allowed),
 					],
 				],
@@ -162,20 +162,13 @@ final class Grants
 			'scopes' => array_map(
 				static fn(string $scope): array => [
 					'value' => $scope,
-					'short' => self::label($scope, 'short.'),
-					'text' => self::label($scope),
+					'short' => Scope::find($scope)?->shortLabel() ?? $scope,
+					'text' => Scope::find($scope)?->label() ?? $scope,
 				],
 				Scope::allowedFor($user, $grant->scopes),
 			),
 			'active' => date('c', $grant->active()),
 			'dialogs' => ['scopes' => $dialogs . '/scopes', 'revoke' => $dialogs . '/revoke'],
 		];
-	}
-
-	private static function label(string $scope, string $variant = ''): string
-	{
-		$label = I18n::translate('agents.scope.' . $variant . $scope);
-
-		return is_string($label) ? $label : $scope;
 	}
 }
