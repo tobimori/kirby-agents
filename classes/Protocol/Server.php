@@ -219,7 +219,7 @@ final class Server
 		return [
 			'name' => 'kirby-agents',
 			'title' => 'Kirby: ' . Agents::siteTitle(),
-			'version' => App::plugin('tobimori/agents')?->version() ?? 'dev',
+			'version' => Agents::version(),
 		];
 	}
 

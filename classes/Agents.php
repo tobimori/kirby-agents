@@ -42,6 +42,19 @@ final class Agents
 		return $values;
 	}
 
+	public static function version(): string
+	{
+		return App::plugin('tobimori/agents')?->version() ?? 'dev';
+	}
+
+	/**
+	 * For requests to other servers, like the client metadata of Claude and ChatGPT
+	 */
+	public static function userAgent(): string
+	{
+		return 'Kirby Agents/' . static::version() . ' (+https://github.com/tobimori/kirby-agents)';
+	}
+
 	public static function path(): ?string
 	{
 		$path = static::option('path');

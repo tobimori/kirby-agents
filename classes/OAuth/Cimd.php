@@ -6,6 +6,7 @@ namespace tobimori\Agents\OAuth;
 
 use Kirby\Cms\App;
 use Throwable;
+use tobimori\Agents\Agents;
 
 final class Cimd
 {
@@ -100,7 +101,7 @@ final class Cimd
 			CURLOPT_CONNECTTIMEOUT => self::TIMEOUT,
 			CURLOPT_TIMEOUT => self::TIMEOUT,
 			CURLOPT_CAINFO => (string) App::instance()->root('kirby') . '/cacert.pem',
-			CURLOPT_HTTPHEADER => ['Accept: application/json', 'User-Agent: Kirby Agents'],
+			CURLOPT_HTTPHEADER => ['Accept: application/json', 'User-Agent: ' . Agents::userAgent()],
 			CURLOPT_HEADERFUNCTION => static function ($curl, string $header) use (&$headers): int {
 				$parts = explode(':', $header, 2);
 
