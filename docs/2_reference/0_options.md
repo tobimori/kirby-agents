@@ -14,6 +14,12 @@ return [
 ];
 ```
 
+Each option can also be a closure. Kirby Agents calls it when it needs the value, for example to turn on WebMCP only for admins:
+
+```php
+'webmcp' => fn () => kirby()->user()?->isAdmin() === true,
+```
+
 | Option    | Default | Description                                                                                      |
 | --------- | ------- | ------------------------------------------------------------------------------------------------ |
 | `scopes`  | `[]`    | Permissions to ask for on every new connection, see [below](#scopes)                             |
@@ -21,6 +27,7 @@ return [
 | `origins` | `[]`    | More origins that may call the endpoints from a browser, like `'https://app.example.com'`        |
 | `limits`  | `[]`    | Rate limits, see [below](#limits)                                                                |
 | `fields`  | `[]`    | Field classes for custom field types, see [Custom field types](1_customization/1_field-types)    |
+| `tools`   | `[]`    | Tools to turn off, see [below](#tools)                                                           |
 | `webmcp`  | `true`  | Registers the tools for browser agents in the Panel, see [WebMCP](1_customization/3_webmcp)      |
 | `secret`  | `null`  | Key to sign tokens. If not set, Kirby Agents creates one in `site/accounts/.agents-secret`       |
 
@@ -51,6 +58,29 @@ The names of all permissions, for this option and for the settings of MCP client
 | `files:delete`    | Delete files                                           | `files.delete`                                                                                              |
 
 `content:publish`, `pages:manage` and `files:manage` include `content:write`, and `content:write` includes `content:read`. Kirby still checks each single action with the role of the user.
+
+Plugins can add permissions for their tools, see [Custom Tools](1_customization/4_custom-tools#adding-a-permission).
+
+## tools
+
+Turns off tools by name, for all connections and for WebMCP. This works for core tools and for tools from plugins:
+
+```php
+return [
+  'tobimori.agents' => [
+    'tools' => [
+      'page_delete' => false,
+      'file_delete' => false,
+    ],
+  ],
+];
+```
+
+Agents don't see these tools, and calls to them fail with "Unknown tool". Kirby Agents checks the names, so a typo stops the requests with an error instead of leaving the tool on.
+
+To stop agents from doing something, use [permissions](2_reference/1_permissions) first. They can be different per role. Use this option for tools that no agent on your site should use.
+
+Don't turn off the tools that read content, like `content_get`. The other tools tell the agent to use them, so the agent can't work without them. The list of tools is in the [tools reference](2_reference/2_tools).
 
 ## limits
 

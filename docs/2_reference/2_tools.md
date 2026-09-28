@@ -5,6 +5,8 @@ intro: The tools that agents use, and the permissions they need
 
 Agents see the tools that the role of their user allows. A tool that needs a permission the connection doesn't have is listed too, so the agent can ask for it. See [Permissions](0_getting-started/4_permissions).
 
+Plugins can add more tools, see [Custom Tools](1_customization/4_custom-tools). To turn off a tool, use the [`tools` option](2_reference/0_options#tools).
+
 ## Read
 
 These tools need the permission to read (`content:read`), which every connection has.
