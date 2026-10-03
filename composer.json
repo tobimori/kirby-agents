@@ -2,7 +2,7 @@
 	"name": "tobimori/kirby-agents",
 	"description": "Stateless MCP server for Kirby CMS with OAuth, blueprint-aware editing, and page lifecycle tools",
 	"type": "kirby-plugin",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"license": "proprietary",
 	"homepage": "https://github.com/tobimori/kirby-agents#readme",
 	"authors": [
