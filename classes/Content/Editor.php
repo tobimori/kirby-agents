@@ -134,7 +134,8 @@ final class Editor
 		}
 
 		[$props, $path] = $this->slot($op);
-		$current = self::getAt($this->values, $path);
+		// agents copy `old` from content_get, so search in the value as it shows it. `write()` converts it back with `input()`
+		$current = Presenter::value($this->content, $props, self::getAt($this->values, $path), $path);
 		$field = (string) end($path);
 
 		if (!is_string($current)) {

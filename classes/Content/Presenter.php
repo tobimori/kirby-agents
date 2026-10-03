@@ -78,6 +78,17 @@ final class Presenter
 		return [...$presenter->meta(), 'fields' => $values];
 	}
 
+	/**
+	 * One value as content_get shows it
+	 *
+	 * @param array<array-key, mixed> $props
+	 * @param list<string|int> $path
+	 */
+	public static function value(Reader $content, array $props, mixed $value, array $path): mixed
+	{
+		return Fields::for($props)->present($value, $path, new self($content, ids: false));
+	}
+
 	public static function node(Reader $content, int $ref, bool $ids): array
 	{
 		$presenter = new self($content, $ids);
