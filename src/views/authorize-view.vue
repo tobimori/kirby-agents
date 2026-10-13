@@ -22,16 +22,31 @@
 						<p>{{ clientTitle(client) }}</p>
 					</k-text>
 
-					<p class="k-agents-authorize-label">{{ $t("agents.authorize.scopes") }}</p>
+					<p class="k-agents-authorize-label">
+						{{ $t("agents.authorize.scopes", { client: client.name }) }}
+					</p>
 					<ul class="k-agents-authorize-scopes">
-						<li v-for="scope in scopes" :key="scope.id" :data-allowed="scope.allowed">
-							<k-icon :type="scope.allowed ? 'check' : 'cancel'" />
-							<span>{{ scope.text }}</span>
-							<small v-if="!scope.allowed">
-								{{ $t("agents.authorize.scope.unavailable") }}
-							</small>
+						<li v-for="scope in rows" :key="scope.id" :data-on="String(scope.on)">
+							<label>
+								<input
+									type="checkbox"
+									name="scopes[]"
+									:value="scope.id"
+									:checked="scope.on"
+									:disabled="scope.disabled"
+									@change="toggle(scope.id, $event.target.checked)"
+								/>
+								<span class="k-agents-authorize-scope-text">
+									<span>{{ scope.text }}</span>
+									<small v-if="scope.new" class="k-agents-authorize-scope-new">
+										{{ $t("agents.authorize.scope.new") }}
+									</small>
+									<small v-else-if="scope.note">{{ scope.note }}</small>
+								</span>
+							</label>
 						</li>
 					</ul>
+					<p class="k-agents-authorize-hint">{{ $t("agents.authorize.scopes.help") }}</p>
 
 					<k-box
 						:theme="redirect.type === 'web' ? 'info' : 'notice'"
@@ -62,24 +77,58 @@
 </template>
 
 <script setup>
-import { nextTick, ref } from "kirbyuse"
+import { computed, nextTick, ref, usePanel } from "kirbyuse"
 
 import { clientTitle } from "../client.js"
 
-defineProps({
+const props = defineProps({
 	action: String,
 	client: Object,
 	csrf: String,
 	error: String,
 	redirect: Object,
-	scopes: Array,
+	scopes: { type: Array, default: () => [] },
 	site: String,
 	user: String
 })
 
+const panel = usePanel()
 const form = ref(null)
 const decision = ref("deny")
 const submitting = ref(false)
+
+// the scopes that the user turned on, starting with the requested ones
+const selected = ref(
+	props.scopes.filter((scope) => scope.requested && scope.allowed).map((scope) => scope.id)
+)
+
+const rows = computed(() =>
+	props.scopes.map((scope) => {
+		// a scope that is on includes others, like publishing includes preparing changes
+		const by = props.scopes.find(
+			(other) => selected.value.includes(other.id) && other.includes.includes(scope.id)
+		)
+
+		return {
+			...scope,
+			on: scope.allowed && (scope.required || !!by || selected.value.includes(scope.id)),
+			disabled: !scope.allowed || scope.required || !!by,
+			note: !scope.allowed
+				? panel.t("agents.authorize.scope.unavailable")
+				: scope.required
+					? panel.t("agents.authorize.scope.required")
+					: by
+						? panel.t("agents.authorize.scope.included", { scope: by.short })
+						: null
+		}
+	})
+)
+
+function toggle(id, on) {
+	selected.value = on
+		? [...selected.value, id]
+		: selected.value.filter((selectedId) => selectedId !== id)
+}
 
 async function submit(value) {
 	decision.value = value
@@ -119,27 +168,44 @@ async function submit(value) {
 
 .k-agents-authorize-scopes {
 	display: grid;
-	gap: var(--spacing-2);
-	margin-bottom: var(--spacing-6);
+	gap: var(--spacing-3);
 
-	li {
+	label {
 		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--spacing-2);
+		align-items: flex-start;
+		gap: var(--spacing-3);
+	}
 
-		&[data-allowed="true"] .k-icon {
-			color: var(--color-positive);
-		}
+	input {
+		flex-shrink: 0;
+		top: 3px;
+	}
+}
 
-		&[data-allowed="false"] {
-			color: var(--color-text-dimmed);
-		}
+.k-agents-authorize-scope-text {
+	display: grid;
+	line-height: 1.375;
+
+	[data-on="false"] & {
+		color: var(--color-text-dimmed);
 	}
 
 	small {
 		font-size: var(--text-xs);
+		color: var(--color-text-dimmed);
 	}
+
+	.k-agents-authorize-scope-new {
+		font-weight: var(--font-bold);
+		color: var(--color-focus);
+	}
+}
+
+.k-agents-authorize-hint {
+	font-size: var(--text-xs);
+	color: var(--color-text-dimmed);
+	margin-top: var(--spacing-3);
+	margin-bottom: var(--spacing-6);
 }
 
 .k-agents-authorize-buttons {

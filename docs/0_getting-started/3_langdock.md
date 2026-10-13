@@ -19,7 +19,7 @@ Select **Connect remote MCP** (1). Paste the MCP URL into **Server URL** (2) and
 
 Log in to the Panel if you aren't logged in yet.
 
-The consent screen shows the Kirby user that Langdock acts as and what Langdock is allowed to do. By default, Langdock can read your content and prepare changes for review. Langdock registers itself with your site, so the screen says that its identity is not verified. Click **Allow** (1).
+The consent screen shows the Kirby user that Langdock acts as and what Langdock is allowed to do. By default, Langdock can read your content and prepare changes for review. Select the permissions to choose what Langdock can do. Langdock registers itself with your site, so the screen says that its identity is not verified. Click **Allow** (1).
 
 ![The Kirby consent screen that asks to allow Langdock access](./langdock-consent.png)
 
@@ -51,7 +51,7 @@ Langdock asks before it uses a tool with confirmation turned on. Click **Confirm
 
 ## When Langdock needs more permissions
 
-By default, Langdock can read your content and prepare changes for review. Other tools, like publishing, creating pages or uploading files, need an extra permission. Langdock can't ask for a new permission during a chat, so the tool call ends with an error. Langdock then shows a **Reauthorize** button, but it doesn't add the missing permission. Add the permission in the Panel instead.
+By default, Langdock can read your content and prepare changes for review. Select the permissions to choose what Langdock can do. Other tools, like publishing, creating pages or uploading files, need an extra permission. Langdock can't ask for a new permission during a chat, so the tool call ends with an error. Langdock then shows a **Reauthorize** button, but it doesn't add the missing permission. Add the permission in the Panel instead.
 
 Open the **Agents** view in the Panel. Click the options of the Langdock connection (1) and choose **Change permissions** (2).
 

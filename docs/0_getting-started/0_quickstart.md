@@ -62,7 +62,7 @@ At the top of the view is the **MCP URL** with a copy button. For most sites, it
 https://example.com/panel/mcp
 ```
 
-Add this URL to your assistant. The assistant opens the Kirby login in your browser. Log in with your Kirby account, check the permissions and click **Allow**.
+Add this URL to your assistant. The assistant opens the Kirby login in your browser. Log in with your Kirby account, choose the permissions and click **Allow**.
 
 ## Connect your assistant
 

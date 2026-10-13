@@ -86,9 +86,35 @@ final class Scope
 		));
 	}
 
+	/**
+	 * The scopes and the scopes that they include, in the order of registration
+	 *
+	 * @param list<string> $scopes
+	 *
+	 * @return list<string>
+	 */
+	public static function expand(array $scopes): array
+	{
+		return array_values(array_filter(
+			self::all(),
+			static fn(string $name): bool => (
+				array_filter($scopes, static fn(string $scope): bool => self::find($scope)?->includes($name) === true)
+				!== []
+			),
+		));
+	}
+
 	public function includes(string $scope): bool
 	{
 		return $scope === $this->name || in_array($scope, $this->includes, true);
+	}
+
+	/**
+	 * @return list<string>
+	 */
+	public function included(): array
+	{
+		return $this->includes;
 	}
 
 	public function label(): string

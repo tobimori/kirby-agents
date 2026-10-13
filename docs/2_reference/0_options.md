@@ -43,7 +43,7 @@ return [
 ];
 ```
 
-The consent screen then lists these permissions too. The role of the user still applies: a permission that the role doesn't allow shows as "Not available for your role".
+The consent screen then selects these permissions, and the user can still deselect them. The role of the user applies too: a permission that the role doesn't allow shows as "Not available for your role".
 
 The names of all permissions, for this option and for the settings of MCP clients:
 

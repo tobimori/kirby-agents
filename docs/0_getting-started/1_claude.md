@@ -23,7 +23,7 @@ Claude detects the authentication settings. Keep the two options with the **Dete
 
 Claude opens the Panel in a new window. Log in if you aren't logged in yet.
 
-The consent screen shows the Kirby user that Claude acts as and what Claude is allowed to do. By default, Claude can read your content and prepare changes for review. Click **Allow** (1).
+The consent screen shows the Kirby user that Claude acts as and what Claude is allowed to do. By default, Claude can read your content and prepare changes for review. Select the permissions to choose what Claude can do. Click **Allow** (1).
 
 ![The Kirby consent screen that asks to allow Claude access](./claude-consent.png)
 
@@ -51,7 +51,7 @@ Ask your question. Claude calls the tools it needs and shows them in the chat.
 
 ## When Claude needs more permissions
 
-By default, Claude can read your content and prepare changes for review. Other tools, like publishing, creating pages or uploading files, need an extra permission. Claude asks for it the first time it uses one of these tools.
+By default, Claude can read your content and prepare changes for review. Select the permissions to choose what Claude can do. Other tools, like publishing, creating pages or uploading files, need an extra permission. Claude asks for it the first time it uses one of these tools.
 
 If the tool is set to **Needs approval**, Claude asks before the tool call. Click **Allow once** (1).
 
@@ -61,7 +61,7 @@ Below the tool call, Claude shows that the permission is missing. Click **Connec
 
 ![Claude shows that the tool needs a new authorization, with a Connect button](./claude-step-up.png)
 
-The consent screen lists the new permission. Click **Allow** (1).
+The consent screen shows the new permission selected and marked as **New permission**. Click **Allow** (1). If you deselect it, the agent can't use the tool.
 
 ![The Kirby consent screen with the new permission to upload files](./claude-consent-step-up.png)
 

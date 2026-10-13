@@ -13,9 +13,9 @@ An agent acts as the Kirby user who connected it. It can never do more than this
 - Upload files
 - Delete files
 
-A new connection gets the first two. The agent can read your whole site and change content, but its changes don't go live. They wait as unsaved changes on the page, and you decide in the Panel whether to save or discard them.
+You choose them on the consent screen when you connect the agent. The permissions that the agent asks for are selected. Usually these are the first two: the agent can read your whole site and change content, but its changes don't go live. They wait as unsaved changes on the page, and you decide in the Panel whether to save or discard them.
 
-This is a good start for most sites. When you trust an agent with more, like publishing its changes or creating new pages, give it the permission for that.
+This is a good start for most sites. When you trust an agent with more, like publishing its changes or creating new pages, select the permission for that. Every agent can read, so you can't deselect this one. Some permissions include others: publishing and managing pages or files include preparing changes.
 
 ## Changing the permissions
 
@@ -33,7 +33,7 @@ The agent gets the new permissions with its next request. It doesn't have to con
 
 ## Asking during a chat
 
-You don't have to decide everything up front. When an agent needs a permission it doesn't have, it asks you first, and then tries the tool. [Claude](0_getting-started/1_claude) and [ChatGPT](0_getting-started/2_chatgpt) then open the consent screen again with the missing permission. With other apps, add the permission in the **Agents** view.
+You don't have to decide everything up front. When an agent needs a permission it doesn't have, it asks you first, and then tries the tool. [Claude](0_getting-started/1_claude) and [ChatGPT](0_getting-started/2_chatgpt) then open the consent screen again, with the missing permission selected and marked as **New permission**. With other apps, add the permission in the **Agents** view.
 
 ## Revoking access
 

@@ -101,8 +101,42 @@ final class Authorization
 			return ['component' => 'k-agents-authorize-view', 'props' => ['error' => 'expired']];
 		}
 
-		$allowed = Scope::allowedFor($user, $pending['scopes']);
+		$allowed = Scope::allowedFor($user, Scope::all());
+		$requested = Scope::expand([Scope::CONTENT_READ, ...$pending['scopes']]);
 		$redirect = $pending['redirect'];
+
+		// what this client got before, so a step-up shows which permissions are new
+		$previous = Scope::expand(array_merge(...array_values(array_map(
+			static fn(Grant $grant): array => $grant->scopes,
+			array_filter(
+				(new GrantStore($user))->connected(),
+				static fn(Grant $grant): bool => $grant->client === $client->id,
+			),
+		))));
+
+		$scopes = [];
+
+		foreach (Scope::all() as $name) {
+			$scope = Scope::find($name);
+			$isAllowed = in_array($name, $allowed, true);
+			$isRequested = in_array($name, $requested, true);
+
+			// permissions that the role doesn't allow only matter when the agent asked for them
+			if ($scope === null || !$isAllowed && !$isRequested) {
+				continue;
+			}
+
+			$scopes[] = [
+				'id' => $name,
+				'text' => $scope->label(),
+				'short' => $scope->shortLabel(),
+				'includes' => $scope->included(),
+				'allowed' => $isAllowed,
+				'required' => $name === Scope::CONTENT_READ,
+				'requested' => $isRequested,
+				'new' => $isRequested && $previous !== [] && !in_array($name, $previous, true),
+			];
+		}
 
 		return [
 			'component' => 'k-agents-authorize-view',
@@ -121,11 +155,7 @@ final class Authorization
 						default => 'app',
 					},
 				],
-				'scopes' => array_map(static fn(string $scope): array => [
-					'id' => $scope,
-					'text' => Scope::find($scope)?->label() ?? $scope,
-					'allowed' => in_array($scope, $allowed, true),
-				], $pending['scopes']),
+				'scopes' => $scopes,
 				'site' => Agents::siteTitle(),
 				'user' => $user->email(),
 				'csrf' => $kirby->csrf(),
@@ -155,7 +185,10 @@ final class Authorization
 			return self::page('This request has expired. Start the connection again from your app.');
 		}
 
-		$scopes = Scope::allowedFor($user, $pending['scopes']);
+		// the user picks the permissions, which may differ from the requested ones (RFC 6749, section 3.3)
+		$chosen = $body->get('scopes');
+		$chosen = is_array($chosen) ? array_filter($chosen, is_string(...)) : [];
+		$scopes = Scope::allowedFor($user, Scope::expand([Scope::CONTENT_READ, ...$chosen]));
 
 		if ($body->get('decision') !== 'approve' || $scopes === []) {
 			return self::back($pending['redirect'], $pending['state'], 'access_denied', 'The user denied access');

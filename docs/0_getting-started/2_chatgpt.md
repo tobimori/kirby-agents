@@ -23,7 +23,7 @@ Click **Continue to Kirby** (1).
 
 Log in to the Panel if you aren't logged in yet.
 
-The consent screen shows the Kirby user that ChatGPT acts as and what ChatGPT is allowed to do. By default, ChatGPT can read your content and prepare changes for review. Click **Allow** (1).
+The consent screen shows the Kirby user that ChatGPT acts as and what ChatGPT is allowed to do. By default, ChatGPT can read your content and prepare changes for review. Select the permissions to choose what ChatGPT can do. Click **Allow** (1).
 
 ![The Kirby consent screen that asks to allow ChatGPT access](./chatgpt-consent.png)
 
@@ -47,13 +47,13 @@ By default, ChatGPT runs read-only tools without asking. To change this, go to *
 
 ## When ChatGPT needs more permissions
 
-By default, ChatGPT can read your content and prepare changes for review. Other tools, like publishing, creating pages or uploading files, need an extra permission. ChatGPT asks for it the first time it uses one of these tools.
+By default, ChatGPT can read your content and prepare changes for review. Select the permissions to choose what ChatGPT can do. Other tools, like publishing, creating pages or uploading files, need an extra permission. ChatGPT asks for it the first time it uses one of these tools.
 
 After the tool call, ChatGPT shows a card to reconnect Kirby. The card says that the connection has expired. This isn't correct: the connection works, it only needs the new permission. Click **Reconnect** (1).
 
 ![ChatGPT asks to reconnect Kirby](./chatgpt-reconnect.png)
 
-The consent screen lists the new permission. Click **Allow** (1).
+The consent screen shows the new permission selected and marked as **New permission**. Click **Allow** (1). If you deselect it, the agent can't use the tool.
 
 ![The Kirby consent screen with the new permission to upload files](./chatgpt-consent-step-up.png)
 
