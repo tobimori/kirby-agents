@@ -1,1 +1,3 @@
+- `bash scripts/setup.sh` installs dependencies and creates a Kirby Starterkit playground in `.playground/` with this plugin linked. Panel credentials are in `.playground/.panel-credentials`.
+- `pnpm playground` serves it at `http://localhost:8000` (`pnpm playground:portless` for a Portless URL, see `pnpm exec portless list`), and `pnpm dev` adds panel HMR. The MCP endpoint is at `/panel/mcp`.
 - `vendor/` is committed and holds production files only: install development dependencies with `COMPOSER_VENDOR_DIR=.repos/vendor composer install`, never with plain `composer install`. Run Composer scripts the same way, e.g. `COMPOSER_VENDOR_DIR=.repos/vendor composer run analyze`. After a change to the autoload config, rebuild `vendor/` with `composer dist`.

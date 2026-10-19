@@ -9,7 +9,9 @@
 		"format": "oxfmt",
 		"format:check": "oxfmt --check",
 		"lint": "eslint \"src/**/*.{js,vue}\"",
-		"lint:fix": "pnpm run lint --fix"
+		"lint:fix": "pnpm run lint --fix",
+		"playground": "PHP_CLI_SERVER_WORKERS=4 php -S ${HOST:-127.0.0.1}:${PORT:-8000} -t .playground .playground/kirby/router.php",
+		"playground:portless": "portless run --name agents pnpm playground"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
@@ -19,6 +21,7 @@
 		"kirbyup": "^3.5.0",
 		"kirbyuse": "^1.4.1",
 		"oxfmt": "^0.70.0",
+		"portless": "^0.15.8",
 		"vue-eslint-parser": "^10.4.1"
 	},
 	"browserslist": [

@@ -1,5 +1,6 @@
 .github/ export-ignore
 src/ export-ignore
+scripts/ export-ignore
 .editorconfig export-ignore
 .gitattributes export-ignore
 .gitignore export-ignore
@@ -12,3 +13,5 @@ mise.toml export-ignore
 package.json export-ignore
 pnpm-lock.yaml export-ignore
 pnpm-workspace.yaml export-ignore
+t3.json export-ignore
+AGENTS.md export-ignore

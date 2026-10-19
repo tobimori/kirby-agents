@@ -1,2 +1,4 @@
 [tools]
+node = "24"
+pnpm = "12.5.1"
 php = "8.5"

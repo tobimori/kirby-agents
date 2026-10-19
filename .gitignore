@@ -5,6 +5,7 @@
 node_modules
 index.dev.mjs
 /.repos/
+/.playground/
 
 # vendor/ holds only the production autoloader, development dependencies go to .repos/vendor
 /vendor/**/.*
