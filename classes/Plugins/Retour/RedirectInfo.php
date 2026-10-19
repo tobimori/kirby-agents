@@ -21,7 +21,7 @@ final class RedirectInfo
 {
 	public const PATTERN = 'The old path without domain and without leading slash, like `old-page`, or a pattern like `blog/(:any)`';
 
-	public const TARGET = 'Page id like `notes/my-post`, a URL, or a path with the matches of the pattern like `notes/$1`';
+	public const TARGET = 'Page id like `notes/my-post`, `/` for the home page, a URL, or a path with the matches of the pattern like `notes/$1`. Add the extension for a content representation, like `notes.rss`';
 
 	public const PATTERNS = <<<'TEXT'
 		`from` can be a pattern with Kirby placeholders: `(:any)` matches one part of the path between slashes, `(:all)` the rest of the path with its slashes, `(:num)` a number, `(:alpha)` letters, `(:alphanum)` letters and digits. Add `?` after a placeholder at the end to make it optional, like `blog/(:any?)`. No `*` and no regular expressions.
@@ -86,14 +86,14 @@ final class RedirectInfo
 	{
 		$data = $redirect->toArray();
 		$to = is_string($data['to']) && $data['to'] !== '' ? $data['to'] : null;
-		$page = $to !== null && !str_contains($to, '$') ? App::instance()->page($to) : null;
+		[$page, $extension] = $to !== null && !str_contains($to, '$') ? self::page($to) : [null, ''];
 
 		return array_filter(
 			[
 				'from' => $data['from'],
 				'to' => $to,
 				// the Panel stores pages as UUIDs
-				'page' => $page instanceof Page && $page->id() !== $to ? $page->id() : null,
+				'page' => $page !== null && $page->id() . $extension !== $to ? $page->id() . $extension : null,
 				'status' => $data['status'] ?? 'disabled',
 				'priority' => $data['priority'] === true ? true : null,
 				'comment' => is_string($data['comment']) && $data['comment'] !== '' ? $data['comment'] : null,
@@ -189,7 +189,14 @@ final class RedirectInfo
 			throw new ToolError('`from` must be a path, for example `old-page`');
 		}
 
-		self::checkPattern((string) $values['from'], is_string($values['to'] ?? null) ? $values['to'] : '');
+		// redirects from the Panel can have patterns that agents may not send, so only new values are checked
+		if ($arguments->has('from')) {
+			self::checkPattern((string) $values['from']);
+		}
+
+		if ($arguments->has('from') || $arguments->has('to')) {
+			self::checkMatches((string) $values['from'], is_string($values['to'] ?? null) ? $values['to'] : '');
+		}
 
 		$status = $values['status'] ?? null;
 
@@ -201,18 +208,38 @@ final class RedirectInfo
 	}
 
 	/**
-	 * Agents guess `*` or regular expressions, which Kirby takes as a part of the regular expression
+	 * Agents guess `*` or regular expressions, which Kirby takes as a part of the regular expression,
+	 * and URLs, which never match the path of a request
 	 */
-	private static function checkPattern(string $from, string $to): void
+	private static function checkPattern(string $from): void
 	{
-		$placeholders = (int) preg_match_all(self::PLACEHOLDER, $from);
+		if (preg_match('!^[a-z][a-z0-9+.-]*://!i', $from) === 1) {
+			throw new ToolError('`from` must be a path without the domain, like `old-page`');
+		}
 
-		if (preg_match('/[*^$\\\\[\]{}|()?+]/', (string) preg_replace(self::PLACEHOLDER, '', $from)) === 1) {
+		if (self::isRegex($from)) {
 			throw new ToolError(
 				'`from` must be a path, or a pattern with the placeholders `(:any)`, `(:all)`, `(:num)`, `(:alpha)` or `(:alphanum)`, like `blog/(:any)`. No `*` and no regular expressions.',
 			);
 		}
+	}
 
+	private static function isRegex(string $from): bool
+	{
+		return preg_match('/[*^$\\\\[\]{}|()?+]/', (string) preg_replace(self::PLACEHOLDER, '', $from)) === 1;
+	}
+
+	/**
+	 * The matches `$1`, `$2` and so on in `to` need a placeholder in `from`
+	 */
+	private static function checkMatches(string $from, string $to): void
+	{
+		// editors can use regular expressions in the Panel, with groups that are not counted here
+		if (self::isRegex($from)) {
+			return;
+		}
+
+		$placeholders = (int) preg_match_all(self::PLACEHOLDER, $from);
 		preg_match_all('/\$(\d+)/', $to, $matches);
 		$used = $matches[1] === [] ? 0 : max(array_map(intval(...), $matches[1]));
 
@@ -232,24 +259,43 @@ final class RedirectInfo
 			return null;
 		}
 
-		// URLs, and paths with placeholders like `blog/$1`
+		// the home page for Retour, URLs, and paths with placeholders like `blog/$1`
 		if (
-			str_contains($to, '$')
+			$to === '/'
+			|| str_contains($to, '$')
 			|| preg_match('!^[a-z][a-z0-9+.-]*:!i', $to) === 1 && !str_starts_with($to, 'page://')
 		) {
 			return $to;
 		}
 
-		$page = App::instance()->page(trim($to, '/'));
+		[$page, $extension] = self::page($to);
 
-		if (!$page instanceof Page) {
+		if ($page === null) {
 			throw new ToolError(
-				"No published page `{$to}`. Send a page id like `blog/my-post`, a URL like `https://example.com`, or a path with placeholders like `blog/$1`.",
+				"No published page `{$to}`. Send a page id like `blog/my-post`, `/` for the home page, a URL like `https://example.com`, or a path with placeholders like `blog/$1`.",
 			);
 		}
 
 		// without UUIDs, `uuid()` is null
-		return $page->uuid()?->toString() ?? $page->id();
+		return ($page->uuid()?->toString() ?? $page->id()) . $extension;
+	}
+
+	/**
+	 * The published page of a target, and the extension of a content representation like `.rss`.
+	 * Retour finds the page the same way, and adds the extension to its URL
+	 *
+	 * @return array{0: ?Page, 1: string}
+	 */
+	private static function page(string $to): array
+	{
+		$extension = pathinfo($to, PATHINFO_EXTENSION);
+		$path = $extension === '' ? $to : substr($to, 0, -strlen($extension) - 1);
+		$page = App::instance()->page(trim($path, '/'));
+
+		return [
+			$page instanceof Page && !$page->isDraft() ? $page : null,
+			$extension === '' ? '' : ".{$extension}",
+		];
 	}
 
 	private static function status(Arguments $arguments): ?int
