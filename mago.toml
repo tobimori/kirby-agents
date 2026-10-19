@@ -1,10 +1,10 @@
-#:schema vendor/carthage-software/mago/schema.json
+#:schema .repos/vendor/carthage-software/mago/schema.json
 version = "1"
 php-version = "8.2"
 
 [source]
 paths = ["index.php", "classes", "config"]
-includes = ["vendor"]
+includes = ["vendor", ".repos/vendor"]
 
 [source.glob]
 literal-separator = true

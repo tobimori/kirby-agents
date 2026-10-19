@@ -1,0 +1,1 @@
+- `vendor/` is committed and holds production files only: install development dependencies with `COMPOSER_VENDOR_DIR=.repos/vendor composer install`, never with plain `composer install`. Run Composer scripts the same way, e.g. `COMPOSER_VENDOR_DIR=.repos/vendor composer run analyze`. After a change to the autoload config, rebuild `vendor/` with `composer dist`.
