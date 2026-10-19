@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b83eeea4b7988921e47b0a39e2b95a4d",
+    "content-hash": "fad97bf12232897c455280edb7730d35",
     "packages": [
         {
             "name": "getkirby/composer-installer",
@@ -306,6 +306,51 @@
                 }
             ],
             "time": "2025-08-20T19:15:30+00:00"
+        },
+        {
+            "name": "distantnative/retour-for-kirby",
+            "version": "5.7.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/distantnative/retour-for-kirby.git",
+                "reference": "17717fcb71a50bcd01998e39197aee3fc1a9e352"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/distantnative/retour-for-kirby/zipball/17717fcb71a50bcd01998e39197aee3fc1a9e352",
+                "reference": "17717fcb71a50bcd01998e39197aee3fc1a9e352",
+                "shasum": ""
+            },
+            "require": {
+                "getkirby/cms": "^4.3.1 || ^5.0",
+                "getkirby/composer-installer": "^1.1",
+                "php": "~8.2.0 || ~8.3.0 || ~8.4.0 || ~8.5.0"
+            },
+            "type": "kirby-plugin",
+            "extra": {
+                "kirby": {
+                    "compatible": "^4.3.1 || ^5.0"
+                },
+                "installer-name": "retour",
+                "kirby-cms-path": false
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Nico Hoffmann",
+                    "email": "nico@getkirby.com"
+                }
+            ],
+            "description": "Manage redirects and track 404s right from the Kirby CMS Panel",
+            "homepage": "https://distantnative.com/retour-for-kirby/",
+            "support": {
+                "issues": "https://github.com/distantnative/retour-for-kirby/issues",
+                "source": "https://github.com/distantnative/retour-for-kirby/tree/5.7.0"
+            },
+            "time": "2026-10-16T14:16:30+00:00"
         },
         {
             "name": "erusev/parsedown",

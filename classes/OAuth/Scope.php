@@ -7,6 +7,7 @@ namespace tobimori\Agents\OAuth;
 use Kirby\Cms\Permissions;
 use Kirby\Cms\User;
 use Kirby\Exception\InvalidArgumentException;
+use Kirby\Retour\Retour;
 use Kirby\Toolkit\I18n;
 use tobimori\Agents\Agents;
 
@@ -24,6 +25,7 @@ final class Scope
 	public const PAGES_DELETE = 'pages:delete';
 	public const FILES_MANAGE = 'files:manage';
 	public const FILES_DELETE = 'files:delete';
+	public const RETOUR_REDIRECTS = 'retour:redirects';
 
 	/**
 	 * @var array<string, self>|null
@@ -194,6 +196,11 @@ final class Scope
 			$scopes[$scope->name] = $scope;
 		}
 
+		// Retour keeps redirects outside of content, so they need their own tools
+		if (class_exists(Retour::class)) {
+			$scopes[self::RETOUR_REDIRECTS] = new self(self::RETOUR_REDIRECTS, permissions: ['access.retour']);
+		}
+
 		foreach (Agents::extensions(self::EXTENSION) as $plugin => $declared) {
 			foreach (is_array($declared) ? $declared : [] as $name => $definition) {
 				$scope = self::custom((string) $name, $definition, $plugin);
@@ -240,6 +247,11 @@ final class Scope
 			$permissions[] = $permission;
 		}
 
-		return new self($name, $label, is_string($short) || is_array($short) ? $short : null, permissions: $permissions);
+		return new self(
+			$name,
+			$label,
+			is_string($short) || is_array($short) ? $short : null,
+			permissions: $permissions,
+		);
 	}
 }

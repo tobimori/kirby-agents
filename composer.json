@@ -23,7 +23,8 @@
 	},
 	"require-dev": {
 		"carthage-software/mago": "^1.50.0",
-		"getkirby/cms": "^5.0.0"
+		"getkirby/cms": "^5.0.0",
+		"distantnative/retour-for-kirby": "^5.6"
 	},
 	"scripts": {
 		"analyze": "mago analyze",
@@ -44,6 +45,7 @@
 		}
 	},
 	"extra": {
-		"kirby-cms-path": false
+		"kirby-cms-path": false,
+		"kirby-plugin-path": ".repos/vendor/plugins"
 	}
 }

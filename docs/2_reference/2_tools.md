@@ -54,6 +54,10 @@ Agents can upload to the same places as the Panel, and Kirby checks the file wit
 
 `file_delete` also checks the option `delete` of the file blueprint. Fields that refer to the deleted file keep the reference, but show nothing.
 
+## Tools for other plugins
+
+When [Retour](https://github.com/distantnative/retour-for-kirby) is installed, agents also get tools for its redirects and 404 errors. See [Retour](3_supported-plugins/0_retour).
+
 ## Tools in the browser
 
 Browser agents in the Panel get one more tool: `panel_view` returns the page, file or language that you have open. See [WebMCP](1_customization/3_webmcp).

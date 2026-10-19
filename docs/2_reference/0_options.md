@@ -47,15 +47,16 @@ The consent screen then selects these permissions, and the user can still desele
 
 The names of all permissions, for this option and for the settings of MCP clients:
 
-| Scope             | Permission                                             | Kirby permissions of the role (one is needed)                                                               |
-| ----------------- | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
-| `content:read`    | Read pages, files, content, and blueprints             |                                                                                                             |
-| `content:write`   | Prepare content changes for review                     | `pages.update`, `site.update`, `files.update`                                                               |
-| `content:publish` | Publish content changes and change the status of pages | `pages.update`, `site.update`, `files.update`, `pages.changeStatus`                                         |
-| `pages:manage`    | Create, rename, move, and sort pages                   | `pages.create`, `pages.changeTitle`, `pages.changeSlug`, `pages.changeTemplate`, `pages.move`, `pages.sort` |
-| `pages:delete`    | Delete pages                                           | `pages.delete`                                                                                              |
-| `files:manage`    | Upload files                                           | `files.create`                                                                                              |
-| `files:delete`    | Delete files                                           | `files.delete`                                                                                              |
+| Scope              | Permission                                                        | Kirby permissions of the role (one is needed)                                                               |
+| ------------------ | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `content:read`     | Read pages, files, content, and blueprints                        |                                                                                                             |
+| `content:write`    | Prepare content changes for review                                | `pages.update`, `site.update`, `files.update`                                                               |
+| `content:publish`  | Publish content changes and change the status of pages            | `pages.update`, `site.update`, `files.update`, `pages.changeStatus`                                         |
+| `pages:manage`     | Create, rename, move, and sort pages                              | `pages.create`, `pages.changeTitle`, `pages.changeSlug`, `pages.changeTemplate`, `pages.move`, `pages.sort` |
+| `pages:delete`     | Delete pages                                                      | `pages.delete`                                                                                              |
+| `files:manage`     | Upload files                                                      | `files.create`                                                                                              |
+| `files:delete`     | Delete files                                                      | `files.delete`                                                                                              |
+| `retour:redirects` | See 404 errors, and create, change, and delete redirects (Retour) | `access.retour`, only if [Retour](3_supported-plugins/0_retour) is installed                                |
 
 `content:publish`, `pages:manage` and `files:manage` include `content:write`, and `content:write` includes `content:read`. Kirby still checks each single action with the role of the user.
 

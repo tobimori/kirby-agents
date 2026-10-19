@@ -36,11 +36,13 @@
 	"scope.pages:delete": "Delete pages",
 	"scope.files:manage": "Upload files",
 	"scope.files:delete": "Delete files",
+	"scope.retour:redirects": "See 404 errors, and create, change, and delete redirects (Retour)",
 	"scope.short.content:read": "Read content",
 	"scope.short.content:write": "Prepare changes",
 	"scope.short.content:publish": "Publish",
 	"scope.short.pages:manage": "Manage pages",
 	"scope.short.pages:delete": "Delete pages",
 	"scope.short.files:manage": "Upload files",
-	"scope.short.files:delete": "Delete files"
+	"scope.short.files:delete": "Delete files",
+	"scope.short.retour:redirects": "Redirects"
 }

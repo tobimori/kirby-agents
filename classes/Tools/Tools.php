@@ -6,9 +6,11 @@ namespace tobimori\Agents\Tools;
 
 use Kirby\Exception\Exception as KirbyException;
 use Kirby\Exception\InvalidArgumentException;
+use Kirby\Retour\Retour;
 use tobimori\Agents\Agents;
 use tobimori\Agents\OAuth\Access;
 use tobimori\Agents\OAuth\Scope;
+use tobimori\Agents\Plugins\Retour\Tools as RetourTools;
 
 final class Tools
 {
@@ -36,6 +38,17 @@ final class Tools
 			new SchemaGet(),
 			new SiteOverview(),
 		];
+
+		if (class_exists(Retour::class)) {
+			$tools = [
+				...$tools,
+				new RetourTools\FailuresFind(),
+				new RetourTools\RedirectCreate(),
+				new RetourTools\RedirectDelete(),
+				new RetourTools\RedirectsFind(),
+				new RetourTools\RedirectUpdate(),
+			];
+		}
 
 		foreach (Agents::extensions(self::EXTENSION) as $plugin => $declared) {
 			foreach (is_array($declared) ? $declared : [] as $class) {
