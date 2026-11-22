@@ -6,9 +6,25 @@ namespace tobimori\Agents\Tools;
 
 final class Arguments
 {
+	private readonly array $values;
+
 	public function __construct(
-		private readonly array $values,
-	) {}
+		private readonly array $sent,
+	) {
+		// some models send every parameter and fill the ones they do not use with empty values
+		$this->values = array_filter(
+			$sent,
+			static fn(mixed $value): bool => $value !== null && $value !== '' && $value !== [],
+		);
+	}
+
+	/**
+	 * Also true for an empty value, for parameters where empty means remove
+	 */
+	public function sent(string $key): bool
+	{
+		return array_key_exists($key, $this->sent);
+	}
 
 	public function string(string $key, ?string $default = null): ?string
 	{

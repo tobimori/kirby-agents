@@ -164,14 +164,14 @@ Kirby Agents checks the tools and permissions of all plugins before it answers a
 
 Your plugin can use these classes. From version 1.0, they only change in major releases:
 
-| Class                             | Use                                                                                                                                                                                  |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `tobimori\Agents\Tools\Tool`      | The interface of a tool                                                                                                                                                              |
-| `tobimori\Agents\Tools\Arguments` | The input of the agent: `string()`, `strings()`, `int()`, `bool()`, `enum()`, `list()`, `object()` and `has()`                                                                       |
-| `tobimori\Agents\Tools\ToolError` | An error that the agent gets as the result                                                                                                                                           |
-| `tobimori\Agents\OAuth\Access`    | The connection: `$access->user`, `$access->scopes` and `$access->allows()`                                                                                                           |
-| `tobimori\Agents\OAuth\Scope`     | The names of the core permissions as constants, like `Scope::CONTENT_WRITE`                                                                                                          |
-| `tobimori\Agents\Content\Models`  | `Models::find()` gets a page or the site from an id, with drafts, and `Models::content()` also files. Both check the access                                                          |
-| `tobimori\Agents\Fields\Field`    | The base class for [custom field types](1_customization/1_field-types), with the core field classes and the objects that their methods get: `Compiler`, `InputCheck` and `Presenter` |
+| Class                             | Use                                                                                                                                                                                                                            |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `tobimori\Agents\Tools\Tool`      | The interface of a tool                                                                                                                                                                                                        |
+| `tobimori\Agents\Tools\Arguments` | The input of the agent: `string()`, `strings()`, `int()`, `bool()`, `enum()`, `list()`, `object()` and `has()`. They take `null`, `""` and `[]` as not sent, because some models fill every parameter. `sent()` sees these too |
+| `tobimori\Agents\Tools\ToolError` | An error that the agent gets as the result                                                                                                                                                                                     |
+| `tobimori\Agents\OAuth\Access`    | The connection: `$access->user`, `$access->scopes` and `$access->allows()`                                                                                                                                                     |
+| `tobimori\Agents\OAuth\Scope`     | The names of the core permissions as constants, like `Scope::CONTENT_WRITE`                                                                                                                                                    |
+| `tobimori\Agents\Content\Models`  | `Models::find()` gets a page or the site from an id, with drafts, and `Models::content()` also files. Both check the access                                                                                                    |
+| `tobimori\Agents\Fields\Field`    | The base class for [custom field types](1_customization/1_field-types), with the core field classes and the objects that their methods get: `Compiler`, `InputCheck` and `Presenter`                                           |
 
 All other classes are internal. They can change in minor releases.

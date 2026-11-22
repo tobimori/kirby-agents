@@ -41,9 +41,9 @@ final class ContentGet implements Tool
 						'description' => 'Field names to return with full values',
 					],
 					'ref' => [
-						'type' => 'integer',
+						'type' => ['integer', 'null'],
 						'minimum' => 1,
-						'description' => 'Ref number from the outline, to return one item with full values',
+						'description' => 'Ref number from the outline, to return one item with full values. null for the outline',
 					],
 					'ids' => [
 						'type' => 'boolean',

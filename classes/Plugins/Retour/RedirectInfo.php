@@ -169,7 +169,7 @@ final class RedirectInfo
 			$values['from'] = trim((string) $arguments->string('from'), " \n\r\t\v\0/");
 		}
 
-		if ($arguments->has('to')) {
+		if ($arguments->sent('to')) {
 			$values['to'] = self::target(trim((string) $arguments->string('to')));
 		}
 
@@ -181,7 +181,7 @@ final class RedirectInfo
 			$values['priority'] = $arguments->bool('priority', false);
 		}
 
-		if ($arguments->has('comment')) {
+		if ($arguments->sent('comment')) {
 			$values['comment'] = trim((string) $arguments->string('comment'));
 		}
 
