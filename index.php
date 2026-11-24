@@ -10,7 +10,7 @@ use Kirby\Data\Json;
 use Kirby\Filesystem\F;
 
 if (
-	version_compare(App::version() ?? '0.0.0', '6.0.0-rc.3', '<') === true
+	version_compare(App::version() ?? '0.0.0', '6.0.0', '<') === true
 	|| version_compare(App::version() ?? '0.0.0', '7.0.0-alpha.1', '>=') === true
 ) {
 	throw new Exception('Kirby Agents requires Kirby 6');
