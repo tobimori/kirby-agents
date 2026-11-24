@@ -35,6 +35,8 @@ fi
 
 mkdir -p "$playground/site/plugins"
 ln -sfn ../../.. "$playground/site/plugins/agents"
+# Retour, for the tools of its redirects and 404 errors
+ln -sfn ../../../.repos/vendor/plugins/retour "$playground/site/plugins/retour"
 
 if ! grep -q 'scripts/setup.sh' "$playground/site/config/config.php"; then
 	cat > "$playground/site/config/config.php" <<'PHP'
