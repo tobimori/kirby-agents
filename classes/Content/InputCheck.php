@@ -67,7 +67,7 @@ final class InputCheck
 
 			// the definition too: fields with the same name can have other rules, like in two block types
 			$this->path[] = $name . '#' . hash('xxh3', (string) json_encode($props));
-			Fields::for($props)->check($values[$name] ?? null, $this, $where . $name);
+			Fields::for($props, $this->model)->check($values[$name] ?? null, $this, $where . $name);
 			array_pop($this->path);
 		}
 	}

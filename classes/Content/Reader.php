@@ -81,7 +81,7 @@ final class Reader
 				$editor = $user->email() ?? $user->id();
 			}
 		}
-		$nodes = Nodes::index($fields, $values);
+		$nodes = Nodes::index($fields, $values, $model);
 
 		// refs also depend on the blueprint, for example on the order of its fields
 		$refs = array_map(static fn(Node $node): array => [$node->kind, $node->type, $node->key()], $nodes);
@@ -113,7 +113,7 @@ final class Reader
 			etag: 'none, dry run',
 			fields: $this->fields,
 			values: $values,
-			nodes: Nodes::index($this->fields, $values),
+			nodes: Nodes::index($this->fields, $values, $this->model),
 			title: $this->title,
 			untranslated: $this->untranslated,
 			editor: $this->editor,

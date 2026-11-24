@@ -45,7 +45,7 @@ final class Presenter
 		]));
 
 		foreach ($content->fields as $name => $props) {
-			$field = Fields::for(is_array($props) ? $props : []);
+			$field = Fields::for(is_array($props) ? $props : [], $content->model);
 			$lines[] =
 				str_pad((string) $name, $width) . '  ' . $field->summary($content->values[$name] ?? null, $presenter);
 
@@ -72,7 +72,11 @@ final class Presenter
 				throw new ToolError("No field `{$name}`. Fields: " . implode(', ', array_keys($content->fields)));
 			}
 
-			$values[$name] = Fields::for($props)->present($content->values[$name] ?? null, [$name], $presenter);
+			$values[$name] = Fields::for($props, $content->model)->present(
+				$content->values[$name] ?? null,
+				[$name],
+				$presenter,
+			);
 		}
 
 		return [...$presenter->meta(), 'fields' => $values];
@@ -86,14 +90,14 @@ final class Presenter
 	 */
 	public static function value(Reader $content, array $props, mixed $value, array $path): mixed
 	{
-		return Fields::for($props)->present($value, $path, new self($content, ids: false));
+		return Fields::for($props, $content->model)->present($value, $path, new self($content, ids: false));
 	}
 
 	public static function node(Reader $content, int $ref, bool $ids): array
 	{
 		$presenter = new self($content, $ids);
 		$node = $content->node($ref);
-		$data = Fields::for($node->props)->presentNode($node, $presenter->at($node->path), $presenter);
+		$data = Fields::for($node->props, $content->model)->presentNode($node, $presenter->at($node->path), $presenter);
 
 		return [...$presenter->meta(), 'node' => ['kind' => $node->kind, ...$data]];
 	}
@@ -110,7 +114,7 @@ final class Presenter
 			$props = $fields[$name] ?? null;
 
 			if (is_array($props)) {
-				$result[$name] = Fields::for($props)->present($value, [...$path, $name], $this);
+				$result[$name] = Fields::for($props, $this->content->model)->present($value, [...$path, $name], $this);
 			}
 		}
 
@@ -123,9 +127,10 @@ final class Presenter
 	public function preview(array $fields, array $values, int $limit = 3): string
 	{
 		$parts = [];
+		$model = $this->content->model;
 		$prominent = array_filter(
 			$fields,
-			static fn(mixed $props): bool => is_array($props) && Fields::for($props)->prominent(),
+			static fn(mixed $props): bool => is_array($props) && Fields::for($props, $model)->prominent(),
 		);
 
 		foreach ($prominent + $fields as $name => $props) {
@@ -135,7 +140,7 @@ final class Presenter
 				continue;
 			}
 
-			$preview = Fields::for(is_array($props) ? $props : [])->preview($value, $this);
+			$preview = Fields::for(is_array($props) ? $props : [], $model)->preview($value, $this);
 
 			if ($preview === null) {
 				continue;
@@ -252,7 +257,11 @@ final class Presenter
 				$depths[$node->ref] = $depth;
 			}
 
-			$summary = Fields::for($node->props)->nodeSummary($node, $this->at($node->path), $this);
+			$summary = Fields::for($node->props, $this->content->model)->nodeSummary(
+				$node,
+				$this->at($node->path),
+				$this,
+			);
 			$lines[] = str_repeat('  ', $depth) . $node->ref . ' ' . $summary;
 		}
 

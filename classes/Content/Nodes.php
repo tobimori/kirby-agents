@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace tobimori\Agents\Content;
 
+use Kirby\Cms\ModelWithContent;
 use tobimori\Agents\Fields\Fields;
 
 final class Nodes
@@ -18,14 +19,18 @@ final class Nodes
 	 */
 	private bool $locked = false;
 
+	private function __construct(
+		public readonly ModelWithContent $model,
+	) {}
+
 	/**
 	 * @param array<array-key, mixed> $fields
 	 *
 	 * @return array<int, Node>
 	 */
-	public static function index(array $fields, array $values): array
+	public static function index(array $fields, array $values, ModelWithContent $model): array
 	{
-		$index = new self();
+		$index = new self($model);
 		$index->fields($fields, $values, [], null);
 
 		return $index->nodes;
@@ -46,7 +51,7 @@ final class Nodes
 
 			$outer = $this->locked;
 			$this->locked = $outer || ($props['disabled'] ?? false) === true;
-			Fields::for($props)->nodes($value, $this, [...$path, $name], $parent, (string) $name);
+			Fields::for($props, $this->model)->nodes($value, $this, [...$path, $name], $parent, (string) $name);
 			$this->locked = $outer;
 		}
 	}

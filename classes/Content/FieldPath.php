@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace tobimori\Agents\Content;
 
+use Kirby\Cms\ModelWithContent;
 use tobimori\Agents\Fields\Fields;
 use tobimori\Agents\Tools\ToolError;
 
@@ -14,7 +15,7 @@ final class FieldPath
 	 *
 	 * @return array<array-key, mixed>
 	 */
-	public static function resolve(array $fields, string $path): array
+	public static function resolve(array $fields, string $path, ModelWithContent $model): array
 	{
 		$parts = array_values(array_filter(
 			array_map(trim(...), explode('>', $path)),
@@ -29,7 +30,7 @@ final class FieldPath
 		$where = (string) ($props['name'] ?? '');
 
 		while ($parts !== []) {
-			$sets = Fields::for($props)->fieldSets();
+			$sets = Fields::for($props, $model)->fieldSets();
 			$next = array_shift($parts);
 
 			if ($sets === []) {
