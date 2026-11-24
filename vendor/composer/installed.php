@@ -1,8 +1,8 @@
 <?php return array(
     'root' => array(
         'name' => 'tobimori/kirby-agents',
-        'pretty_version' => '0.2.0',
-        'version' => '0.2.0.0',
+        'pretty_version' => '1.0.0-rc.1',
+        'version' => '1.0.0.0-RC1',
         'reference' => null,
         'type' => 'kirby-plugin',
         'install_path' => __DIR__ . '/../../',
@@ -20,8 +20,8 @@
             'dev_requirement' => false,
         ),
         'tobimori/kirby-agents' => array(
-            'pretty_version' => '0.2.0',
-            'version' => '0.2.0.0',
+            'pretty_version' => '1.0.0-rc.1',
+            'version' => '1.0.0.0-RC1',
             'reference' => null,
             'type' => 'kirby-plugin',
             'install_path' => __DIR__ . '/../../',
