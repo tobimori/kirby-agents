@@ -37,7 +37,7 @@ final class ContentUpdate implements Tool
 				'- `{"op": "insert", "after": 5, "type": "text", "content": {…}}` adds a block after item 5. `before` works the same way',
 				'- `{"op": "insert", "into": 3, "slot": "left", "type": "text", "content": {…}}` adds a block to the nested field `left` of block 3',
 				'- `{"op": "insert", "into": "links", "content": {"label": "Docs", "url": "https://…"}}` adds a structure row (no `type`)',
-				'- `{"op": "insert", "into": "layout", "columns": ["1/2", "1/2"], "content": {"background": "dark"}, "as": "r"}` adds a layout row. `content` is its settings',
+				'- `{"op": "insert", "into": "<layout field>", "columns": ["1/2", "1/2"], "content": {"background": "dark"}, "as": "r"}` adds a layout row. Replace `<layout field>` with the name of a layout field from the outline. `content` is its settings',
 				'- `{"op": "insert", "into": "r", "column": 1, "type": "text", "content": {…}}` adds a block to column 1 (counted from 1) of a layout row. `into` a column ref works too',
 				'- `{"op": "move", "ref": 1, "after": 5}` moves an item. `before` and `into` work as for insert',
 				'- `{"op": "remove", "ref": 6}` removes an item with everything in it',

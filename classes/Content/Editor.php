@@ -337,6 +337,10 @@ final class Editor
 			];
 		}
 
+		if (is_string($into) && !ctype_digit($into) && !in_array($into, $this->created, true)) {
+			throw new ToolError(Field::unknownField($into, $this->content->fields, 'the page'));
+		}
+
 		$node = $this->open($this->key($into));
 		$owner = Fields::for($node->props);
 		$inner = $owner->into($node->kind, self::getAt($this->values, $node->path), $op);
