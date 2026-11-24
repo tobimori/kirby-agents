@@ -33,7 +33,7 @@ final class PageUpdate implements Tool
 				'- `template`: one of `templates` from page_rules. Content of fields that the new template does not have is removed',
 				'- `parent`: a page id from `moveTo` of page_rules, or `site`',
 				'- `status`: `draft`, `unlisted`, or `listed`. This is how a page becomes public: `listed` pages show in menus and lists, `unlisted` pages only by URL. Needs the `content:publish` scope. Only the published content goes live: unsaved changes need changes_publish',
-				'- `position`: position among the listed siblings, counted from 1. For top-level pages, this is usually the order in the main menu. Only when `sort` in page_rules says that you can set it',
+				'- `position`: position among the listed siblings, counted from 1. For top-level pages, this is usually the order in the main menu. Only when `sort` in page_rules says that you can set it, otherwise it is ignored',
 			]),
 			'inputSchema' => [
 				'type' => 'object',
@@ -88,6 +88,15 @@ final class PageUpdate implements Tool
 		$position = $arguments->has('position') ? $arguments->int('position', 1, 1, PHP_INT_MAX) : null;
 		$language = Language::ensure($arguments->string('language') ?? 'default');
 
+		$newTemplate = $template !== null && $template !== $page->intendedTemplate()->name();
+		$notes = [];
+
+		// after a template change, the new blueprint decides in the status action
+		if ($position !== null && !$newTemplate && ($note = self::ignoredPosition($page)) !== null) {
+			$notes[] = $note;
+			$position = null;
+		}
+
 		if (
 			($status !== null || $position !== null && !$page->isListed())
 			&& $access->allows(Scope::CONTENT_PUBLISH) === false
@@ -105,7 +114,6 @@ final class PageUpdate implements Tool
 		$parent = $parentId !== null ? Models::find($parentId) : null;
 		$listed = $status ?? ($position !== null ? 'listed' : null);
 
-		$newTemplate = $template !== null && $template !== $page->intendedTemplate()->name();
 		$renames = $slug !== null && $language->isDefault();
 
 		if ($newTemplate) {
@@ -127,10 +135,6 @@ final class PageUpdate implements Tool
 		// the move checks the slug: after a rename, Kirby checks it with the new one
 		if ($check && $parent !== null && !$renames) {
 			$page->guards()->ensureExecutable('move', $parent);
-		}
-
-		if ($check && $position !== null) {
-			self::ensurePosition($page);
 		}
 
 		if ($check && $listed !== null) {
@@ -159,9 +163,11 @@ final class PageUpdate implements Tool
 		}
 
 		if ($listed !== null) {
-			$actions['status'] = static function (Page $page) use ($listed, $position): Page {
-				if ($position !== null) {
-					self::ensurePosition($page);
+			$actions['status'] = static function (Page $page) use ($status, $listed, $position, &$notes): Page {
+				if ($position !== null && ($note = self::ignoredPosition($page)) !== null) {
+					$notes[] = $note;
+
+					return $status !== null ? $page->changeStatus($status) : $page;
 				}
 
 				return $page->changeStatus($listed, $position);
@@ -180,7 +186,11 @@ final class PageUpdate implements Tool
 		}
 
 		if ($listed !== null && $listed !== 'draft' && $summary['changes']) {
-			$result['note'] = 'The page has unsaved changes. They are not public yet: publish them with changes_publish.';
+			$notes[] = 'The page has unsaved changes. They are not public yet: publish them with changes_publish.';
+		}
+
+		if ($notes !== []) {
+			$result['note'] = implode(' ', $notes);
 		}
 
 		return $result;
@@ -222,15 +232,13 @@ final class PageUpdate implements Tool
 		return $page;
 	}
 
-	private static function ensurePosition(Page $page): void
+	private static function ignoredPosition(Page $page): ?string
 	{
-		if ($page->blueprint()->num() !== 'default') {
-			throw new ToolError(
-				'The position of this page comes from its blueprint (`num: '
-				. $page->blueprint()->num()
-				. '`), so it cannot be set.',
-			);
-		}
+		$num = $page->blueprint()->num();
+
+		return $num === 'default'
+			? null
+			: "`position` is ignored: the position of this page comes from its blueprint (`num: {$num}`).";
 	}
 
 	/**
