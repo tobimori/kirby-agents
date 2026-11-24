@@ -2,6 +2,13 @@
 	<k-panel-outside class="k-agents-authorize-view">
 		<div class="k-dialog k-agents-authorize">
 			<div class="k-dialog-body">
+				<k-agents-license-banner
+					v-if="license"
+					:state="license.state"
+					:local="license.local"
+					class="k-agents-authorize-license"
+				/>
+
 				<k-box
 					v-if="error"
 					theme="negative"
@@ -87,6 +94,7 @@ const props = defineProps({
 	client: Object,
 	csrf: String,
 	error: String,
+	license: Object,
 	redirect: Object,
 	scopes: { type: Array, default: () => [] },
 	site: String,
@@ -150,6 +158,10 @@ async function submit(value) {
 	.k-dialog-body {
 		padding-bottom: var(--dialog-padding);
 	}
+}
+
+.k-agents-authorize-license {
+	margin-bottom: var(--spacing-6);
 }
 
 .k-agents-authorize-title {

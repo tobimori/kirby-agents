@@ -1,0 +1,493 @@
+<?php
+
+declare(strict_types=1);
+
+namespace tobimori\Agents;
+
+use Kirby\Cms\App;
+use Kirby\Cms\LicenseType;
+use Kirby\Data\Json;
+use Kirby\Exception\Exception;
+use Kirby\Exception\InvalidArgumentException;
+use Kirby\Filesystem\F;
+use Kirby\Http\Remote;
+use Kirby\Plugin\License as KirbyLicense;
+use Kirby\Plugin\LicenseStatus;
+use Kirby\Plugin\Plugin;
+use Kirby\Toolkit\A;
+use Kirby\Toolkit\I18n;
+use Kirby\Toolkit\Str;
+use Kirby\Toolkit\V;
+use Throwable;
+
+/**
+ * Kirby Agents License implementation for Kirby 5
+ *
+ * If you're here to crack the plugin, please buy a license instead.
+ * I'm an independent developer and this plugin helps fund my open-source work as well.
+ * https://www.andkindness.com/buy?plugin=agents
+ *
+ * If you're unable to afford a license, or you encounter any issues with
+ * the license validation being too strict, please let me know at support@andkindness.com.
+ * I'm happy to help.
+ *
+ * Licenses are read from two files next to Kirby's own license file:
+ * - `.tm-licenses` is shared by all my plugins and written by the Panel activation.
+ *   It holds a list of signed licenses, one per plugin and domain. Each plugin ships
+ *   its own copy of this class, so keep the file format in sync with the other
+ *   plugins and only change entries of this plugin.
+ * - `.agents-license` is a license file downloaded from the account area and added
+ *   manually. It holds one signed license or a list of them and is never written.
+ *
+ * Licenses belong to a plugin by the prefix of their signed license key.
+ *
+ * Licenses are checked offline. Licenses with an expiry date are reissued by the
+ * license server shortly before they expire. Activated licenses without an expiry date
+ * (issued before expiry dates existed) are reissued once to get one. Manual licenses
+ * without an expiry date are permanent. Reissued copies are stored in `.tm-licenses`.
+ */
+final class License extends KirbyLicense
+{
+	// license keys of this plugin start with this prefix, e.g. `AI-BAS-…`
+	private const PREFIX = 'AI-';
+
+	// sites with a Kirby Enterprise license need an Enterprise license of this plugin
+	private const ENTERPRISE_PREFIX = 'AI-ENT-';
+	private const FILE = '.tm-licenses';
+	private const MANUAL_FILE = '.agents-license';
+	private const BASE = 'https://www.andkindness.com/licenses/';
+
+	// the order of the fields is part of the signature, `expires` is signed last if it exists
+	private const SIGNED_FIELDS = [
+		'license',
+		'plugin',
+		'edition',
+		'allowOfflineUse',
+		'purchasedOn',
+		'assignedUrl',
+		'email',
+	];
+
+	// seconds before the expiry date to start reissuing
+	private const REISSUE_BEFORE = 7 * 24 * 60 * 60;
+
+	// minutes to wait before the next reissue attempt after a failure
+	private const REISSUE_BACKOFF = [5, 60, 180, 720, 1440];
+
+	// seconds, the reissue runs while the Panel loads a view
+	private const REISSUE_TIMEOUT = 3;
+
+	private ?array $data;
+
+	// whether the license is from the manual license file
+	private bool $manual;
+
+	public function __construct(
+		protected Plugin $plugin,
+	) {
+		$this->name = 'Kirby Agents License';
+		$this->link = 'https://www.andkindness.com/legal/license-agreement';
+
+		// Kirby's System view and the consent screen create the license without a guard
+		try {
+			[$this->data, $this->manual] = static::find(App::instance()->system()->indexUrl());
+			$this->reissue();
+			$state = $this->state();
+		} catch (Throwable) {
+			[$this->data, $this->manual, $state] = [null, false, 'missing'];
+		}
+
+		if ($state === 'active') {
+			$this->status = LicenseStatus::from('active');
+			return;
+		}
+
+		$status = LicenseStatus::from(App::instance()->system()->isLocal() ? 'demo' : 'missing');
+		$this->status = new LicenseStatus(
+			value: $status->value(),
+			icon: $state === 'missing' ? $status->icon() : 'alert',
+			label: $state === 'missing' ? $status->label() : static::translate("agents.license.status.{$state}"),
+			theme: $state === 'missing' ? $status->theme() : 'negative',
+			dialog: 'agents/activate',
+		);
+	}
+
+	public function isValid(): bool
+	{
+		return $this->data !== null && static::isActive($this->data);
+	}
+
+	/**
+	 * Returns `active`, `enterprise` (an Enterprise license is required for this Kirby license),
+	 * `revoked` (moved to another domain or revoked by the license server),
+	 * `expired` (could not be reissued in time) or `missing`
+	 */
+	public function state(): string
+	{
+		return match (true) {
+			// a valid license has a license key
+			// @mago-expect analysis:mixed-argument,possibly-null-array-access
+			$this->isValid() => static::requiresEnterprise() && !static::isEnterprise($this->data['license'])
+				? 'enterprise'
+				: 'active',
+			($this->data['revoked'] ?? false) === true => 'revoked',
+			$this->data !== null && static::isSigned($this->data) => 'expired',
+			default => 'missing',
+		};
+	}
+
+	/**
+	 * Props of the license banner in the Panel, or `null` if the license is active
+	 *
+	 * @return array{state: string, local: bool}|null
+	 */
+	public static function banner(): ?array
+	{
+		try {
+			$license = App::plugin('tobimori/agents')?->license();
+			$state = $license instanceof self ? $license->state() : 'active';
+		} catch (Throwable) {
+			return null;
+		}
+
+		if ($state === 'active') {
+			return null;
+		}
+
+		return ['state' => $state, 'local' => App::instance()->system()->isLocal()];
+	}
+
+	/**
+	 * Whether the site is registered with a Kirby Enterprise license
+	 */
+	private static function requiresEnterprise(): bool
+	{
+		$license = App::instance()->system()->license();
+
+		return $license->isMissing() === false && $license->type() === LicenseType::Enterprise;
+	}
+
+	private static function isEnterprise(string $license): bool
+	{
+		return str_starts_with(Str::upper(trim($license)), self::ENTERPRISE_PREFIX);
+	}
+
+	/**
+	 * Normalizes the domain like the license server and Kirby: testing subdomains
+	 * and `www.` are removed only for installations at the root of the domain
+	 */
+	public static function normalizeUrl(string $url): string
+	{
+		$url = rtrim((string) preg_replace('#^https?://#', '', Str::lower(trim($url))), '/');
+
+		return str_contains($url, '/') ? $url : (string) preg_replace('/^(?:www|dev|test|staging)\./', '', $url);
+	}
+
+	/**
+	 * Downloads the license for the current domain and adds it to the shared file
+	 */
+	public static function activate(string $email, string $license): void
+	{
+		$license = trim($license);
+		$url = App::instance()->system()->indexUrl();
+
+		if (!V::email($email)) {
+			throw new InvalidArgumentException(static::translate('agents.license.error.email'));
+		}
+
+		if (!static::isOwn(['license' => $license])) {
+			throw new InvalidArgumentException(static::translate('agents.license.error.plugin'));
+		}
+
+		if (static::requiresEnterprise() && !static::isEnterprise($license)) {
+			throw new InvalidArgumentException(static::translate('agents.license.error.enterprise'));
+		}
+
+		try {
+			$response = static::request(rawurlencode(Str::lower($license)) . '/download', [
+				'email' => $email,
+				'url' => static::normalizeUrl($url),
+				// older plugin versions can't verify licenses with an expiry date
+				'expires' => true,
+			]);
+		} catch (Throwable) {
+			throw new InvalidArgumentException(static::translate('agents.license.error.server'));
+		}
+
+		$data = $response->code() === 200 ? $response->json() : null;
+		if (!is_array($data)) {
+			throw new InvalidArgumentException(static::translate(match ($response->code()) {
+				404 => 'agents.license.error.key',
+				403 => 'agents.license.error.forbidden',
+				default => 'agents.license.error.download',
+			}));
+		}
+
+		if (!static::isOwn($data)) {
+			throw new InvalidArgumentException(static::translate('agents.license.error.plugin'));
+		}
+
+		// a license for another domain would be saved but never used
+		if (!static::isSigned($data) || !static::isFor($data, $url)) {
+			throw new InvalidArgumentException(static::translate('agents.license.error.download'));
+		}
+
+		try {
+			static::write($data);
+		} catch (Throwable) {
+			throw new InvalidArgumentException(static::translate('agents.license.error.write'));
+		}
+	}
+
+	private static function translate(string $key): string
+	{
+		$translation = I18n::translate($key);
+
+		return is_string($translation) ? $translation : $key;
+	}
+
+	/**
+	 * Gets a new copy of the license from the license server if it expires soon,
+	 * or if it was activated before expiry dates existed.
+	 * A failed attempt is stored in the unsigned `failures` and `checked` fields of the license.
+	 */
+	private function reissue(): void
+	{
+		if (
+			$this->data === null
+			|| ($this->data['revoked'] ?? false) === true
+			// licenses for sites without internet access are never reissued
+			|| ($this->data['allowOfflineUse'] ?? null) === true
+			|| !static::isSigned($this->data)
+		) {
+			return;
+		}
+
+		if (
+			($this->data['expires'] ?? null) !== null
+				// signed licenses have a date string in `expires`
+				// @mago-expect analysis:mixed-argument,possibly-false-operand
+				? (strtotime($this->data['expires']) - time()) > self::REISSUE_BEFORE
+				: $this->manual
+		) {
+			return;
+		}
+
+		$failures = (int) ($this->data['failures'] ?? 0);
+		$backoff = self::REISSUE_BACKOFF[min($failures, count(self::REISSUE_BACKOFF)) - 1] ?? 0;
+		// @mago-expect analysis:mixed-argument,possibly-false-operand
+		if ((time() - strtotime($this->data['checked'] ?? '')) < ($backoff * 60)) {
+			return;
+		}
+
+		try {
+			// @mago-expect analysis:mixed-argument
+			$response = static::request(
+				Str::lower($this->data['license']) . '/reissue',
+				['url' => $this->data['assignedUrl']],
+				self::REISSUE_TIMEOUT,
+			);
+		} catch (Throwable) {
+			$response = null;
+		}
+
+		$license = $response?->code() === 200 ? $response->json() : null;
+
+		$this->data = match (true) {
+			// the license server issued a new copy of the license
+			is_array($license)
+				&& static::isOwn($license)
+				&& static::isSigned($license)
+				&& $license['license'] === $this->data['license']
+				=> $license,
+			// the license was moved to another domain or revoked,
+			// keep it marked as revoked so it also blocks its copy in the manual file
+			$response?->code() === 410 => [...$this->data, 'revoked' => true],
+			// the license server is not reachable or failed, try again later
+			default => [
+				...$this->data,
+				'failures' => $failures + 1,
+				'checked' => date(DATE_ATOM),
+			],
+		};
+
+		// @mago-expect lint:no-empty-catch-clause
+		try {
+			static::write($this->data);
+		} catch (Throwable) {
+			// the config folder is not writable, use the result for this request only
+		}
+	}
+
+	/**
+	 * @param array<string, mixed> $data
+	 */
+	private static function request(string $path, array $data, ?int $timeout = null): Remote
+	{
+		// @mago-expect analysis:non-documented-method (Kirby calls request methods with __callStatic)
+		return Remote::post(self::BASE . $path, [
+			...($timeout !== null ? ['timeout' => $timeout] : []),
+			'headers' => [
+				'Content-Type' => 'application/json',
+				'Accept' => 'application/json',
+			],
+			'data' => Json::encode($data),
+		]);
+	}
+
+	private static function path(string $file): string
+	{
+		// Kirby always sets the license root
+		// @mago-expect analysis:possibly-null-argument
+		return dirname(App::instance()->root('license')) . '/' . $file;
+	}
+
+	/**
+	 * Returns all licenses from a license file, including those of other plugins
+	 *
+	 * @return list<array<array-key, mixed>>
+	 */
+	private static function read(string $file, bool $strict = false): array
+	{
+		$path = static::path($file);
+
+		try {
+			// the other plugins write the shared file in place, so it is empty for a moment.
+			// a file that stays empty has no licenses to lose
+			for ($attempt = 0; $strict && $attempt < 5 && F::exists($path) && F::read($path) === ''; $attempt++) {
+				usleep(20_000);
+			}
+
+			$licenses = F::exists($path) ? Json::read($path) : [];
+		} catch (Throwable $error) {
+			if ($strict) {
+				throw $error;
+			}
+
+			return [];
+		}
+
+		// a manual license file can hold a single license
+		if (($licenses['license'] ?? null) !== null) {
+			$licenses = [$licenses];
+		}
+
+		return array_values(array_filter($licenses, 'is_array'));
+	}
+
+	/**
+	 * Returns the license of this plugin for the given domain and whether it is from the manual file,
+	 * preferring an active license from the shared file over the manual file
+	 *
+	 * @return array{0: array<array-key, mixed>|null, 1: bool}
+	 */
+	private static function find(string $url): array
+	{
+		$shared = A::find(static::read(self::FILE), static fn(array $license) => static::isFor($license, $url));
+		$manual = A::find(static::read(self::MANUAL_FILE), static fn(array $license) => static::isFor($license, $url));
+
+		// a revoked license also blocks its copy in the manual file
+		// the shared license is revoked, so it exists
+		// @mago-expect analysis:possibly-null-array-access
+		if (($shared['revoked'] ?? false) === true && ($manual['license'] ?? null) === $shared['license']) {
+			return [$shared, false];
+		}
+
+		if ($manual !== null && ($shared === null || !static::isActive($shared) && static::isActive($manual))) {
+			return [$manual, true];
+		}
+
+		return [$shared, false];
+	}
+
+	/**
+	 * Adds the license to the shared file and replaces the license
+	 * of this plugin for the same domain and other copies of the same license key.
+	 * Fails if the shared file can't be read, so licenses of other plugins are never lost.
+	 */
+	private static function write(array $license): void
+	{
+		$licenses = array_filter(
+			static::read(self::FILE, strict: true),
+			static fn(array $entry) => (
+				// @mago-expect analysis:mixed-argument
+				!static::isFor($entry, $license['assignedUrl'])
+				&& ($entry['license'] ?? null) !== $license['license']
+			),
+		);
+
+		$licenses = [...array_values($licenses), $license];
+		$path = static::path(self::FILE);
+		$temp = $path . '.' . bin2hex(random_bytes(4));
+
+		// the other plugins read the file without a lock, so replace it in one step
+		try {
+			$written = Json::write($temp, $licenses) && rename($temp, $path);
+		} catch (Throwable) {
+			$written = false;
+		} finally {
+			F::remove($temp);
+		}
+
+		// the folder is not writable or the file is a mount, write in place
+		if (!$written && !Json::write($path, $licenses)) {
+			throw new Exception(message: 'The license file could not be written');
+		}
+	}
+
+	/**
+	 * Checks that the license is signed, not expired and not revoked
+	 */
+	private static function isActive(array $license): bool
+	{
+		return (
+			($license['revoked'] ?? false) !== true
+			&& static::isSigned($license) &&
+			(
+				// @mago-expect analysis:mixed-argument,possibly-false-operand
+				($license['expires'] ?? null) === null
+				|| strtotime($license['expires']) > time()
+			)
+		);
+	}
+
+	private static function isOwn(array $license): bool
+	{
+		return is_string($key = $license['license'] ?? null) && str_starts_with(Str::upper(trim($key)), self::PREFIX);
+	}
+
+	private static function isFor(array $license, string $url): bool
+	{
+		return (
+			static::isOwn($license)
+			&& is_string($assigned = $license['assignedUrl'] ?? null)
+			&& static::normalizeUrl($assigned) === static::normalizeUrl($url)
+		);
+	}
+
+	/**
+	 * Checks that the license is complete and signed by the license server
+	 */
+	private static function isSigned(array $license): bool
+	{
+		$signed = [];
+		$fields = ($license['expires'] ?? null) !== null ? [...self::SIGNED_FIELDS, 'expires'] : self::SIGNED_FIELDS;
+		foreach ($fields as $field) {
+			if (($signed[$field] = $license[$field] ?? null) === null) {
+				return false;
+			}
+		}
+
+		return (
+			is_string($signature = $license['signature'] ?? null)
+			&& openssl_verify(
+				Json::encode($signed),
+				(string) base64_decode($signature, true),
+				// the public key ships with the plugin
+				// @mago-expect analysis:possibly-false-argument
+				openssl_pkey_get_public('file://' . dirname(__DIR__) . '/public.pem'),
+				'RSA-SHA256',
+			) === 1
+		);
+	}
+}

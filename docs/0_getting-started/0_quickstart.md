@@ -80,3 +80,13 @@ Each connection is listed in the **Agents** view. There you can [change its perm
 Changes by the assistant don't go live directly. Like your own edits in the Panel, they are saved as **unsaved changes** on the page. To publish them, open the page in the Panel and click **Save**. To remove them, click **Discard**.
 
 You can give an assistant the permission to publish changes directly in the **Agents** view. We recommend to start without this permission.
+
+## Purchase license & activate your installation
+
+Once you publish your website, you need to purchase a [Kirby Agents license](https://www.andkindness.com/buy?plugin=agents). We will send you a unique license code for your domain. You can activate your license with the following steps:
+
+1. Open the Panel at `https://example.com/panel` and log in.
+2. Go to the **Agents** view, and click on "Activate license" in the banner at the top.
+3. Enter your license code and your email address and press "Activate license".
+
+It is not required to activate your license locally.

@@ -10,6 +10,7 @@ use Kirby\Toolkit\Escape;
 use tobimori\Agents\Agents;
 use tobimori\Agents\Http\Guard;
 use tobimori\Agents\Http\RateLimit;
+use tobimori\Agents\License;
 
 final class Authorization
 {
@@ -159,6 +160,7 @@ final class Authorization
 				'user' => $user->email(),
 				'csrf' => $kirby->csrf(),
 				'action' => $kirby->panel()->url('agents/authorize/' . $id),
+				'license' => $allowed === [] ? null : License::banner(),
 			],
 		];
 	}

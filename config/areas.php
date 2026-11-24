@@ -2,8 +2,12 @@
 
 declare(strict_types=1);
 
+use Kirby\Cms\App;
+use Kirby\Panel\Field;
+use Kirby\Toolkit\HtmlString;
 use Kirby\Toolkit\I18n;
 use tobimori\Agents\Agents;
+use tobimori\Agents\License;
 use tobimori\Agents\OAuth\Authorization;
 use tobimori\Agents\Panel\Grants;
 
@@ -56,6 +60,52 @@ return [
 			],
 		],
 		'dialogs' => [
+			'agents.activate' => [
+				'pattern' => 'agents/activate',
+				'load' => function () {
+					$isLocal = App::instance()->system()->isLocal();
+
+					return [
+						'component' => 'k-form-dialog',
+						'props' => [
+							'fields' => [
+								'domain' => [
+									'label' => I18n::translate('agents.license.activate.label'),
+									'type' => 'info',
+									'theme' => $isLocal ? 'warning' : 'info',
+									'text' => HtmlString::translate(
+										'agents.license.activate.' . ($isLocal ? 'local' : 'domain'),
+										['domain' => License::normalizeUrl(App::instance()->system()->indexUrl())],
+									),
+								],
+								'email' => Field::email(['required' => true]),
+								'license' => [
+									'label' => I18n::translate('agents.license.key.label'),
+									'type' => 'text',
+									'required' => true,
+									'counter' => false,
+									'help' => HtmlString::translate('agents.license.key.help'),
+								],
+							],
+							'submitButton' => [
+								'icon' => 'key',
+								'text' => I18n::translate('agents.license.activate'),
+								'theme' => 'love',
+							],
+						],
+					];
+				},
+				'submit' => function () {
+					$body = App::instance()->request()->body();
+
+					License::activate(
+						email: (string) $body->get('email'),
+						license: trim((string) $body->get('license', '')),
+					);
+
+					return ['message' => I18n::translate('agents.license.activated')];
+				},
+			],
 			'agents.grants.scopes' => [
 				'pattern' => 'agents/grants/(:any)/(:any)/scopes',
 				'load' => fn(string $user, string $grant) => Grants::scopesDialog($user, $grant),

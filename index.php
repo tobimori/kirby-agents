@@ -8,6 +8,8 @@ declare(strict_types=1);
 use Kirby\Cms\App;
 use Kirby\Data\Json;
 use Kirby\Filesystem\F;
+use Kirby\Plugin\Plugin;
+use tobimori\Agents\License;
 
 if (
 	version_compare(App::version() ?? '0.0.0', '6.0.0', '<') === true
@@ -25,16 +27,25 @@ foreach ($files === false ? [] : $files as $file) {
 	}
 }
 
-App::plugin('tobimori/agents', extends: [
-	'options' => require __DIR__ . '/config/options.php',
-	'routes' => require __DIR__ . '/config/routes.php',
-	'api' => require __DIR__ . '/config/api.php',
-	'areas' => require __DIR__ . '/config/areas.php',
-	'hooks' => require __DIR__ . '/config/hooks.php',
-	'permissions' => [
-		'connect' => true,
-		'publish' => true,
-		'delete' => true,
+App::plugin(
+	'tobimori/agents',
+	extends: [
+		'options' => require __DIR__ . '/config/options.php',
+		'routes' => require __DIR__ . '/config/routes.php',
+		'api' => require __DIR__ . '/config/api.php',
+		'areas' => require __DIR__ . '/config/areas.php',
+		'hooks' => require __DIR__ . '/config/hooks.php',
+		'permissions' => [
+			'connect' => true,
+			'publish' => true,
+			'delete' => true,
+		],
+		'translations' => $translations,
 	],
-	'translations' => $translations,
-]);
+	// Kirby creates the license for each call, and the license can call the license server
+	license: static function (Plugin $plugin): License {
+		static $license = null;
+
+		return $license ??= new License($plugin);
+	},
+);

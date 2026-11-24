@@ -12,6 +12,7 @@ use Kirby\Exception\PermissionException;
 use Kirby\Toolkit\HtmlString;
 use Kirby\Toolkit\I18n;
 use tobimori\Agents\Agents;
+use tobimori\Agents\License;
 use tobimori\Agents\OAuth\Client;
 use tobimori\Agents\OAuth\Grant;
 use tobimori\Agents\OAuth\GrantStore;
@@ -43,6 +44,7 @@ final class Grants
 				'grants' => array_column($grants, 'item'),
 				'all' => $current->isAdmin(),
 				'url' => Agents::resource(),
+				'license' => License::banner(),
 			],
 		];
 	}

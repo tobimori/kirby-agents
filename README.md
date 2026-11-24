@@ -32,6 +32,5 @@ Kirby Agents is open to contributors: If you open a pull request that gets merge
 ## License
 
 Kirby Agents is not free software. In order to run it on a public server, you'll have to purchase a valid Kirby license & a valid Kirby Agents license.
-**The plugin is currently free to use while in pre-release state.**
 
 Copyright 2026 © Tobias Möritz - Love & Kindness GmbH

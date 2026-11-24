@@ -1,5 +1,11 @@
 <template>
 	<k-panel-inside class="k-agents-grants-view">
+		<k-agents-license-banner
+			v-if="license"
+			:state="license.state"
+			:local="license.local"
+			class="k-agents-grants-license"
+		/>
 		<k-header>
 			{{ $t("agents.title") }}
 
@@ -35,6 +41,7 @@ import { computed } from "vue"
 const props = defineProps({
 	all: Boolean,
 	grants: Array,
+	license: Object,
 	url: String
 })
 
@@ -84,6 +91,10 @@ function onOption(option, row) {
 			border-end-end-radius: var(--rounded);
 		}
 	}
+}
+
+.k-agents-grants-license {
+	margin-bottom: var(--spacing-6);
 }
 
 .k-agents-grants-url {
