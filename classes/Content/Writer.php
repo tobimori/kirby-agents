@@ -60,7 +60,8 @@ final class Writer
 			$after = match (true) {
 				$saved['errors'] !== [] => null,
 				$dryRun => $base->withValues($saved['values']),
-				default => self::fresh($saved['model'], $language),
+				// page models can keep derived content per instance, like the steps of DreamForm forms
+				default => self::fresh($saved['model']->clone(), $language),
 			};
 
 			return ['base' => $base, 'edit' => $edit, 'others' => $others, 'after' => $after, ...$saved];
