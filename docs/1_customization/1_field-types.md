@@ -16,7 +16,7 @@ The agent has to guess the format. If it guesses wrong, Kirby may store a value 
 
 ## When you need a field class
 
-Many custom fields work without one. A field that extends a core field, like `'extends' => 'writer'` or a subclass of Kirby's `BlocksField`, works like that core field. If a custom field only needs a short explanation on a few blueprints, a [blueprint hint](1_customization/0_blueprint-hints) is enough.
+Many custom fields work without one. A field class that extends a core field class, like a subclass of Kirby's `WriterField` or `BlocksField`, works like that core field. If a custom field only needs a short explanation on a few blueprints, a [blueprint hint](1_customization/0_blueprint-hints) is enough.
 
 Write a field class when the value has a format of its own, or when agents send input that Kirby would store without an error. With the class from the example below, the agent sees this:
 
