@@ -86,7 +86,7 @@ final class PageCreate implements Tool
 		if (!array_key_exists($template, $templates)) {
 			throw new ToolError(
 				$templates === []
-					? 'No pages can be created here. The pages sections of the parent do not allow it, are full, or your role may not create pages.'
+					? 'No pages can be created here. The page lists of the parent do not allow it, are full, or your role may not create pages.'
 					: "The template `{$template}` is not allowed here. Allowed: "
 					. implode(', ', array_keys($templates))
 					. '.',

@@ -279,7 +279,6 @@ abstract class Field
 		return A::some($fields, static function (mixed $props, int|string $name) use ($content): bool {
 			$value = $content[$name] ?? null;
 
-			// @mago-expect analysis:non-documented-method (Kirby validators are called with __callStatic)
 			if (!is_array($props) || V::empty($value)) {
 				return false;
 			}

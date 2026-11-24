@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace tobimori\Agents\Plugins\Retour\Tools;
 
-use Kirby\Retour\Redirect;
 use tobimori\Agents\OAuth\Access;
 use tobimori\Agents\OAuth\Scope;
 use tobimori\Agents\Plugins\Retour\RedirectInfo;
@@ -66,18 +65,16 @@ final class RedirectUpdate implements Tool
 		$current = RedirectInfo::find((string) $arguments->string('redirect'));
 		$values = RedirectInfo::values($arguments, $current->toArray());
 		$redirects = RedirectInfo::retour()->redirects();
-		$id = $current->id();
-		$redirect = new Redirect([...$values, 'modifier' => $access->user->email()]);
-
 		$other = RedirectInfo::get((string) $values['from']);
 
-		if ($other !== null && $other->id() !== $id) {
+		if ($other !== null && $other->id() !== $current->id()) {
 			throw new ToolError("A redirect from `{$values['from']}` exists already.");
 		}
 
-		// keeps the position in the list
-		$redirects->set($id, $redirect);
-		$redirects->save();
+		$redirect = $redirects->update($current->id(), [
+			...$values,
+			'modifier' => RedirectInfo::author($access->user),
+		]);
 
 		return [
 			'redirect' => RedirectInfo::summary($redirect),

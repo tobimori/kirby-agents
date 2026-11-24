@@ -17,7 +17,7 @@
 
 ## Get started
 
-[Read the documentation](docs/0_getting-started/0_quickstart.md) to get started with Kirby Agents. It requires Kirby 5 and PHP 8.2 or later.
+[Read the documentation](docs/0_getting-started/0_quickstart.md) to get started with Kirby Agents. It requires Kirby 6 and PHP 8.3 or later.
 
 `composer require tobimori/kirby-agents`
 

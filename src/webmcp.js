@@ -1,4 +1,5 @@
-import { usePanel, watch } from "kirbyuse"
+import { usePanel } from "kirbyuse"
+import { watch } from "vue"
 
 export default function webmcp() {
 	const panel = usePanel()

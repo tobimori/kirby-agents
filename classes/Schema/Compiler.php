@@ -24,16 +24,8 @@ final class Compiler
 		$compiler = new self();
 		$fields = [];
 
-		$props = [];
-
-		foreach (Form::for($model)->fields() as $name => $field) {
-			if ($field->hasValue()) {
-				$props[(string) $name] = Fields::props($field);
-			}
-		}
-
-		foreach (Fields::visible($props) as $name => $field) {
-			$fields[(string) $name] = $compiler->describe(is_array($field) ? $field : []);
+		foreach (Fields::visible(Fields::props(Form::for($model), $model)) as $name => $field) {
+			$fields[$name] = $compiler->describe($field);
 		}
 
 		$blueprint = basename($model->blueprint()->name());

@@ -72,14 +72,15 @@ final class RedirectsFind implements Tool
 
 		$limit = $arguments->int('limit', 50, 1, 100);
 		$offset = $arguments->offset();
+		$hits = RedirectInfo::hits($since);
 
 		return [
 			'total' => count($redirects),
 			'redirects' => array_map(
-				static fn(Redirect $redirect): array => RedirectInfo::summary($redirect, RedirectInfo::hits(
+				static fn(Redirect $redirect): array => RedirectInfo::summary(
 					$redirect,
-					$since,
-				)),
+					$hits === null ? null : $hits[$redirect->from()] ?? ['hits' => 0, 'last' => null],
+				),
 				array_slice($redirects, $offset, $limit),
 			),
 			'nextCursor' => Arguments::nextCursor($offset, $limit, count($redirects)),

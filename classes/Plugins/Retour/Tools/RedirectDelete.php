@@ -52,8 +52,7 @@ final class RedirectDelete implements Tool
 		$redirect = RedirectInfo::find((string) $arguments->string('redirect'));
 		$redirects = RedirectInfo::retour()->redirects();
 
-		$redirects->remove($redirect->id());
-		$redirects->save();
+		$redirects->delete($redirect->id());
 
 		return 'Deleted the redirect from `' . RedirectInfo::path($redirect) . '`.';
 	}

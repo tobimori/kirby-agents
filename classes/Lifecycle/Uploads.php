@@ -8,8 +8,13 @@ use Kirby\Cms\File;
 use Kirby\Cms\Page;
 use Kirby\Cms\Site;
 use Kirby\Content\MemoryStorage;
+use Kirby\Exception\InvalidArgumentException;
+use Kirby\Form\Field\FileListField;
+use Kirby\Form\Fields as FormFields;
 use Kirby\Form\Form;
+use Throwable;
 use tobimori\Agents\Content\InputCheck;
+use tobimori\Agents\Content\Models;
 use tobimori\Agents\Content\Reader;
 use tobimori\Agents\Content\Writer;
 use tobimori\Agents\Fields\Fields;
@@ -27,15 +32,20 @@ final class Uploads
 	{
 		$templates = [];
 
-		foreach (Placement::sections($parent, $parent, 'files') as $section) {
-			$template = is_string($section['template'] ?? null) ? $section['template'] : null;
-			$max = $section['max'] ?? null;
-
-			if (($section['create'] ?? true) === false || is_int($max) && self::count($parent, $template) >= $max) {
+		foreach (FormFields::for($parent) as $name => $field) {
+			if (!$field instanceof FileListField) {
 				continue;
 			}
 
-			$templates[$template ?? self::DEFAULT][] = 'section ' . (string) ($section['name'] ?? '');
+			try {
+				$listed = $field->parentModel();
+			} catch (InvalidArgumentException) {
+				continue;
+			}
+
+			if (Models::is($listed, $parent) && $field->upload() !== false) {
+				$templates[$field->blueprint() ?? self::DEFAULT][] = 'list ' . $name;
+			}
 		}
 
 		foreach (self::fields($parent, Reader::read($parent)->fields, '') as $path => $template) {
@@ -45,10 +55,10 @@ final class Uploads
 		$result = [];
 
 		foreach ($templates as $template => $from) {
-			$file = self::draft($parent, (string) $template);
+			$file = self::draft($parent, $template);
 
-			if ($file->permissions()->can('create')) {
-				$result[(string) $template] = [
+			if ($file->guards()->isAvailable('create')) {
+				$result[$template] = [
 					'title' => $file->blueprint()->title(),
 					'from' => array_values(array_unique($from)),
 					'accept' => array_filter(
@@ -70,13 +80,7 @@ final class Uploads
 	public static function content(File $draft, array $content): array
 	{
 		$form = Form::for($draft);
-		$props = [];
-
-		foreach ($form->fields() as $name => $field) {
-			$props[(string) $name] = Fields::props($field);
-		}
-
-		$props = Fields::visible($props);
+		$props = Fields::visible(Fields::props($form, $draft));
 		$unknown = array_diff(array_keys($content), array_keys($props));
 
 		if ($unknown !== []) {
@@ -104,7 +108,7 @@ final class Uploads
 
 		foreach ($form->toStoredValues() as $name => $value) {
 			if ($value !== null && $value !== '') {
-				$stored[(string) $name] = $value;
+				$stored[$name] = $value;
 			}
 		}
 
@@ -134,11 +138,6 @@ final class Uploads
 		return $file;
 	}
 
-	private static function count(Site|Page $parent, ?string $template): int
-	{
-		return $parent->files()->template($template)->count();
-	}
-
 	/**
 	 * @param array<array-key, mixed> $fields
 	 *
@@ -155,13 +154,14 @@ final class Uploads
 
 			$path = $where . $name;
 			$field = Fields::for($props);
+			$uploads = $props['uploads'] ?? null;
 
 			if (
 				$field instanceof FilesField
-				&& is_array($props['uploads'] ?? null)
-				&& Placement::lists($parent, $props['uploads'], $parent)
+				&& is_array($uploads)
+				&& self::uploadsTo($parent, $uploads['parent'] ?? null)
 			) {
-				$template = $props['uploads']['template'] ?? null;
+				$template = $uploads['blueprint'] ?? null;
 				$found[$path] = is_string($template) ? $template : null;
 			}
 
@@ -172,5 +172,19 @@ final class Uploads
 		}
 
 		return $found;
+	}
+
+	/**
+	 * Like Kirby, which uploads to the files of the parent query, or to the parent of a file
+	 */
+	private static function uploadsTo(Site|Page $parent, mixed $query): bool
+	{
+		try {
+			$target = is_string($query) && $query !== '' ? $parent->query($query) : $parent;
+		} catch (Throwable) {
+			return false;
+		}
+
+		return Models::is($target instanceof File ? $target->parent() : $target, $parent);
 	}
 }

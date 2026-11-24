@@ -54,17 +54,7 @@ final class Reader
 		$form = new Form(fields: $model->blueprint()->fields(), model: $model, language: $language);
 		$form->fill(input: $content->content($language)->toArray());
 
-		$fields = [];
-
-		foreach ($form->fields() as $name => $field) {
-			if ($field->hasValue()) {
-				$props = Fields::props($field);
-				unset($props['value']);
-				$fields[(string) $name] = $props;
-			}
-		}
-
-		$fields = Fields::visible($fields);
+		$fields = Fields::visible(Fields::props($form, $model));
 
 		$values = array_intersect_key($form->toFormValues(), $fields);
 		$raw = $content->read($language) ?? [];

@@ -6,11 +6,13 @@ namespace tobimori\Agents\Tools;
 
 use Kirby\Cms\App;
 use Kirby\Cms\File;
-use Kirby\Cms\FilePicker;
 use Kirby\Cms\Page;
-use Kirby\Cms\PagePicker;
+use Kirby\Cms\Site;
 use Kirby\Cms\User;
-use Kirby\Cms\UserPicker;
+use Kirby\Panel\Collector\FilesCollector;
+use Kirby\Panel\Collector\ModelsCollector;
+use Kirby\Panel\Collector\PagesCollector;
+use Kirby\Panel\Collector\UsersCollector;
 use Kirby\Uuid\FileUuid;
 use Kirby\Uuid\PageUuid;
 use tobimori\Agents\Content\FieldPath;
@@ -88,22 +90,37 @@ final class RelationsFind implements Tool
 		$offset = $arguments->offset();
 
 		$number = intdiv($offset, $limit) + 1;
-		$options = ['model' => $model, 'query' => $query, 'search' => $search, 'limit' => $limit, 'page' => $number];
 
 		// the adapter, not the type: custom fields can extend or map to a relation field
 		$field = Fields::for($props);
 
-		$result = match (true) {
-			$field instanceof PagesField && $query === null => self::pages($parent, $search, $limit, $number),
-			$field instanceof PagesField => (new PagePicker([...$options, 'map' => self::page(...)]))->toArray(),
-			$field instanceof FilesField => (new FilePicker([...$options, 'map' => self::file(...)]))->toArray(),
-			$field instanceof UsersField => (new UserPicker([...$options, 'map' => self::user(...)]))->toArray(),
+		// the collectors of the pickers in the Panel, without their dialogs, which read the request
+		$collector = match (true) {
+			$field instanceof PagesField && $query === null => null,
+			$field instanceof PagesField => self::pagesByQuery($model, $query, $search, $limit, $number),
+			$field instanceof FilesField => new FilesCollector(
+				limit: $limit,
+				page: $number,
+				parent: $model,
+				query: $query
+				?? ($model instanceof File ? 'file.siblings.sorted' : $model::CLASS_ALIAS . '.files.sorted'),
+				search: $search,
+			),
+			$field instanceof UsersField => new UsersCollector(
+				limit: $limit,
+				page: $number,
+				parent: $model,
+				query: $query ?? 'kirby.users',
+				search: $search,
+				sortBy: 'username asc',
+			),
 			default => throw new ToolError("`{$path}` is a {$type} field, not a pages, files, or users field"),
 		};
 
+		$result = $collector === null ? self::pages($parent, $search, $limit, $number) : self::collect($collector);
+
 		$max = $props['max'] ?? null;
-		$total = $result['pagination']['total'] ?? 0;
-		$total = is_int($total) ? $total : 0;
+		$total = $result['pagination']['total'];
 
 		return [
 			'field' => $path,
@@ -138,6 +155,41 @@ final class RelationsFind implements Tool
 		}
 
 		return ['data' => $data, 'pagination' => ['total' => $pages->count()]];
+	}
+
+	/**
+	 * Like the page picker of the Panel, which lists the children of a page or the site from the query
+	 */
+	private static function pagesByQuery(
+		Site|Page|File $model,
+		string $query,
+		?string $search,
+		int $limit,
+		int $page,
+	): PagesCollector {
+		$result = $model->query($query);
+
+		return $result instanceof Site || $result instanceof Page
+			? new PagesCollector(limit: $limit, page: $page, parent: $result, status: 'published', search: $search)
+			: new PagesCollector(limit: $limit, page: $page, parent: $model, query: $query, search: $search);
+	}
+
+	/**
+	 * @return array{data: list<array<string, mixed>>, pagination: array{total: int}}
+	 */
+	private static function collect(ModelsCollector $collector): array
+	{
+		$data = [];
+
+		foreach ($collector->models(paginated: true) as $model) {
+			$data[] = match (true) {
+				$model instanceof Page => self::page($model),
+				$model instanceof File => self::file($model),
+				$model instanceof User => self::user($model),
+			};
+		}
+
+		return ['data' => $data, 'pagination' => ['total' => $collector->pagination()->total()]];
 	}
 
 	/**

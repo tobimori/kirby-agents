@@ -55,6 +55,7 @@ return array(
     'tobimori\\Agents\\Http\\McpEndpoint' => $baseDir . '/classes/Http/McpEndpoint.php',
     'tobimori\\Agents\\Http\\RateLimit' => $baseDir . '/classes/Http/RateLimit.php',
     'tobimori\\Agents\\Http\\UploadEndpoint' => $baseDir . '/classes/Http/UploadEndpoint.php',
+    'tobimori\\Agents\\Lifecycle\\CreateDialog' => $baseDir . '/classes/Lifecycle/CreateDialog.php',
     'tobimori\\Agents\\Lifecycle\\Creator' => $baseDir . '/classes/Lifecycle/Creator.php',
     'tobimori\\Agents\\Lifecycle\\Placement' => $baseDir . '/classes/Lifecycle/Placement.php',
     'tobimori\\Agents\\Lifecycle\\Uploads' => $baseDir . '/classes/Lifecycle/Uploads.php',

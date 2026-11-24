@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace tobimori\Agents\Fields;
 
 use DOMElement;
-use DOMNode;
 use DOMText;
 use Kirby\Toolkit\A;
 use Kirby\Toolkit\Dom;
@@ -226,10 +225,6 @@ class WriterField extends Field
 		$changed = false;
 
 		foreach (iterator_to_array($body->childNodes) as $node) {
-			if (!$node instanceof DOMNode) {
-				continue;
-			}
-
 			$isBlock = $node instanceof DOMElement && in_array(strtolower($node->tagName), self::BLOCKS, true);
 			$isSpace = $node instanceof DOMText && trim($node->textContent) === '';
 

@@ -1,6 +1,6 @@
 <template>
 	<k-panel-outside class="k-agents-authorize-view">
-		<div class="k-dialog k-login k-agents-authorize">
+		<div class="k-dialog k-agents-authorize">
 			<div class="k-dialog-body">
 				<k-box
 					v-if="error"
@@ -77,7 +77,8 @@
 </template>
 
 <script setup>
-import { computed, nextTick, ref, usePanel } from "kirbyuse"
+import { usePanel } from "kirbyuse"
+import { computed, nextTick, ref } from "vue"
 
 import { clientTitle } from "../client.js"
 
@@ -142,6 +143,8 @@ async function submit(value) {
 <style>
 .k-agents-authorize {
 	--dialog-width: 30rem;
+	/* Kirby limits dialogs to the viewport, but this page scrolls */
+	max-height: none;
 	line-height: 1.5;
 
 	.k-dialog-body {

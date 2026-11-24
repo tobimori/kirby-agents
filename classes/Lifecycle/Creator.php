@@ -6,10 +6,8 @@ namespace tobimori\Agents\Lifecycle;
 
 use Kirby\Cms\App;
 use Kirby\Cms\Page;
-use Kirby\Cms\PageRules;
 use Kirby\Cms\Site;
 use Kirby\Form\Form;
-use Kirby\Panel\PageCreateDialog;
 use Kirby\Toolkit\Str;
 use tobimori\Agents\Content\InputCheck;
 use tobimori\Agents\Content\Writer;
@@ -19,7 +17,7 @@ use tobimori\Agents\Tools\ToolError;
 
 final class Creator
 {
-	private readonly PageCreateDialog $dialog;
+	private readonly CreateDialog $dialog;
 
 	public function __construct(
 		public readonly Site|Page $parent,
@@ -27,13 +25,10 @@ final class Creator
 		private readonly ?string $title = null,
 		private readonly ?string $slug = null,
 	) {
-		$this->dialog = new PageCreateDialog(
-			parentId: $parent->panel()->path(),
-			sectionId: null,
-			template: $template,
-			viewId: null,
-			slug: $slug,
-			title: $title,
+		$this->dialog = new CreateDialog(
+			$parent,
+			$template,
+			array_filter(['title' => $title, 'slug' => $slug], static fn(?string $value): bool => $value !== null),
 		);
 	}
 
@@ -83,7 +78,7 @@ final class Creator
 		$content = Fields::input($fields, $content, [], 'the create dialog');
 
 		$input = [...$content, 'title' => $this->title ?? '', 'slug' => $this->slug ?? ''];
-		$resolved = $this->dialog->resolveFieldTemplates($input);
+		$resolved = $this->dialog->resolveFieldTemplates($input, ['title', 'slug']);
 
 		if (!is_string($resolved['slug'] ?? null) || $resolved['slug'] === '') {
 			$input['slug'] = Str::slug(is_string($resolved['title'] ?? null) ? $resolved['title'] : '');
@@ -96,7 +91,8 @@ final class Creator
 			return null;
 		}
 
-		$this->dialog->submit($input);
+		$this->dialog->input($input);
+		$this->dialog->submit();
 		$slug = is_string($data['slug']) ? $data['slug'] : '';
 		$page = App::instance()->page(
 			$this->parent instanceof Page ? $this->parent->id() . '/' . $slug : $slug,
@@ -131,7 +127,7 @@ final class Creator
 		$this->dialog->validate($data, $this->status());
 
 		$slug = is_string($data['slug'] ?? null) ? $data['slug'] : '';
-		PageRules::create(Placement::draft($this->parent, $this->template, $slug));
+		Placement::draft($this->parent, $this->template, $slug)->guards()->ensureExecutable('create');
 	}
 
 	/**
@@ -139,15 +135,12 @@ final class Creator
 	 */
 	private function fields(): array
 	{
-		$fields = [];
+		// Kirby checks the fields of the dialog, but its props have no `agents` hints
+		$names = array_keys($this->dialog->customFields());
+		$model = $this->dialog->model();
+		$form = new Form(fields: array_intersect_key($model->blueprint()->fields(), array_flip($names)), model: $model);
 
-		foreach ($this->dialog->customFields() as $name => $props) {
-			if (is_array($props)) {
-				$fields[(string) $name] = $props;
-			}
-		}
-
-		return Fields::visible($fields);
+		return Fields::visible(Fields::props($form, $model));
 	}
 
 	private function option(string $key): mixed

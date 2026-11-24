@@ -5,7 +5,7 @@ intro: Let agents fix 404 errors with redirects
 
 [Retour](https://github.com/distantnative/retour-for-kirby) manages redirects in the Panel and logs the requests that end in a 404 error. Retour doesn't store them as content, but in `site/config/retour.yml` and in a database, so the content tools of Kirby Agents can't see them. When Retour is installed, agents get extra tools for them.
 
-You don't have to set anything up. Install Retour 5 or later, and the tools are there with the next request of an agent.
+You don't have to set anything up. Install Retour 6 or later, and the tools are there with the next request of an agent.
 
 ## The permission
 

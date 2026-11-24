@@ -4,21 +4,19 @@ declare(strict_types=1);
 
 namespace tobimori\Agents\Lifecycle;
 
+use Kirby\Blueprint\PageBlueprint;
 use Kirby\Cms\App;
-use Kirby\Cms\Blueprint;
 use Kirby\Cms\Page;
 use Kirby\Cms\Pages;
 use Kirby\Cms\Site;
 use Kirby\Content\MemoryStorage;
-use Kirby\Toolkit\A;
-use Kirby\Toolkit\I18n;
+use Kirby\Exception\InvalidArgumentException;
+use Kirby\Form\Field\PageListField;
+use Kirby\Form\Fields;
 use Kirby\Toolkit\Str;
 use Throwable;
 use tobimori\Agents\Content\Models;
 
-/**
- * Reads the section props: a `Section` object is slow and writes missing UUIDs into content files
- */
 final class Placement
 {
 	public const MAX_MOVE_CHECKS = 300;
@@ -38,6 +36,9 @@ final class Placement
 	}
 
 	/**
+	 * The templates for new pages from the page lists of the parent and the site that show its children, like the
+	 * create dialog of the Panel
+	 *
 	 * @return array<string, string>
 	 */
 	public static function templates(Site|Page $parent): array
@@ -46,13 +47,9 @@ final class Placement
 		$models = $parent instanceof Page ? [$parent, $parent->site()] : [$parent];
 
 		foreach ($models as $model) {
-			foreach (self::sections($model, $parent) as $props) {
-				$names = self::names($props);
-
-				if (self::canAdd($model, $parent, $props, $names)) {
-					foreach ($names as $name) {
-						$templates[$name] = self::title($name);
-					}
+			foreach (self::lists($model, $parent) as $list) {
+				foreach ($list->add() ? $list->acceptedPageBlueprints() : [] as $name) {
+					$templates[$name] = self::title($name);
 				}
 			}
 		}
@@ -60,8 +57,8 @@ final class Placement
 		return array_filter(
 			$templates,
 			static fn(string $title, string $template): bool => self::draft($parent, $template)
-				->permissions()
-				->can('create'),
+				->guards()
+				->isAvailable('create'),
 			ARRAY_FILTER_USE_BOTH,
 		);
 	}
@@ -110,12 +107,10 @@ final class Placement
 			}
 
 			$checked++;
-			$sections = self::sections($target, $target);
-			$allowed = array_merge(...array_map(self::templatesProp(...), $sections));
 
+			// like Kirby's check of a move
 			if (
-				$sections !== []
-				&& ($allowed === [] || in_array($template, $allowed, true))
+				Fields::for($target)->hasPageBlueprint($template)
 				&& !$target->childrenAndDrafts()->find($page->slug()) instanceof Page
 			) {
 				$targets[] = $id;
@@ -140,140 +135,29 @@ final class Placement
 	}
 
 	/**
-	 * @return list<array<array-key, mixed>>
+	 * @return list<PageListField>
 	 */
-	public static function sections(Site|Page $model, Site|Page $parent, string $type = 'pages'): array
+	private static function lists(Site|Page $model, Site|Page $parent): array
 	{
-		$tabs = $model->blueprint()->toArray()['tabs'] ?? [];
-		$sections = [];
+		$lists = [];
 
-		foreach (is_array($tabs) ? $tabs : [] as $tab) {
-			$columns = is_array($tab) && is_array($tab['columns'] ?? null) ? $tab['columns'] : [];
-
-			foreach ($columns as $column) {
-				$props = is_array($column) && is_array($column['sections'] ?? null) ? $column['sections'] : [];
-
-				foreach ($props as $section) {
-					if (
-						is_array($section)
-						&& ($section['type'] ?? null) === $type
-						&& self::lists($model, $section, $parent)
-					) {
-						$sections[] = $section;
-					}
-				}
+		foreach (Fields::for($model) as $field) {
+			if (!$field instanceof PageListField) {
+				continue;
 			}
-		}
 
-		return $sections;
-	}
-
-	public static function lists(Site|Page $model, array $section, Site|Page $parent): bool
-	{
-		try {
-			$listed = is_string($section['parent'] ?? null) ? $model->query($section['parent']) : $model;
-		} catch (Throwable) {
-			return false;
-		}
-
-		return (
-			$listed instanceof Site
-			&& $parent instanceof Site
-			|| $listed instanceof Page
-			&& $parent instanceof Page
-			&& $listed->is($parent)
-		);
-	}
-
-	/**
-	 * @return list<string>
-	 */
-	private static function names(array $section): array
-	{
-		$names = self::strings($section['create'] ?? null);
-		$names = $names !== [] ? $names : self::templatesProp($section);
-		$names = $names !== [] ? $names : self::strings(App::instance()->blueprints());
-
-		return array_values(array_diff($names, self::strings($section['templatesIgnore'] ?? null)));
-	}
-
-	/**
-	 * @return list<string>
-	 */
-	private static function templatesProp(array $section): array
-	{
-		return self::strings($section['templates'] ?? $section['template'] ?? null);
-	}
-
-	/**
-	 * @return list<string>
-	 */
-	private static function strings(mixed $value): array
-	{
-		$strings = [];
-
-		foreach (A::wrap($value) as $item) {
-			if (is_string($item) && $item !== '') {
-				$strings[] = $item;
-			}
-		}
-
-		return $strings;
-	}
-
-	/**
-	 * @param list<string> $names
-	 */
-	private static function canAdd(Site|Page $model, Site|Page $parent, array $section, array $names): bool
-	{
-		if (($section['create'] ?? null) === false || $names === []) {
-			return false;
-		}
-
-		$status = self::status($section);
-		$max = $section['max'] ?? null;
-
-		if (is_int($max) && self::listed($model, $parent, $section, $status) >= $max) {
-			return false;
-		}
-
-		if ($status === 'all') {
-			return true;
-		}
-
-		$statuses = array_unique(array_map(static function (string $name): string {
 			try {
-				$status = Blueprint::load('pages/' . $name)['create']['status'] ?? 'draft';
-			} catch (Throwable) {
-				$status = 'draft';
+				$listed = $field->parentModel();
+			} catch (InvalidArgumentException) {
+				continue;
 			}
 
-			return is_string($status) ? $status : 'draft';
-		}, $names));
+			if (Models::is($listed, $parent)) {
+				$lists[] = $field;
+			}
+		}
 
-		return count($statuses) === 1 && $statuses[0] === $status;
-	}
-
-	private static function status(array $section): string
-	{
-		$status = $section['status'] ?? '';
-		$status = $status === 'drafts' ? 'draft' : $status;
-
-		return in_array($status, ['draft', 'published', 'listed', 'unlisted'], true) ? $status : 'all';
-	}
-
-	private static function listed(Site|Page $model, Site|Page $parent, array $section, string $status): int
-	{
-		$query = $section['query'] ?? null;
-		$pages = is_string($query) ? $model->query($query, Pages::class) : null;
-		$pages = $pages instanceof Pages ? $pages : $parent->childrenAndDrafts();
-
-		$ignore = self::strings($section['templatesIgnore'] ?? null);
-
-		return self::withStatus($pages, $status)
-			->template(self::templatesProp($section))
-			->filter(static fn(Page $page): bool => !in_array($page->intendedTemplate()->name(), $ignore, true))
-			->count();
+		return $lists;
 	}
 
 	/**
@@ -282,13 +166,9 @@ final class Placement
 	public static function title(string $name): string
 	{
 		try {
-			$title = Blueprint::load('pages/' . $name)['title'] ?? $name;
+			return PageBlueprint::factory(App::instance()->site(), 'pages/' . $name)?->title() ?? ucfirst($name);
 		} catch (Throwable) {
 			return ucfirst($name);
 		}
-
-		$title = is_array($title) ? I18n::translate($title) : $title;
-
-		return is_string($title) ? $title : $name;
 	}
 }

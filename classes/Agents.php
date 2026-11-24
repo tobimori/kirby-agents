@@ -6,8 +6,6 @@ namespace tobimori\Agents;
 
 use Closure;
 use Kirby\Cms\App;
-use Kirby\Content\Field;
-use Kirby\Plugin\Plugin;
 
 final class Agents
 {
@@ -32,7 +30,7 @@ final class Agents
 		$values = [];
 
 		foreach (App::instance()->plugins() as $plugin) {
-			if (!$plugin instanceof Plugin || !array_key_exists($key, $plugin->extends())) {
+			if (!array_key_exists($key, $plugin->extends())) {
 				continue;
 			}
 
@@ -77,8 +75,6 @@ final class Agents
 
 	public static function siteTitle(): string
 	{
-		$title = App::instance()->site()->content()->get('title');
-
-		return $title instanceof Field ? (string) $title->value() : '';
+		return (string) App::instance()->site()->content()->get('title')->value();
 	}
 }

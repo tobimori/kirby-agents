@@ -79,9 +79,8 @@ final class PageRulesGet implements Tool
 			];
 		}
 
-		$permissions = $model->permissions()->toArray();
 		$allowed = array_keys(array_filter(
-			array_intersect_key($permissions, array_flip(self::ACTIONS)),
+			array_intersect_key($model->guards()->availability(), array_flip(self::ACTIONS)),
 			static fn(mixed $value): bool => $value === true,
 		));
 		$rules = [
@@ -128,7 +127,7 @@ final class PageRulesGet implements Tool
 		$templates = [];
 
 		foreach ($page->blueprints() as $blueprint) {
-			$name = is_array($blueprint) ? $blueprint['name'] ?? null : null;
+			$name = $blueprint['name'] ?? null;
 
 			if (is_string($name) && $name !== $page->intendedTemplate()->name()) {
 				$templates[] = $name;

@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace tobimori\Agents\Fields;
 
+use Kirby\Cms\File;
 use Kirby\Cms\ModelWithContent;
+use Kirby\Cms\Page;
+use Kirby\Cms\User;
 use tobimori\Agents\Content\InputCheck;
 use tobimori\Agents\Content\Presenter;
 use tobimori\Agents\Schema\Compiler;
@@ -46,12 +49,12 @@ abstract class RelationField extends Field
 
 	public function present(mixed $value, array $path, Presenter $presenter): mixed
 	{
-		return is_array($value) ? array_map(self::relation(...), $value) : $value;
+		return is_array($value) ? $this->relations($value, $presenter->content->model) : $value;
 	}
 
 	public function summary(mixed $value, Presenter $presenter): string
 	{
-		$items = is_array($value) ? array_map(self::relation(...), $value) : [];
+		$items = is_array($value) ? $this->relations($value, $presenter->content->model) : [];
 
 		return $items === []
 			? '(empty)'
@@ -68,16 +71,31 @@ abstract class RelationField extends Field
 	}
 
 	/**
-	 * @return array{uuid: string|null, id: string|null, title: string}
+	 * Kirby's form values are the stored UUIDs or ids
+	 *
+	 * @param array<array-key, mixed> $value
+	 *
+	 * @return list<array{uuid: string|null, id: string|null, title: string}>
 	 */
-	private static function relation(mixed $item): array
+	private function relations(array $value, ModelWithContent $model): array
 	{
-		$item = is_array($item) ? $item : [];
+		$items = [];
 
-		return [
-			'uuid' => is_string($item['uuid'] ?? null) ? $item['uuid'] : null,
-			'id' => is_string($item['id'] ?? null) ? $item['id'] : null,
-			'title' => is_string($item['text'] ?? null) ? $item['text'] : '',
-		];
+		foreach ($value as $id) {
+			$found = is_string($id) ? $this->find($id, $model) : null;
+
+			$items[] = [
+				'uuid' => $found?->uuid()?->toString(),
+				'id' => $found?->id() ?? (is_string($id) ? $id : null),
+				'title' => match (true) {
+					$found instanceof Page => (string) $found->title()->value(),
+					$found instanceof File => $found->filename(),
+					$found instanceof User => (string) $found->username(),
+					default => '',
+				},
+			];
+		}
+
+		return $items;
 	}
 }

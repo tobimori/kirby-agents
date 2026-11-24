@@ -77,9 +77,7 @@ final class RedirectCreate implements Tool
 			);
 		}
 
-		$redirects->create([...$values, 'creator' => $access->user->email()]);
-		$redirects->save();
-		$redirect = RedirectInfo::find((string) $values['from']);
+		$redirect = $redirects->create([...$values, 'creator' => RedirectInfo::author($access->user)]);
 
 		return [
 			'redirect' => RedirectInfo::summary($redirect),

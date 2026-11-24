@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace tobimori\Agents\Fields;
 
+use Kirby\Blueprint\Blueprint;
+use Kirby\Cms\Fieldset;
+use Kirby\Cms\Fieldsets;
+use Kirby\Cms\ModelWithContent;
 use Kirby\Exception\InvalidArgumentException;
 use Kirby\Form\Field as FormField;
-use Kirby\Form\FieldClass;
+use Kirby\Form\Form;
 use Kirby\Toolkit\V;
 use tobimori\Agents\Agents;
 use tobimori\Agents\Tools\ToolError;
@@ -48,6 +52,9 @@ final class Fields
 		'color' => ColorField::class,
 		'link' => LinkField::class,
 		'hidden' => HiddenField::class,
+		'pagepicker' => PagesField::class,
+		'filepicker' => FilesField::class,
+		'userpicker' => UsersField::class,
 		'pages' => PagesField::class,
 		'files' => FilesField::class,
 		'users' => UsersField::class,
@@ -78,18 +85,116 @@ final class Fields
 		return $class === null ? new CustomField($props) : new $class($props);
 	}
 
-	public static function props(FormField|FieldClass $field): array
+	/**
+	 * The props of the fields with a value as the Panel gets them, with their defaults and `agents` hints
+	 *
+	 * @return array<string, array<array-key, mixed>>
+	 */
+	public static function props(Form $form, ModelWithContent $model): array
 	{
-		$props = $field->toArray();
+		$definitions = $model->blueprint()->fields();
+		$props = [];
 
-		// @mago-expect analysis:non-documented-method (Kirby reads unknown keys with __call)
-		$agents = $field instanceof FieldClass ? $field->agents() : null;
-
-		if (is_array($agents)) {
-			$props['agents'] = $agents;
+		foreach ($form->fields() as $name => $field) {
+			if ($field->hasValue()) {
+				$field = [...$field->toArray(), 'default' => $field->default()];
+				unset($field['value']);
+				$props[$name] = self::withHints($field, $definitions[$name] ?? null, $model);
+			}
 		}
 
 		return $props;
+	}
+
+	/**
+	 * Kirby passes only the props that a field class knows to the field, so the hints come from the blueprint
+	 *
+	 * @param array<array-key, mixed> $props
+	 *
+	 * @return array<array-key, mixed>
+	 */
+	private static function withHints(array $props, mixed $definition, ModelWithContent $model): array
+	{
+		if (!is_array($definition)) {
+			return $props;
+		}
+
+		if (is_array($definition['agents'] ?? null)) {
+			$props['agents'] = $definition['agents'];
+		}
+
+		if (is_array($props['fields'] ?? null) && is_array($definition['fields'] ?? null)) {
+			$props['fields'] = self::fieldsWithHints($props['fields'], $definition['fields'], $model);
+		}
+
+		if (is_array($props['field'] ?? null)) {
+			$props['field'] = self::withHints($props['field'], $definition['field'] ?? null, $model);
+		}
+
+		if (is_array($props['fieldsets'] ?? null)) {
+			$fieldsets = $definition['fieldsets'] ?? null;
+			// @mago-expect analysis:less-specific-nested-argument-type (Kirby takes names of fieldsets too)
+			$fieldsets = Fieldsets::factory(is_array($fieldsets) ? $fieldsets : null, ['parent' => $model]);
+
+			foreach ($props['fieldsets'] as $type => $fieldset) {
+				$tabs = $fieldsets->get((string) $type)?->tabs();
+
+				if (is_array($fieldset) && $tabs !== null) {
+					$props['fieldsets'][$type] = self::tabsWithHints($fieldset, $tabs, $model);
+				}
+			}
+		}
+
+		$settings = $definition['settings'] ?? null;
+
+		if (is_array($props['settings'] ?? null) && (is_array($settings) || is_string($settings))) {
+			// like Kirby's layout field
+			$settings = new Fieldset([...Blueprint::extend($settings), 'type' => 'layout', 'parent' => $model]);
+			$props['settings'] = self::tabsWithHints($props['settings'], $settings->tabs(), $model);
+		}
+
+		return $props;
+	}
+
+	/**
+	 * @param array<array-key, mixed> $fields
+	 * @param array<array-key, mixed> $definitions
+	 *
+	 * @return array<array-key, mixed>
+	 */
+	private static function fieldsWithHints(array $fields, array $definitions, ModelWithContent $model): array
+	{
+		foreach ($fields as $name => $props) {
+			if (is_array($props)) {
+				$fields[$name] = self::withHints($props, $definitions[$name] ?? null, $model);
+			}
+		}
+
+		return $fields;
+	}
+
+	/**
+	 * @param array<array-key, mixed> $fieldset
+	 * @param array<array-key, mixed> $tabs
+	 *
+	 * @return array<array-key, mixed>
+	 */
+	private static function tabsWithHints(array $fieldset, array $tabs, ModelWithContent $model): array
+	{
+		if (!is_array($fieldset['tabs'] ?? null)) {
+			return $fieldset;
+		}
+
+		foreach ($fieldset['tabs'] as $name => $tab) {
+			$definitions = is_array($tabs[$name] ?? null) ? $tabs[$name]['fields'] ?? null : null;
+
+			if (is_array($tab) && is_array($tab['fields'] ?? null) && is_array($definitions)) {
+				$tab['fields'] = self::fieldsWithHints($tab['fields'], $definitions, $model);
+				$fieldset['tabs'][$name] = $tab;
+			}
+		}
+
+		return $fieldset;
 	}
 
 	/**
@@ -161,30 +266,23 @@ final class Fields
 		return null;
 	}
 
+	/**
+	 * The type of the first parent class that Kirby registers as a field type
+	 */
 	private static function extended(string $type): ?string
 	{
-		$definition = FormField::$types[$type] ?? null;
+		$class = FormField::$types[$type] ?? null;
+		$parents = is_string($class) && class_exists($class) ? class_parents($class) : false;
 
-		if (is_string($definition) && class_exists($definition)) {
-			// the first parent that Kirby registers as a field type
-			$parents = class_parents($definition);
+		foreach ($parents === false ? [] : $parents as $parent) {
+			$type = array_search($parent, FormField::$types, true);
 
-			foreach ($parents === false ? [] : $parents as $parent) {
-				$type = array_search($parent, FormField::$types, true);
-
-				if (is_string($type)) {
-					return $type;
-				}
+			if (is_string($type)) {
+				return $type;
 			}
-
-			return null;
 		}
 
-		if (is_string($definition) || is_array($definition)) {
-			$definition = FormField::load($type);
-		}
-
-		return is_array($definition) && is_string($definition['extends'] ?? null) ? $definition['extends'] : null;
+		return null;
 	}
 
 	/**
@@ -219,7 +317,6 @@ final class Fields
 			$old = $current[$name] ?? null;
 
 			// agents see read-only values, and can send them back unchanged
-			// @mago-expect analysis:non-documented-method (Kirby validators are called with __callStatic)
 			if (($props['disabled'] ?? false) === true && !V::empty($value) && $value !== $old) {
 				throw new ToolError("{$where}: field `{$name}` is read-only");
 			}

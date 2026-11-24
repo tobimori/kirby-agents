@@ -106,9 +106,7 @@ final class SiteOverview implements Tool
 		$blueprints = [];
 
 		foreach (App::instance()->blueprints('pages') as $name) {
-			if (is_string($name)) {
-				$blueprints[] = ['name' => $name, 'title' => Placement::title($name)];
-			}
+			$blueprints[] = ['name' => $name, 'title' => Placement::title($name)];
 		}
 
 		return $blueprints;
@@ -123,7 +121,7 @@ final class SiteOverview implements Tool
 		$ids = $site->version('changes')->exists('*') ? ['site'] : [];
 
 		foreach ((new Changes())->pages() as $page) {
-			if ($page instanceof Page && $page->isListable()) {
+			if ($page->isListable()) {
 				$ids[] = $page->id();
 			}
 		}

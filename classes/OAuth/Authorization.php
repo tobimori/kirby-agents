@@ -6,7 +6,6 @@ namespace tobimori\Agents\OAuth;
 
 use Kirby\Cms\App;
 use Kirby\Http\Response;
-use Kirby\Panel\Panel;
 use Kirby\Toolkit\Escape;
 use tobimori\Agents\Agents;
 use tobimori\Agents\Http\Guard;
@@ -87,7 +86,7 @@ final class Authorization
 		]);
 
 		// in the path, because the Panel drops the query after the login
-		return Response::redirect(Panel::url('agents/authorize/' . $id));
+		return Response::redirect($kirby->panel()->url('agents/authorize/' . $id));
 	}
 
 	public static function view(string $id): array
@@ -159,7 +158,7 @@ final class Authorization
 				'site' => Agents::siteTitle(),
 				'user' => $user->email(),
 				'csrf' => $kirby->csrf(),
-				'action' => Panel::url('agents/authorize/' . $id),
+				'action' => $kirby->panel()->url('agents/authorize/' . $id),
 			],
 		];
 	}

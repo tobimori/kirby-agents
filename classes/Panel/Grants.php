@@ -9,7 +9,7 @@ use Kirby\Cms\User;
 use Kirby\Exception\InvalidArgumentException;
 use Kirby\Exception\NotFoundException;
 use Kirby\Exception\PermissionException;
-use Kirby\Toolkit\Escape;
+use Kirby\Toolkit\HtmlString;
 use Kirby\Toolkit\I18n;
 use tobimori\Agents\Agents;
 use tobimori\Agents\OAuth\Client;
@@ -54,10 +54,10 @@ final class Grants
 		return [
 			'component' => 'k-remove-dialog',
 			'props' => [
-				// the client chose its name, and the dialog renders HTML
-				'text' => I18n::template('agents.grants.revoke.confirm', null, [
-					'name' => Escape::html($grant->name),
-					'user' => Escape::html($user->email() ?? $user->id()),
+				// the client chose its name, which is escaped
+				'text' => HtmlString::translate('agents.grants.revoke.confirm', [
+					'name' => $grant->name,
+					'user' => $user->email() ?? $user->id(),
 				]),
 				'submitButton' => I18n::translate('agents.grants.revoke'),
 			],

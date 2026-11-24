@@ -6,7 +6,6 @@ namespace tobimori\Agents\Tools;
 
 use Kirby\Cms\File;
 use Kirby\Cms\Page;
-use Kirby\Cms\PageRules;
 use Kirby\Content\VersionCache;
 use Kirby\Filesystem\Dir;
 use tobimori\Agents\Content\Models;
@@ -71,7 +70,7 @@ final class PageDelete implements Tool
 			throw new ToolError('The site cannot be deleted');
 		}
 
-		PageRules::delete($page, force: true);
+		$page->guards()->ensureExecutable('delete', true);
 
 		$confirm = $arguments->string('confirm');
 
@@ -142,11 +141,11 @@ final class PageDelete implements Tool
 	 */
 	private static function fingerprint(Page $page): string
 	{
-		$root = (string) $page->root();
+		$root = $page->root();
 		$parts = [];
 
 		foreach (is_dir($root) ? Dir::index($root, recursive: true) : [] as $path) {
-			$file = $root . '/' . (string) $path;
+			$file = $root . '/' . $path;
 
 			if (is_file($file)) {
 				$parts[$path] = hash_file('xxh128', $file);
@@ -199,7 +198,7 @@ final class PageDelete implements Tool
 		$files = $page->files()->count();
 
 		foreach ($subpages as $subpage) {
-			$files += $subpage instanceof Page ? $subpage->files()->count() : 0;
+			$files += $subpage->files()->count();
 		}
 
 		return ['subpages' => $subpages->count(), 'files' => $files];

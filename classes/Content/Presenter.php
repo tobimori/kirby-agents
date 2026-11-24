@@ -20,7 +20,7 @@ final class Presenter
 	private array $refs = [];
 
 	private function __construct(
-		private readonly Reader $content,
+		public readonly Reader $content,
 		private readonly bool $ids,
 	) {
 		foreach ($content->nodes as $node) {

@@ -1,6 +1,6 @@
 #:schema .repos/vendor/carthage-software/mago/schema.json
 version = "1"
-php-version = "8.2"
+php-version = "8.3"
 
 [source]
 paths = ["index.php", "classes", "config"]

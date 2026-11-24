@@ -39,6 +39,16 @@ final class Models
 		return $model instanceof Page ? $model->id() : 'site';
 	}
 
+	/**
+	 * If the model is the page or the site
+	 */
+	public static function is(mixed $model, Site|Page $target): bool
+	{
+		return $model instanceof Site
+			? $target instanceof Site
+			: $model instanceof Page && $target instanceof Page && $model->is($target);
+	}
+
 	public static function find(string $id): Site|Page
 	{
 		$kirby = App::instance();

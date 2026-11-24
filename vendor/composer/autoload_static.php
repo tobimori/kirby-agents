@@ -78,6 +78,7 @@ class ComposerStaticInitb83eeea4b7988921e47b0a39e2b95a4d
         'tobimori\\Agents\\Http\\McpEndpoint' => __DIR__ . '/../..' . '/classes/Http/McpEndpoint.php',
         'tobimori\\Agents\\Http\\RateLimit' => __DIR__ . '/../..' . '/classes/Http/RateLimit.php',
         'tobimori\\Agents\\Http\\UploadEndpoint' => __DIR__ . '/../..' . '/classes/Http/UploadEndpoint.php',
+        'tobimori\\Agents\\Lifecycle\\CreateDialog' => __DIR__ . '/../..' . '/classes/Lifecycle/CreateDialog.php',
         'tobimori\\Agents\\Lifecycle\\Creator' => __DIR__ . '/../..' . '/classes/Lifecycle/Creator.php',
         'tobimori\\Agents\\Lifecycle\\Placement' => __DIR__ . '/../..' . '/classes/Lifecycle/Placement.php',
         'tobimori\\Agents\\Lifecycle\\Uploads' => __DIR__ . '/../..' . '/classes/Lifecycle/Uploads.php',

@@ -3,7 +3,7 @@
 *.cache
 
 node_modules
-index.dev.mjs
+index.dev.*
 /.repos/
 /.playground/
 

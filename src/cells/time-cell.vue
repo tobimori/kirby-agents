@@ -3,7 +3,8 @@
 </template>
 
 <script setup>
-import { computed, usePanel } from "kirbyuse"
+import { usePanel } from "kirbyuse"
+import { computed } from "vue"
 
 const UNITS = [
 	["year", 31536000],

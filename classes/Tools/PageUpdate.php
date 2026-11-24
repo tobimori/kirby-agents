@@ -7,7 +7,6 @@ namespace tobimori\Agents\Tools;
 use Closure;
 use Kirby\Cms\Language;
 use Kirby\Cms\Page;
-use Kirby\Cms\PageRules;
 use Kirby\Exception\Exception as KirbyException;
 use Kirby\Toolkit\Str;
 use tobimori\Agents\Content\Models;
@@ -110,7 +109,7 @@ final class PageUpdate implements Tool
 		$renames = $slug !== null && $language->isDefault();
 
 		if ($newTemplate) {
-			PageRules::changeTemplate($page, $template);
+			$page->guards()->ensureExecutable('changeTemplate', $template);
 		}
 
 		// checks with the page as it is now. After a template change, other rules can apply:
@@ -118,16 +117,16 @@ final class PageUpdate implements Tool
 		$check = !$newTemplate;
 
 		if ($check && $title !== null) {
-			PageRules::changeTitle($page, $title);
+			$page->guards()->ensureExecutable('changeTitle', $title);
 		}
 
 		if ($check && $renames) {
-			PageRules::changeSlug($page, $slug);
+			$page->guards()->ensureExecutable('changeSlug', $slug);
 		}
 
 		// the move checks the slug: after a rename, Kirby checks it with the new one
 		if ($check && $parent !== null && !$renames) {
-			PageRules::move($page, $parent);
+			$page->guards()->ensureExecutable('move', $parent);
 		}
 
 		if ($check && $position !== null) {
@@ -135,7 +134,7 @@ final class PageUpdate implements Tool
 		}
 
 		if ($check && $listed !== null) {
-			PageRules::changeStatus($page, $listed, $position ?? 0);
+			$page->guards()->ensureExecutable('changeStatus', $listed, $position ?? 0);
 		}
 
 		$before = self::state($page, $language);

@@ -72,7 +72,7 @@ final class Writer
 	 */
 	public static function read(ModelWithContent $model, ?string $language, string $etag): Reader
 	{
-		if ($model->permissions()->can('update') === false) {
+		if ($model->guards()->isAvailable('update') === false) {
 			throw new ToolError('your role may not change this content');
 		}
 
@@ -249,8 +249,7 @@ final class Writer
 		$errors = [];
 
 		foreach ($fields->errors() as $name => $error) {
-			$messages = is_array($error['message'] ?? null) ? $error['message'] : [];
-			$errors[(string) $name] = $name . ': ' . implode(' ', array_filter($messages, is_string(...)));
+			$errors[$name] = $name . ': ' . implode(' ', array_filter($error['message'], is_string(...)));
 		}
 
 		return $errors;

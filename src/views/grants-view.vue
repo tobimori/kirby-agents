@@ -29,7 +29,8 @@
 </template>
 
 <script setup>
-import { computed, useHelpers, usePanel } from "kirbyuse"
+import { useHelpers, usePanel } from "kirbyuse"
+import { computed } from "vue"
 
 const props = defineProps({
 	all: Boolean,

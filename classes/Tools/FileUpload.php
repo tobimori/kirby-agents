@@ -71,7 +71,7 @@ final class FileUpload implements Tool
 
 		if ($templates === []) {
 			throw new ToolError(
-				'No files can be uploaded here. The blueprint has no files section or field that uploads to it, or your role may not upload.',
+				'No files can be uploaded here. The blueprint has no file list or files field that uploads to it, or your role may not upload.',
 			);
 		}
 

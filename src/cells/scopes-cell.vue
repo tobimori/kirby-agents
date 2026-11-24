@@ -9,14 +9,14 @@
 				size="xs"
 				@click.stop="all.toggle()"
 			/>
-			<k-dropdown-content ref="all" align-x="start">
+			<k-dropdown ref="all" align-x="start">
 				<ul class="k-agents-scopes-list">
 					<li v-for="scope in value" :key="scope.value">
 						<k-icon type="check" />
 						<span>{{ scope.text }}</span>
 					</li>
 				</ul>
-			</k-dropdown-content>
+			</k-dropdown>
 		</template>
 
 		<div ref="measure" aria-hidden="true" class="k-agents-scopes-measure">
@@ -27,7 +27,7 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "kirbyuse"
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
 
 const props = defineProps({
 	value: Array

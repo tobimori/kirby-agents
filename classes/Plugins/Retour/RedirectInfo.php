@@ -6,9 +6,10 @@ namespace tobimori\Agents\Plugins\Retour;
 
 use Kirby\Cms\App;
 use Kirby\Cms\Page;
+use Kirby\Cms\User;
 use Kirby\Http\Header;
-use Kirby\Http\Route;
 use Kirby\Retour\Log;
+use Kirby\Retour\Pattern;
 use Kirby\Retour\Redirect;
 use Kirby\Retour\Retour;
 use tobimori\Agents\Tools\Arguments;
@@ -52,7 +53,15 @@ final class RedirectInfo
 	 */
 	public static function path(Redirect $redirect): string
 	{
-		return trim((string) $redirect->toArray()['from'], '/');
+		return trim($redirect->from(), '/');
+	}
+
+	/**
+	 * Retour stores the UUID of the user, like the Panel
+	 */
+	public static function author(User $user): string
+	{
+		return $user->uuid()?->toString() ?? $user->id();
 	}
 
 	public static function get(string $from): ?Redirect
@@ -94,11 +103,12 @@ final class RedirectInfo
 				'to' => $to,
 				// the Panel stores pages as UUIDs
 				'page' => $page !== null && $page->id() . $extension !== $to ? $page->id() . $extension : null,
+				'language' => $data['language'],
 				'status' => $data['status'] ?? 'disabled',
 				'priority' => $data['priority'] === true ? true : null,
 				'comment' => is_string($data['comment']) && $data['comment'] !== '' ? $data['comment'] : null,
-				'creator' => $data['creator'],
-				'modifier' => $data['modifier'],
+				'creator' => self::user($redirect->creator()),
+				'modifier' => self::user($redirect->modifier()),
 				'hits' => $hits['hits'] ?? null,
 				'lastHit' => $hits['last'] ?? null,
 			],
@@ -107,19 +117,22 @@ final class RedirectInfo
 	}
 
 	/**
-	 * The uses of the redirect since the date
-	 *
-	 * @return array{hits: int, last: ?string}|null
+	 * The email of an author, which Retour stores as a UUID, an id, or an email
 	 */
-	public static function hits(Redirect $redirect, string $since): ?array
+	private static function user(?string $id): ?string
 	{
-		$hits = self::log()?->redirect((string) $redirect->toArray()['from'], $since, date('Y-m-d'));
+		return $id !== null ? App::instance()->user($id)?->email() ?? $id : null;
+	}
 
-		if ($hits === null) {
-			return null;
-		}
-
-		return ['hits' => (int) $hits['hits'], 'last' => is_string($hits['last']) ? $hits['last'] : null];
+	/**
+	 * The uses of the redirects since the date, by their `from`, or `null` if the site turned the log off.
+	 * Redirects without uses are missing
+	 *
+	 * @return array<string, array{hits: int, last: string}>|null
+	 */
+	public static function hits(string $since): ?array
+	{
+		return self::log()?->redirects($since, date('Y-m-d'));
 	}
 
 	/**
@@ -130,19 +143,25 @@ final class RedirectInfo
 	public static function failures(Log $log, string $since): array
 	{
 		$failures = [];
+		$page = 1;
 
-		foreach ($log->fails($since, date('Y-m-d')) as $fail) {
-			if (!is_array($fail)) {
-				continue;
+		// Retour returns them in pages
+		do {
+			$fails = $log->fails($since, date('Y-m-d'), page: $page++, limit: 1000);
+
+			foreach ($fails as $fail) {
+				if (!is_array($fail)) {
+					continue;
+				}
+
+				$failures[] = [
+					'path' => (string) $fail['path'],
+					'referrer' => is_string($fail['referrer']) && $fail['referrer'] !== '' ? $fail['referrer'] : null,
+					'last' => (string) $fail['last'],
+					'hits' => (int) $fail['hits'],
+				];
 			}
-
-			$failures[] = [
-				'path' => (string) $fail['path'],
-				'referrer' => is_string($fail['referrer']) && $fail['referrer'] !== '' ? $fail['referrer'] : null,
-				'last' => (string) $fail['last'],
-				'hits' => (int) $fail['hits'],
-			];
-		}
+		} while ($fails->pagination()?->hasNextPage() === true);
 
 		return $failures;
 	}
@@ -332,13 +351,12 @@ final class RedirectInfo
 		}
 
 		$pattern = self::path($redirect);
-		$route = new Route($pattern, 'GET', static fn(): null => null);
 		$resolved = [];
 
 		foreach (self::failures($log, '2000-01-01') as $failure) {
 			$path = trim($failure['path'], '/');
 
-			if (!in_array($path, $resolved, true) && $route->parse($pattern, $path) !== false) {
+			if (!in_array($path, $resolved, true) && Pattern::matches($pattern, $path)) {
 				$log->resolve($failure['path']);
 				$resolved[] = $path;
 			}

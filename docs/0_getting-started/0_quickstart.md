@@ -14,8 +14,8 @@ intro: Install Kirby Agents and get the URL you need to connect your AI assistan
 
 Kirby Agents requires
 
-- Kirby 5 or later
-- PHP 8.2 or later
+- Kirby 6
+- PHP 8.3 or later
 - HTTPS on the site you want to connect
 
 AI assistants like Claude and ChatGPT connect to your site from their own servers. This means your site must be reachable from the internet. It does not work with sites who lock the panel behind their intranet. A local development site only works with 'coding agents' that run on your own computer, like Claude Code/Codex.
