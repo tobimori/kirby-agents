@@ -42,11 +42,11 @@ class ObjectField extends Field
 			static fn(mixed $props): bool => is_array($props) && !Fields::isLocked($props),
 		);
 
-		if (self::lockedIn($open, $current)) {
+		if ($this->lockedIn($open, $current)) {
 			throw $this->lockedError();
 		}
 
-		$value = Fields::input($this->fields(), $value, $current, $this->name());
+		$value = Fields::input($this->fields(), $value, $current, $this->name(), $this->model);
 		$locked = array_diff_key($this->allFields(), $open);
 
 		return [...$value, ...array_intersect_key($current, $locked)];
@@ -54,7 +54,7 @@ class ObjectField extends Field
 
 	public function locks(array $value): bool
 	{
-		return self::lockedIn($this->allFields(), $value);
+		return $this->lockedIn($this->allFields(), $value);
 	}
 
 	public function check(mixed $value, InputCheck $check, string $where): void

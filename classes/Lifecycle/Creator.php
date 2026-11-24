@@ -46,7 +46,8 @@ final class Creator
 	{
 		$title = $this->option('title');
 		$slug = $this->option('slug');
-		$fields = array_map(Compiler::line(...), $this->fields());
+		$model = $this->dialog->model();
+		$fields = array_map(static fn(array $props): string => Compiler::line($props, $model), $this->fields());
 		$options = [
 			'status' => $this->status(),
 			'title' => is_string($title) ? "set from the template `{$title}`" : 'you send it',
@@ -75,7 +76,7 @@ final class Creator
 			);
 		}
 
-		$content = Fields::input($fields, $content, [], 'the create dialog');
+		$content = Fields::input($fields, $content, [], 'the create dialog', $this->dialog->model());
 
 		$input = [...$content, 'title' => $this->title ?? '', 'slug' => $this->slug ?? ''];
 		$resolved = $this->dialog->resolveFieldTemplates($input, ['title', 'slug']);

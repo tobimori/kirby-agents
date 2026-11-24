@@ -39,7 +39,13 @@ class StructureField extends ObjectField
 		$rows = array_values($value);
 
 		foreach ($rows as $index => $row) {
-			$rows[$index] = Fields::input($this->fields(), A::wrap($row), [], "{$this->name()} > row " . ($index + 1));
+			$rows[$index] = Fields::input(
+				$this->fields(),
+				A::wrap($row),
+				[],
+				"{$this->name()} > row " . ($index + 1),
+				$this->model,
+			);
 		}
 
 		return $rows;
@@ -56,7 +62,7 @@ class StructureField extends ObjectField
 			return parent::newItem($kind, $op, $content);
 		}
 
-		return Fields::input($this->fields(), $content, [], "row {$this->name()}");
+		return Fields::input($this->fields(), $content, [], "row {$this->name()}", $this->model);
 	}
 
 	public function itemDefinition(string $kind, string $type): array

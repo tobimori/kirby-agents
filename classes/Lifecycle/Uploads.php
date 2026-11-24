@@ -90,7 +90,7 @@ final class Uploads
 			);
 		}
 
-		$content = Fields::input($props, $content, [], 'the file');
+		$content = Fields::input($props, $content, [], 'the file', $draft);
 		$form->fill(input: $content);
 
 		$errors = [
@@ -153,7 +153,7 @@ final class Uploads
 			}
 
 			$path = $where . $name;
-			$field = Fields::for($props);
+			$field = Fields::for($props, $parent);
 			$uploads = $props['uploads'] ?? null;
 
 			if (

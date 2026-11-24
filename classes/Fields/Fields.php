@@ -68,7 +68,7 @@ final class Fields
 	/**
 	 * @param array<array-key, mixed> $props
 	 */
-	public static function for(array $props): Field
+	public static function for(array $props, ?ModelWithContent $model = null): Field
 	{
 		$as = self::hint($props, 'as');
 		$type = is_string($as) ? $as : $props['type'] ?? '';
@@ -82,7 +82,7 @@ final class Fields
 			);
 		}
 
-		return $class === null ? new CustomField($props) : new $class($props);
+		return $class === null ? new CustomField($props, $model) : new $class($props, $model);
 	}
 
 	/**
@@ -305,8 +305,13 @@ final class Fields
 	 *
 	 * @return array<array-key, mixed>
 	 */
-	public static function input(array $fields, array $content, array $current, string $where): array
-	{
+	public static function input(
+		array $fields,
+		array $content,
+		array $current,
+		string $where,
+		?ModelWithContent $model = null,
+	): array {
 		foreach ($content as $name => $value) {
 			$props = $fields[$name] ?? null;
 
@@ -321,7 +326,7 @@ final class Fields
 				throw new ToolError("{$where}: field `{$name}` is read-only");
 			}
 
-			$content[$name] = self::for($props)->input($value, $old);
+			$content[$name] = self::for($props, $model)->input($value, $old);
 		}
 
 		return $content;

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace tobimori\Agents\Fields;
 
+use Kirby\Cms\ModelWithContent;
 use Kirby\Toolkit\A;
 use Kirby\Toolkit\Str;
 use Kirby\Toolkit\V;
@@ -21,6 +22,7 @@ abstract class Field
 	 */
 	final public function __construct(
 		public readonly array $props,
+		public readonly ?ModelWithContent $model = null,
 	) {}
 
 	abstract public function describe(Compiler $schema): string;
@@ -272,18 +274,19 @@ abstract class Field
 	/**
 	 * @param array<array-key, mixed> $fields all fields, also the hidden ones
 	 */
-	protected static function lockedIn(array $fields, mixed $content): bool
+	protected function lockedIn(array $fields, mixed $content): bool
 	{
 		$content = A::wrap($content);
+		$model = $this->model;
 
-		return A::some($fields, static function (mixed $props, int|string $name) use ($content): bool {
+		return A::some($fields, static function (mixed $props, int|string $name) use ($content, $model): bool {
 			$value = $content[$name] ?? null;
 
 			if (!is_array($props) || V::empty($value)) {
 				return false;
 			}
 
-			return Fields::isLocked($props) || is_array($value) && Fields::for($props)->locks($value);
+			return Fields::isLocked($props) || is_array($value) && Fields::for($props, $model)->locks($value);
 		});
 	}
 }

@@ -27,7 +27,7 @@ class EntriesField extends Field
 			return $value;
 		}
 
-		$field = Fields::for($this->field());
+		$field = Fields::for($this->field(), $this->model);
 
 		return array_map(static fn(mixed $item): mixed => $field->input($item, null), $value);
 	}
@@ -50,7 +50,7 @@ class EntriesField extends Field
 
 	public function check(mixed $value, InputCheck $check, string $where): void
 	{
-		$field = Fields::for($this->field());
+		$field = Fields::for($this->field(), $this->model);
 
 		foreach (array_values(A::wrap($value)) as $index => $item) {
 			$field->check($item, $check, "{$where} > entry " . ($index + 1));

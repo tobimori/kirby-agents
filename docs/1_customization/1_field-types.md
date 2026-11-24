@@ -36,6 +36,8 @@ Nothing was saved. Invalid values:
 
 Extend `tobimori\Agents\Fields\Field`, or a core class like `TextField`, `WriterField` or `ObjectField` if your field is close to one of them. `$this->props` has the props of the field, as the Panel gets them.
 
+`$this->model` is the page, file, site or user that has the field. Use it when a value depends on other content of the model, for example when agents send a name that your field stores as an ID. If your class makes the class of a nested field, give it the model too: `Fields::for($props, $this->model)`. `$this->model` is `null` only when code makes a field class without a model.
+
 Only `describe()` is required. It returns the format that agents see:
 
 ```php

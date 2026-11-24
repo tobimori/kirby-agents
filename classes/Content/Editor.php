@@ -196,7 +196,7 @@ final class Editor
 
 		self::ensureEditable($field, $props);
 
-		return [$props, [...$node->path, ...Fields::for($node->props)->contentPath($node->kind), $field]];
+		return [$props, [...$node->path, ...$this->field($node->props)->contentPath($node->kind), $field]];
 	}
 
 	/**
@@ -206,7 +206,7 @@ final class Editor
 	private function write(array $props, array $path, mixed $value): void
 	{
 		$current = self::getAt($this->values, $path);
-		$this->values = self::setAt($this->values, $path, Fields::for($props)->input($value, $current));
+		$this->values = self::setAt($this->values, $path, $this->field($props)->input($value, $current));
 
 		// the nodes in the old value are gone
 		$this->forget($path, false);
@@ -231,7 +231,7 @@ final class Editor
 		$target = $this->target($op);
 		$content = Field::json($op['content'] ?? null);
 		$content = is_array($content) ? $content : [];
-		$item = Fields::for($target['props'])->newItem($target['kind'], $op, $content);
+		$item = $this->field($target['props'])->newItem($target['kind'], $op, $content);
 
 		$key = $name ?? '_' . (count($this->created) + 1);
 		$this->created[] = $key;
@@ -265,7 +265,7 @@ final class Editor
 			$this->moving = [];
 		}
 
-		Fields::for($target['props'])->accept($target['kind'], $node);
+		$this->field($target['props'])->accept($target['kind'], $node);
 		$to = $this->place($target, $value);
 
 		foreach ($inside as $other => $rest) {
@@ -333,7 +333,7 @@ final class Editor
 				'path' => [$into],
 				'index' => null,
 				'props' => $props,
-				'kind' => Fields::for($props)->itemKind() ?? '',
+				'kind' => $this->field($props)->itemKind() ?? '',
 			];
 		}
 
@@ -342,7 +342,7 @@ final class Editor
 		}
 
 		$node = $this->open($this->key($into));
-		$owner = Fields::for($node->props);
+		$owner = $this->field($node->props);
 		$inner = $owner->into($node->kind, self::getAt($this->values, $node->path), $op);
 
 		if ($inner !== null) {
@@ -356,12 +356,12 @@ final class Editor
 
 		$slot = $op['slot'] ?? null;
 		$props = is_string($slot) ? $node->fields[$slot] ?? null : null;
-		$kind = is_array($props) ? Fields::for($props)->itemKind() : null;
+		$kind = is_array($props) ? $this->field($props)->itemKind() : null;
 
 		if (!is_string($slot) || !is_array($props) || $kind === null) {
 			$slots = array_keys(array_filter(
 				$node->fields,
-				static fn(mixed $props): bool => is_array($props) && Fields::for($props)->itemKind() !== null,
+				fn(mixed $props): bool => is_array($props) && $this->field($props)->itemKind() !== null,
 			));
 
 			throw new ToolError(
@@ -471,6 +471,14 @@ final class Editor
 		return $node;
 	}
 
+	/**
+	 * @param array<array-key, mixed> $props
+	 */
+	private function field(array $props): Field
+	{
+		return Fields::for($props, $this->content->model);
+	}
+
 	private function node(int|string $key): Node
 	{
 		if ($this->moving[$key] ?? false) {
@@ -482,7 +490,7 @@ final class Editor
 		if ($this->index === null) {
 			$this->index = [];
 
-			foreach (Nodes::index($this->content->fields, $this->values) as $node) {
+			foreach (Nodes::index($this->content->fields, $this->values, $this->content->model) as $node) {
 				$this->index[$node->key()] = $node;
 			}
 		}
@@ -506,7 +514,7 @@ final class Editor
 				$schema[implode('/', array_slice($node->path, count($base)))] = [
 					$node->kind,
 					$node->type,
-					Fields::for($node->props)->itemDefinition($node->kind, $node->type),
+					$this->field($node->props)->itemDefinition($node->kind, $node->type),
 				];
 			}
 		}

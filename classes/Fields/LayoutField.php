@@ -67,7 +67,7 @@ class LayoutField extends BlocksField
 			throw new ToolError('`columns` must be one of: ' . implode(', ', $options));
 		}
 
-		$content = Fields::input($this->settings(), $content, [], 'layout row settings');
+		$content = Fields::input($this->settings(), $content, [], 'layout row settings', $this->model);
 
 		return [
 			'id' => Str::uuid(),
@@ -162,7 +162,13 @@ class LayoutField extends BlocksField
 		foreach ($rows as $r => $row) {
 			$row = A::wrap($row);
 			$where = $this->name() . ' > row ' . ($r + 1);
-			$row['attrs'] = Fields::input($this->settings(), A::wrap($row['attrs'] ?? null), [], "{$where} settings");
+			$row['attrs'] = Fields::input(
+				$this->settings(),
+				A::wrap($row['attrs'] ?? null),
+				[],
+				"{$where} settings",
+				$this->model,
+			);
 			$columns = array_values(A::wrap($row['columns'] ?? null));
 
 			foreach ($columns as $c => $column) {
@@ -188,7 +194,7 @@ class LayoutField extends BlocksField
 		foreach ($value as $row) {
 			$row = A::wrap($row);
 
-			if (self::lockedIn($settings, $row['attrs'] ?? null)) {
+			if ($this->lockedIn($settings, $row['attrs'] ?? null)) {
 				return true;
 			}
 

@@ -19,9 +19,13 @@ final class Compiler
 	 */
 	private array $types = [];
 
+	private function __construct(
+		private readonly ModelWithContent $model,
+	) {}
+
 	public static function compile(ModelWithContent $model): Schema
 	{
-		$compiler = new self();
+		$compiler = new self($model);
 		$fields = [];
 
 		foreach (Fields::visible(Fields::props(Form::for($model), $model)) as $name => $field) {
@@ -40,14 +44,14 @@ final class Compiler
 		return new Schema($title, $fields, $compiler->types);
 	}
 
-	public static function line(array $props): string
+	public static function line(array $props, ModelWithContent $model): string
 	{
-		return (new self())->describe($props);
+		return (new self($model))->describe($props);
 	}
 
 	public function expression(array $props): string
 	{
-		return Fields::for($props)->describe($this);
+		return Fields::for($props, $this->model)->describe($this);
 	}
 
 	/**

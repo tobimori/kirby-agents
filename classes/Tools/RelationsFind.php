@@ -81,7 +81,7 @@ final class RelationsFind implements Tool
 	{
 		$model = Models::content((string) $arguments->string('page'));
 		$path = (string) $arguments->string('field');
-		$props = FieldPath::resolve(Reader::read($model)->fields, $path);
+		$props = FieldPath::resolve(Reader::read($model)->fields, $path, $model);
 		$type = is_string($props['type'] ?? null) ? $props['type'] : '';
 		$query = is_string($props['query'] ?? null) && $props['query'] !== '' ? $props['query'] : null;
 		$search = $arguments->string('search');
@@ -92,7 +92,7 @@ final class RelationsFind implements Tool
 		$number = intdiv($offset, $limit) + 1;
 
 		// the adapter, not the type: custom fields can extend or map to a relation field
-		$field = Fields::for($props);
+		$field = Fields::for($props, $model);
 
 		// the collectors of the pickers in the Panel, without their dialogs, which read the request
 		$collector = match (true) {

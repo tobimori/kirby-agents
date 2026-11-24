@@ -45,7 +45,7 @@ class BlocksField extends Field
 		$type = $op['type'] ?? null;
 		$this->ensureType($type);
 
-		$content = Fields::input($this->fieldset($type), $content, [], "block {$type}");
+		$content = Fields::input($this->fieldset($type), $content, [], "block {$type}", $this->model);
 
 		return ['id' => Str::uuid(), 'type' => $type, 'isHidden' => false, 'content' => $content];
 	}
@@ -96,7 +96,7 @@ class BlocksField extends Field
 			$block = A::wrap($block);
 			$fields = self::tabFields(A::wrap($this->props['fieldsets'][self::blockType($block)] ?? null));
 
-			if (self::lockedIn($fields, $block['content'] ?? null)) {
+			if ($this->lockedIn($fields, $block['content'] ?? null)) {
 				return true;
 			}
 		}
@@ -213,6 +213,7 @@ class BlocksField extends Field
 				A::wrap($block['content'] ?? null),
 				[],
 				"{$where} > block " . ($index + 1) . " ({$type})",
+				$this->model,
 			);
 			$blocks[$index] = $block;
 		}
