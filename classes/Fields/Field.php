@@ -8,6 +8,7 @@ use Kirby\Cms\ModelWithContent;
 use Kirby\Toolkit\A;
 use Kirby\Toolkit\Str;
 use Kirby\Toolkit\V;
+use Stringable;
 use tobimori\Agents\Content\InputCheck;
 use tobimori\Agents\Content\Node;
 use tobimori\Agents\Content\Nodes;
@@ -198,7 +199,9 @@ abstract class Field
 
 		foreach (array_slice($options, 0, 30) as $option) {
 			$value = is_array($option) ? $option['value'] ?? null : $option;
-			$text = is_array($option) && is_string($option['text'] ?? null) ? $option['text'] : null;
+			$text = is_array($option) ? $option['text'] ?? null : null;
+			// Kirby 6 resolves the texts of options to HtmlString objects
+			$text = is_string($text) || $text instanceof Stringable ? (string) $text : null;
 			$differs = $text !== null && is_string($value) && Str::lower($text) !== Str::lower($value);
 			$values[] = self::quote($value) . ($differs ? ' (' . $text . ')' : '');
 		}
