@@ -92,14 +92,15 @@ final class Fields
 	 */
 	public static function props(Form $form, ModelWithContent $model): array
 	{
-		$definitions = $model->blueprint()->fields();
+		// Kirby's form uses lowercase field names, the blueprint the names as written
+		$definitions = array_change_key_case($model->blueprint()->fields());
 		$props = [];
 
 		foreach ($form->fields() as $name => $field) {
 			if ($field->hasValue()) {
 				$field = [...$field->toArray(), 'default' => $field->default()];
 				unset($field['value']);
-				$props[$name] = self::withHints($field, $definitions[$name] ?? null, $model);
+				$props[$name] = self::withHints($field, $definitions[strtolower($name)] ?? null, $model);
 			}
 		}
 
@@ -164,9 +165,11 @@ final class Fields
 	 */
 	private static function fieldsWithHints(array $fields, array $definitions, ModelWithContent $model): array
 	{
+		$definitions = array_change_key_case($definitions);
+
 		foreach ($fields as $name => $props) {
 			if (is_array($props)) {
-				$fields[$name] = self::withHints($props, $definitions[$name] ?? null, $model);
+				$fields[$name] = self::withHints($props, $definitions[strtolower((string) $name)] ?? null, $model);
 			}
 		}
 
