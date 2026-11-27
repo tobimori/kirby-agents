@@ -97,6 +97,7 @@ return array(
     'tobimori\\Agents\\Tools\\PageDelete' => $baseDir . '/classes/Tools/PageDelete.php',
     'tobimori\\Agents\\Tools\\PageRulesGet' => $baseDir . '/classes/Tools/PageRulesGet.php',
     'tobimori\\Agents\\Tools\\PageUpdate' => $baseDir . '/classes/Tools/PageUpdate.php',
+    'tobimori\\Agents\\Tools\\PagesCacheFlush' => $baseDir . '/classes/Tools/PagesCacheFlush.php',
     'tobimori\\Agents\\Tools\\PagesFind' => $baseDir . '/classes/Tools/PagesFind.php',
     'tobimori\\Agents\\Tools\\RelationsFind' => $baseDir . '/classes/Tools/RelationsFind.php',
     'tobimori\\Agents\\Tools\\SchemaGet' => $baseDir . '/classes/Tools/SchemaGet.php',

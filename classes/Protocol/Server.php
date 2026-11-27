@@ -14,6 +14,7 @@ use tobimori\Agents\Http\McpEndpoint;
 use tobimori\Agents\OAuth\Access;
 use tobimori\Agents\OAuth\Client;
 use tobimori\Agents\Tools\ScopeRequired;
+use tobimori\Agents\Tools\Tool;
 use tobimori\Agents\Tools\Tools;
 
 final class Server
@@ -74,8 +75,8 @@ final class Server
 
 		try {
 			return match ($method) {
-				'initialize' => self::result($id, self::initialize($params)),
-				'server/discover' => self::result($id, self::discover()),
+				'initialize' => self::result($id, self::initialize($params, $access)),
+				'server/discover' => self::result($id, self::discover($access)),
 				'ping' => self::result($id, []),
 				'tools/list' => self::result($id, self::listTools($access)),
 				'tools/call' => self::callTool($id, $params, $access),
@@ -143,7 +144,7 @@ final class Server
 		return $value;
 	}
 
-	private static function initialize(array $params): array
+	private static function initialize(array $params, Access $access): array
 	{
 		$requested = $params['protocolVersion'] ?? null;
 
@@ -151,16 +152,16 @@ final class Server
 			'protocolVersion' => in_array($requested, self::LEGACY, true) ? $requested : self::LEGACY[0],
 			'capabilities' => self::capabilities(),
 			'serverInfo' => self::serverInfo(),
-			'instructions' => self::instructions(),
+			'instructions' => self::instructions($access),
 		];
 	}
 
-	private static function discover(): array
+	private static function discover(Access $access): array
 	{
 		return [
 			'supportedVersions' => self::versions(),
 			'capabilities' => self::capabilities(),
-			'instructions' => self::instructions(),
+			'instructions' => self::instructions($access),
 			'ttlMs' => 5 * 60 * 1000,
 			'cacheScope' => 'private',
 		];
@@ -223,8 +224,10 @@ final class Server
 		];
 	}
 
-	private static function instructions(): string
+	private static function instructions(Access $access): string
 	{
+		$tools = array_map(static fn(Tool $tool): string => $tool->name(), Tools::for($access));
+
 		return (
 			'Kirby CMS site "'
 			. Agents::siteTitle()
@@ -232,6 +235,12 @@ final class Server
 			. 'All tools act as the connected Kirby user, with the permissions of their role. '
 			. 'Start with site_overview to see the page blueprints and the page tree, then use pages_find. '
 			. 'Pages are identified by their id, which is their path, for example `blog/my-post`.'
+			// with only the tool description, agents often do not think of the cache
+			. (
+				in_array('pages_cache_flush', $tools, true)
+					? ' If the user says that the site shows old content or does not show a change, flush the pages cache with pages_cache_flush.'
+					: ''
+			)
 		);
 	}
 

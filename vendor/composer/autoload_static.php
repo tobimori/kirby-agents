@@ -120,6 +120,7 @@ class ComposerStaticInitb83eeea4b7988921e47b0a39e2b95a4d
         'tobimori\\Agents\\Tools\\PageDelete' => __DIR__ . '/../..' . '/classes/Tools/PageDelete.php',
         'tobimori\\Agents\\Tools\\PageRulesGet' => __DIR__ . '/../..' . '/classes/Tools/PageRulesGet.php',
         'tobimori\\Agents\\Tools\\PageUpdate' => __DIR__ . '/../..' . '/classes/Tools/PageUpdate.php',
+        'tobimori\\Agents\\Tools\\PagesCacheFlush' => __DIR__ . '/../..' . '/classes/Tools/PagesCacheFlush.php',
         'tobimori\\Agents\\Tools\\PagesFind' => __DIR__ . '/../..' . '/classes/Tools/PagesFind.php',
         'tobimori\\Agents\\Tools\\RelationsFind' => __DIR__ . '/../..' . '/classes/Tools/RelationsFind.php',
         'tobimori\\Agents\\Tools\\SchemaGet' => __DIR__ . '/../..' . '/classes/Tools/SchemaGet.php',

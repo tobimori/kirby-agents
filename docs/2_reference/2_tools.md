@@ -54,6 +54,14 @@ Agents can upload to the same places as the Panel, and Kirby checks the file wit
 
 `file_delete` also checks the option `delete` of the file blueprint. Fields that refer to the deleted file keep the reference, but show nothing.
 
+## Cache
+
+| Tool                | What it does                                                   | Permission      |
+| ------------------- | -------------------------------------------------------------- | --------------- |
+| `pages_cache_flush` | Empties the pages cache, so the site shows the current content | `content:write` |
+
+Kirby empties the pages cache after each change in the Panel or by an agent. Agents use this tool only when you say that the site shows old content or does not show a change, for example after a change to a template or to the content files on the server. A flush changes no content, so agents use it without asking first. When the pages cache is off, the tool does nothing.
+
 ## Tools for other plugins
 
 When [Retour](https://github.com/distantnative/retour-for-kirby) is installed, agents also get tools for its redirects and 404 errors. See [Retour](3_supported-plugins/0_retour).

@@ -33,6 +33,7 @@ final class Tools
 			new PageDelete(),
 			new PageRulesGet(),
 			new PageUpdate(),
+			new PagesCacheFlush(),
 			new PagesFind(),
 			new RelationsFind(),
 			new SchemaGet(),
